@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, BookOpen, Plus, Save, Smile, Meh, Frown, HeartCrack, Heart, Angry } from "lucide-react";
+import { ArrowLeft, BookOpen, Plus, Save, Smile, Meh, Frown, HeartCrack, Heart, Angry, Stars, Sun, Cloud, CloudRain, CloudLightning, Zap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -13,6 +13,7 @@ interface DiaryEntry {
   content: string;
   date: Date;
   mood: string;
+  energy: string;
 }
 
 const moodOptions = [
@@ -24,12 +25,22 @@ const moodOptions = [
   { value: "heartbreak", icon: HeartCrack, label: "Heartbreak", color: "text-purple-500" },
 ];
 
+const energyOptions = [
+  { value: "energetic", icon: Zap, label: "Energetic", color: "text-yellow-500" },
+  { value: "calm", icon: Stars, label: "Calm", color: "text-indigo-500" },
+  { value: "productive", icon: Sun, label: "Productive", color: "text-orange-500" },
+  { value: "tired", icon: Cloud, label: "Tired", color: "text-gray-400" },
+  { value: "stressed", icon: CloudLightning, label: "Stressed", color: "text-purple-400" },
+  { value: "down", icon: CloudRain, label: "Down", color: "text-blue-400" },
+];
+
 const Diary = () => {
   const navigate = useNavigate();
   const [entries, setEntries] = useState<DiaryEntry[]>([]);
   const [newEntry, setNewEntry] = useState("");
   const [isWriting, setIsWriting] = useState(false);
   const [selectedMood, setSelectedMood] = useState("neutral");
+  const [selectedEnergy, setSelectedEnergy] = useState("calm");
 
   const handleSaveEntry = () => {
     if (!newEntry.trim()) return;
@@ -39,15 +50,18 @@ const Diary = () => {
       content: newEntry,
       date: new Date(),
       mood: selectedMood,
+      energy: selectedEnergy,
     };
 
     setEntries([entry, ...entries]);
     setNewEntry("");
     setSelectedMood("neutral");
+    setSelectedEnergy("calm");
     setIsWriting(false);
   };
 
   const MoodIcon = moodOptions.find(mood => mood.value === selectedMood)?.icon || Meh;
+  const EnergyIcon = energyOptions.find(energy => energy.value === selectedEnergy)?.icon || Stars;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-white dark:from-gray-900 dark:to-gray-800">
@@ -86,40 +100,81 @@ const Diary = () => {
           <Card className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-6 mb-6">
             <div className="space-y-6">
               <div className="space-y-4">
-                <h2 className="text-lg font-semibold">How are you feeling today?</h2>
-                <RadioGroup
-                  value={selectedMood}
-                  onValueChange={setSelectedMood}
-                  className="grid grid-cols-3 sm:grid-cols-6 gap-4"
-                >
-                  {moodOptions.map((mood) => {
-                    const Icon = mood.icon;
-                    return (
-                      <div key={mood.value} className="text-center space-y-2">
-                        <RadioGroupItem
-                          value={mood.value}
-                          id={mood.value}
-                          className="peer sr-only"
-                        />
-                        <Label
-                          htmlFor={mood.value}
-                          className="flex flex-col items-center space-y-2 cursor-pointer peer-aria-checked:text-primary"
-                        >
-                          <div className={`p-2 rounded-full transition-colors ${
-                            selectedMood === mood.value 
-                              ? 'bg-primary/10 ' + mood.color
-                              : 'hover:bg-gray-100 dark:hover:bg-gray-800'
-                          }`}>
-                            <Icon className={`h-8 w-8 ${
-                              selectedMood === mood.value ? mood.color : ''
-                            }`} />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <h2 className="text-lg font-semibold">How are you feeling?</h2>
+                    <RadioGroup
+                      value={selectedMood}
+                      onValueChange={setSelectedMood}
+                      className="grid grid-cols-2 sm:grid-cols-3 gap-4"
+                    >
+                      {moodOptions.map((mood) => {
+                        const Icon = mood.icon;
+                        return (
+                          <div key={mood.value} className="text-center space-y-2">
+                            <RadioGroupItem
+                              value={mood.value}
+                              id={`mood-${mood.value}`}
+                              className="peer sr-only"
+                            />
+                            <Label
+                              htmlFor={`mood-${mood.value}`}
+                              className="flex flex-col items-center space-y-2 cursor-pointer peer-aria-checked:text-primary"
+                            >
+                              <div className={`p-2 rounded-full transition-colors ${
+                                selectedMood === mood.value 
+                                  ? 'bg-primary/10 ' + mood.color
+                                  : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+                              }`}>
+                                <Icon className={`h-8 w-8 ${
+                                  selectedMood === mood.value ? mood.color : ''
+                                }`} />
+                              </div>
+                              <span className="text-sm">{mood.label}</span>
+                            </Label>
                           </div>
-                          <span className="text-sm">{mood.label}</span>
-                        </Label>
-                      </div>
-                    );
-                  })}
-                </RadioGroup>
+                        );
+                      })}
+                    </RadioGroup>
+                  </div>
+
+                  <div className="space-y-4">
+                    <h2 className="text-lg font-semibold">Energy Level</h2>
+                    <RadioGroup
+                      value={selectedEnergy}
+                      onValueChange={setSelectedEnergy}
+                      className="grid grid-cols-2 sm:grid-cols-3 gap-4"
+                    >
+                      {energyOptions.map((energy) => {
+                        const Icon = energy.icon;
+                        return (
+                          <div key={energy.value} className="text-center space-y-2">
+                            <RadioGroupItem
+                              value={energy.value}
+                              id={`energy-${energy.value}`}
+                              className="peer sr-only"
+                            />
+                            <Label
+                              htmlFor={`energy-${energy.value}`}
+                              className="flex flex-col items-center space-y-2 cursor-pointer peer-aria-checked:text-primary"
+                            >
+                              <div className={`p-2 rounded-full transition-colors ${
+                                selectedEnergy === energy.value 
+                                  ? 'bg-primary/10 ' + energy.color
+                                  : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+                              }`}>
+                                <Icon className={`h-8 w-8 ${
+                                  selectedEnergy === energy.value ? energy.color : ''
+                                }`} />
+                              </div>
+                              <span className="text-sm">{energy.label}</span>
+                            </Label>
+                          </div>
+                        );
+                      })}
+                    </RadioGroup>
+                  </div>
+                </div>
               </div>
               
               <div className="space-y-4">
@@ -146,7 +201,9 @@ const Diary = () => {
         <div className="space-y-4">
           {entries.map((entry) => {
             const mood = moodOptions.find(m => m.value === entry.mood);
+            const energy = energyOptions.find(e => e.value === entry.energy);
             const EntryMoodIcon = mood?.icon || Meh;
+            const EntryEnergyIcon = energy?.icon || Stars;
             
             return (
               <Card
@@ -158,9 +215,15 @@ const Diary = () => {
                     <span className="text-sm text-gray-500">
                       {entry.date.toLocaleDateString()}
                     </span>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-gray-500">Mood:</span>
-                      <EntryMoodIcon className={`h-5 w-5 ${mood?.color || ''}`} />
+                    <div className="flex items-center space-x-4">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm text-gray-500">Mood:</span>
+                        <EntryMoodIcon className={`h-5 w-5 ${mood?.color || ''}`} />
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm text-gray-500">Energy:</span>
+                        <EntryEnergyIcon className={`h-5 w-5 ${energy?.color || ''}`} />
+                      </div>
                     </div>
                   </div>
                   <p className="whitespace-pre-wrap">{entry.content}</p>
@@ -175,3 +238,4 @@ const Diary = () => {
 };
 
 export default Diary;
+
