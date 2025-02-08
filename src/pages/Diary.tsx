@@ -4,9 +4,10 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, BookOpen, Plus, Save, Smile, Meh, Frown, HeartCrack, Heart, Angry, Stars, Sun, Cloud, CloudRain, CloudLightning, Zap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 
 interface DiaryEntry {
   id: string;
@@ -14,6 +15,13 @@ interface DiaryEntry {
   date: Date;
   mood: string;
   energy: string;
+}
+
+interface Sticker {
+  id: string;
+  type: 'mood' | 'energy';
+  value: string;
+  date: Date;
 }
 
 const moodOptions = [
@@ -42,8 +50,27 @@ const Diary = () => {
   const [selectedMood, setSelectedMood] = useState("neutral");
   const [selectedEnergy, setSelectedEnergy] = useState("calm");
 
+  // Load entries from localStorage on component mount
+  useEffect(() => {
+    const savedEntries = localStorage.getItem('diary-entries');
+    if (savedEntries) {
+      setEntries(JSON.parse(savedEntries).map((entry: any) => ({
+        ...entry,
+        date: new Date(entry.date)
+      })));
+    }
+  }, []);
+
+  // Save entries to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('diary-entries', JSON.stringify(entries));
+  }, [entries]);
+
   const handleSaveEntry = () => {
-    if (!newEntry.trim()) return;
+    if (!newEntry.trim()) {
+      toast.error("Please write something in your entry");
+      return;
+    }
 
     const entry: DiaryEntry = {
       id: Date.now().toString(),
@@ -53,11 +80,37 @@ const Diary = () => {
       energy: selectedEnergy,
     };
 
+    // Create stickers for the calendar
+    const moodSticker: Sticker = {
+      id: `mood-${entry.id}`,
+      type: 'mood',
+      value: selectedMood,
+      date: entry.date
+    };
+
+    const energySticker: Sticker = {
+      id: `energy-${entry.id}`,
+      type: 'energy',
+      value: selectedEnergy,
+      date: entry.date
+    };
+
+    // Get existing stickers from localStorage
+    const existingStickers = JSON.parse(localStorage.getItem('calendar-stickers') || '[]');
+    
+    // Add new stickers
+    const updatedStickers = [...existingStickers, moodSticker, energySticker];
+    
+    // Save stickers to localStorage
+    localStorage.setItem('calendar-stickers', JSON.stringify(updatedStickers));
+
     setEntries([entry, ...entries]);
     setNewEntry("");
     setSelectedMood("neutral");
     setSelectedEnergy("calm");
     setIsWriting(false);
+    
+    toast.success("Entry saved successfully!");
   };
 
   const MoodIcon = moodOptions.find(mood => mood.value === selectedMood)?.icon || Meh;
@@ -238,4 +291,3 @@ const Diary = () => {
 };
 
 export default Diary;
-
