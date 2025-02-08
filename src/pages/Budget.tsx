@@ -12,9 +12,11 @@ interface Transaction {
   id: string;
   description: string;
   amount: number;
-  type: 'income' | 'expense';
+  type: TransactionType;
   date: Date;
 }
+
+type TransactionType = 'income' | 'expense';
 
 const Budget = () => {
   const navigate = useNavigate();
@@ -22,7 +24,7 @@ const Budget = () => {
   const [newTransaction, setNewTransaction] = useState({
     description: "",
     amount: "",
-    type: 'expense' as const
+    type: 'expense' as TransactionType
   });
   const [isAdding, setIsAdding] = useState(false);
 
@@ -209,3 +211,4 @@ const Budget = () => {
 };
 
 export default Budget;
+
