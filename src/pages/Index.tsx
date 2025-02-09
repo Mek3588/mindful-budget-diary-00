@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -14,10 +14,33 @@ import {
   PlusCircle,
   Sun,
   Menu,
+  Smile,
+  Meh,
+  Frown,
+  Heart,
+  HeartCrack,
+  Angry,
 } from "lucide-react";
+
+interface MoodCount {
+  happy: number;
+  neutral: number;
+  sad: number;
+  angry: number;
+  love: number;
+  heartbreak: number;
+}
 
 const Index = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [moodCounts, setMoodCounts] = useState<MoodCount>({
+    happy: 0,
+    neutral: 0,
+    sad: 0,
+    angry: 0,
+    love: 0,
+    heartbreak: 0,
+  });
   const navigate = useNavigate();
 
   const menuItems = [
@@ -28,6 +51,63 @@ const Index = () => {
     { icon: Lock, label: "Security", route: "/security" },
     { icon: Settings, label: "Settings", route: "/settings" },
   ];
+
+  useEffect(() => {
+    // Load diary entries and count moods
+    const diaryEntries = JSON.parse(localStorage.getItem('diary-entries') || '[]');
+    const counts: MoodCount = {
+      happy: 0,
+      neutral: 0,
+      sad: 0,
+      angry: 0,
+      love: 0,
+      heartbreak: 0,
+    };
+
+    diaryEntries.forEach((entry: { mood: keyof MoodCount }) => {
+      counts[entry.mood]++;
+    });
+
+    setMoodCounts(counts);
+  }, []);
+
+  const getMoodIcon = (mood: string) => {
+    switch (mood) {
+      case 'happy':
+        return Smile;
+      case 'neutral':
+        return Meh;
+      case 'sad':
+        return Frown;
+      case 'angry':
+        return Angry;
+      case 'love':
+        return Heart;
+      case 'heartbreak':
+        return HeartCrack;
+      default:
+        return Meh;
+    }
+  };
+
+  const getMoodColor = (mood: string) => {
+    switch (mood) {
+      case 'happy':
+        return 'text-green-500';
+      case 'neutral':
+        return 'text-gray-500';
+      case 'sad':
+        return 'text-blue-500';
+      case 'angry':
+        return 'text-red-500';
+      case 'love':
+        return 'text-pink-500';
+      case 'heartbreak':
+        return 'text-purple-500';
+      default:
+        return 'text-gray-500';
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-white dark:from-gray-900 dark:to-gray-800">
@@ -122,10 +202,31 @@ const Index = () => {
           {/* Mood Tracker */}
           <Card className="col-span-full md:col-span-1 bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
             <h2 className="text-lg font-semibold mb-4">Mood Tracker</h2>
-            <div className="flex items-center justify-center h-32">
-              <span className="text-gray-500 dark:text-gray-400">
-                Start tracking your mood
-              </span>
+            <div className="space-y-4">
+              {Object.entries(moodCounts).map(([mood, count]) => {
+                const Icon = getMoodIcon(mood);
+                return (
+                  <div key={mood} className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Icon className={`h-5 w-5 ${getMoodColor(mood)}`} />
+                      <span className="capitalize">{mood}</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="bg-gray-200 dark:bg-gray-700 h-2 w-24 rounded-full overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ 
+                            width: `${(count / Math.max(...Object.values(moodCounts))) * 100}%` 
+                          }}
+                          transition={{ duration: 0.5 }}
+                          className={`h-full ${getMoodColor(mood)} opacity-75`}
+                        />
+                      </div>
+                      <span className="text-sm text-gray-500">{count}</span>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </Card>
 
@@ -146,3 +247,4 @@ const Index = () => {
 };
 
 export default Index;
+
