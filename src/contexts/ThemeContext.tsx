@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useEffect, useState } from "react";
 
 type Theme = {
@@ -28,317 +29,84 @@ type Theme = {
 };
 
 const themes: Theme[] = [
-  // Masculine themes
+  // Default dark theme
+  {
+    id: 'dark',
+    name: 'Dark',
+    type: 'masculine',
+    primaryColor: '#1A1F2C',
+    secondaryColor: '#2D3748',
+    accentColor: '#4A5568',
+    stickerColors: {
+      mood: {
+        happy: '#48BB78',
+        neutral: '#718096',
+        sad: '#4299E1',
+        angry: '#F56565',
+        love: '#ED64A6',
+        heartbreak: '#9F7AEA'
+      },
+      energy: {
+        energetic: '#F6AD55',
+        calm: '#4FD1C5',
+        productive: '#48BB78',
+        tired: '#718096',
+        stressed: '#F56565',
+        down: '#4A5568'
+      }
+    }
+  },
+  // Premium Masculine theme - Ocean Depths
   {
     id: 'm1',
-    name: 'Forest',
+    name: 'Ocean Depths',
     type: 'masculine',
-    primaryColor: '#2D3A3A',
-    secondaryColor: '#4A5859',
-    accentColor: '#8FAD88',
+    primaryColor: '#1E293B',
+    secondaryColor: '#334155',
+    accentColor: '#0EA5E9',
     stickerColors: {
       mood: {
-        happy: '#90B77D',
-        neutral: '#628B48',
-        sad: '#42593D',
-        angry: '#D35D6E',
-        love: '#FF8882',
-        heartbreak: '#6B4F4F'
+        happy: '#38BDF8',
+        neutral: '#94A3B8',
+        sad: '#0369A1',
+        angry: '#EF4444',
+        love: '#EC4899',
+        heartbreak: '#6366F1'
       },
       energy: {
-        energetic: '#F0A500',
-        calm: '#557153',
-        productive: '#A9AF7E',
-        tired: '#6D8B74',
-        stressed: '#D57E7E',
-        down: '#557153'
+        energetic: '#F59E0B',
+        calm: '#0D9488',
+        productive: '#22C55E',
+        tired: '#64748B',
+        stressed: '#DC2626',
+        down: '#1E293B'
       }
     }
   },
-  {
-    id: 'm2',
-    name: 'Ocean',
-    type: 'masculine',
-    primaryColor: '#1B2A41',
-    secondaryColor: '#324A5F',
-    accentColor: '#5C829A',
-    stickerColors: {
-      mood: {
-        happy: '#8ECAE6',
-        neutral: '#219EBC',
-        sad: '#126782',
-        angry: '#FB8500',
-        love: '#FFB703',
-        heartbreak: '#BC6C25'
-      },
-      energy: {
-        energetic: '#FFB703',
-        calm: '#219EBC',
-        productive: '#8ECAE6',
-        tired: '#126782',
-        stressed: '#FB8500',
-        down: '#023047'
-      }
-    }
-  },
-  {
-    id: 'm3',
-    name: 'Mountain',
-    type: 'masculine',
-    primaryColor: '#2B2D42',
-    secondaryColor: '#4A4E69',
-    accentColor: '#9A8C98',
-    stickerColors: {
-      mood: {
-        happy: '#90B77D',
-        neutral: '#628B48',
-        sad: '#42593D',
-        angry: '#D35D6E',
-        love: '#FF8882',
-        heartbreak: '#6B4F4F'
-      },
-      energy: {
-        energetic: '#F0A500',
-        calm: '#557153',
-        productive: '#A9AF7E',
-        tired: '#6D8B74',
-        stressed: '#D57E7E',
-        down: '#557153'
-      }
-    }
-  },
-  {
-    id: 'm4',
-    name: 'Desert',
-    type: 'masculine',
-    primaryColor: '#4A4238',
-    secondaryColor: '#7A6C5D',
-    accentColor: '#C2A878',
-    stickerColors: {
-      mood: {
-        happy: '#90B77D',
-        neutral: '#628B48',
-        sad: '#42593D',
-        angry: '#D35D6E',
-        love: '#FF8882',
-        heartbreak: '#6B4F4F'
-      },
-      energy: {
-        energetic: '#F0A500',
-        calm: '#557153',
-        productive: '#A9AF7E',
-        tired: '#6D8B74',
-        stressed: '#D57E7E',
-        down: '#557153'
-      }
-    }
-  },
-  {
-    id: 'm5',
-    name: 'Urban',
-    type: 'masculine',
-    primaryColor: '#2B2D42',
-    secondaryColor: '#3D3D3D',
-    accentColor: '#666666',
-    stickerColors: {
-      mood: {
-        happy: '#90B77D',
-        neutral: '#628B48',
-        sad: '#42593D',
-        angry: '#D35D6E',
-        love: '#FF8882',
-        heartbreak: '#6B4F4F'
-      },
-      energy: {
-        energetic: '#F0A500',
-        calm: '#557153',
-        productive: '#A9AF7E',
-        tired: '#6D8B74',
-        stressed: '#D57E7E',
-        down: '#557153'
-      }
-    }
-  },
-  {
-    id: 'm6',
-    name: 'Tech',
-    type: 'masculine',
-    primaryColor: '#1A1B26',
-    secondaryColor: '#2E3440',
-    accentColor: '#5E81AC',
-    stickerColors: {
-      mood: {
-        happy: '#90B77D',
-        neutral: '#628B48',
-        sad: '#42593D',
-        angry: '#D35D6E',
-        love: '#FF8882',
-        heartbreak: '#6B4F4F'
-      },
-      energy: {
-        energetic: '#F0A500',
-        calm: '#557153',
-        productive: '#A9AF7E',
-        tired: '#6D8B74',
-        stressed: '#D57E7E',
-        down: '#557153'
-      }
-    }
-  },
-  // Feminine themes
+  // Premium Feminine theme - Rose Garden
   {
     id: 'f1',
     name: 'Rose Garden',
     type: 'feminine',
-    primaryColor: '#FFE5E5',
-    secondaryColor: '#FFC4C4',
-    accentColor: '#FF9F9F',
+    primaryColor: '#FDF2F8',
+    secondaryColor: '#FCE7F3',
+    accentColor: '#EC4899',
     stickerColors: {
       mood: {
-        happy: '#FFB5B5',
-        neutral: '#FF9F9F',
-        sad: '#FF8989',
-        angry: '#FF7373',
-        love: '#FFACAC',
-        heartbreak: '#FF5D5D'
+        happy: '#14B8A6',
+        neutral: '#8B5CF6',
+        sad: '#6366F1',
+        angry: '#EF4444',
+        love: '#EC4899',
+        heartbreak: '#9333EA'
       },
       energy: {
-        energetic: '#FFD93D',
-        calm: '#FFC4C4',
-        productive: '#FF9F9F',
-        tired: '#FF8989',
-        stressed: '#FF7373',
-        down: '#FF5D5D'
-      }
-    }
-  },
-  {
-    id: 'f2',
-    name: 'Lavender',
-    type: 'feminine',
-    primaryColor: '#E6E6FA',
-    secondaryColor: '#D8BFD8',
-    accentColor: '#DDA0DD',
-    stickerColors: {
-      mood: {
-        happy: '#FFB5B5',
-        neutral: '#FF9F9F',
-        sad: '#FF8989',
-        angry: '#FF7373',
-        love: '#FFACAC',
-        heartbreak: '#FF5D5D'
-      },
-      energy: {
-        energetic: '#FFD93D',
-        calm: '#FFC4C4',
-        productive: '#FF9F9F',
-        tired: '#FF8989',
-        stressed: '#FF7373',
-        down: '#FF5D5D'
-      }
-    }
-  },
-  {
-    id: 'f3',
-    name: 'Mint',
-    type: 'feminine',
-    primaryColor: '#E0F2F1',
-    secondaryColor: '#B2DFDB',
-    accentColor: '#80CBC4',
-    stickerColors: {
-      mood: {
-        happy: '#FFB5B5',
-        neutral: '#FF9F9F',
-        sad: '#FF8989',
-        angry: '#FF7373',
-        love: '#FFACAC',
-        heartbreak: '#FF5D5D'
-      },
-      energy: {
-        energetic: '#FFD93D',
-        calm: '#FFC4C4',
-        productive: '#FF9F9F',
-        tired: '#FF8989',
-        stressed: '#FF7373',
-        down: '#FF5D5D'
-      }
-    }
-  },
-  {
-    id: 'f4',
-    name: 'Coral',
-    type: 'feminine',
-    primaryColor: '#FFE8DF',
-    secondaryColor: '#FFCDB2',
-    accentColor: '#FFB4A2',
-    stickerColors: {
-      mood: {
-        happy: '#FFB5B5',
-        neutral: '#FF9F9F',
-        sad: '#FF8989',
-        angry: '#FF7373',
-        love: '#FFACAC',
-        heartbreak: '#FF5D5D'
-      },
-      energy: {
-        energetic: '#FFD93D',
-        calm: '#FFC4C4',
-        productive: '#FF9F9F',
-        tired: '#FF8989',
-        stressed: '#FF7373',
-        down: '#FF5D5D'
-      }
-    }
-  },
-  {
-    id: 'f5',
-    name: 'Sky',
-    type: 'feminine',
-    primaryColor: '#E3F2FD',
-    secondaryColor: '#BBDEFB',
-    accentColor: '#90CAF9',
-    stickerColors: {
-      mood: {
-        happy: '#FFB5B5',
-        neutral: '#FF9F9F',
-        sad: '#FF8989',
-        angry: '#FF7373',
-        love: '#FFACAC',
-        heartbreak: '#FF5D5D'
-      },
-      energy: {
-        energetic: '#FFD93D',
-        calm: '#FFC4C4',
-        productive: '#FF9F9F',
-        tired: '#FF8989',
-        stressed: '#FF7373',
-        down: '#FF5D5D'
-      }
-    }
-  },
-  {
-    id: 'f6',
-    name: 'Sunset',
-    type: 'feminine',
-    primaryColor: '#FFF3E0',
-    secondaryColor: '#FFE0B2',
-    accentColor: '#FFCC80',
-    stickerColors: {
-      mood: {
-        happy: '#FFB5B5',
-        neutral: '#FF9F9F',
-        sad: '#FF8989',
-        angry: '#FF7373',
-        love: '#FFACAC',
-        heartbreak: '#FF5D5D'
-      },
-      energy: {
-        energetic: '#FFD93D',
-        calm: '#FFC4C4',
-        productive: '#FF9F9F',
-        tired: '#FF8989',
-        stressed: '#FF7373',
-        down: '#FF5D5D'
+        energetic: '#F59E0B',
+        calm: '#8B5CF6',
+        productive: '#22C55E',
+        tired: '#6B7280',
+        stressed: '#EF4444',
+        down: '#4C1D95'
       }
     }
   }
@@ -355,7 +123,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   const [currentTheme, setCurrentTheme] = useState<Theme>(() => {
     const savedThemeId = localStorage.getItem('selected-theme');
-    return themes.find(theme => theme.id === savedThemeId) || themes[0];
+    return themes.find(theme => theme.id === savedThemeId) || themes[0]; // Default to dark theme
   });
 
   const setTheme = (themeId: string) => {
@@ -394,3 +162,4 @@ export const useTheme = () => {
   }
   return context;
 };
+
