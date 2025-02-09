@@ -200,27 +200,4 @@ const Calendar = () => {
                 {events
                   .filter(event => format(new Date(event.date), 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd'))
                   .map(event => (
-                    <Card key={event.id} className="p-3 bg-white/30 dark:bg-gray-700/30">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="font-medium">{event.title}</h3>
-                          {event.description && (
-                            <p className="text-sm text-gray-500 dark:text-gray-400">
-                              {event.description}
-                            </p>
-                          )}
-                        </div>
-                        <Badge>{event.category}</Badge>
-                      </div>
-                    </Card>
-                  ))}
-              </div>
-            </div>
-          </Card>
-        </div>
-      </main>
-    </div>
-  );
-};
-
-export default Calendar;
+                    <Card key
