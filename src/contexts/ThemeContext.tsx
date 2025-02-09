@@ -20,17 +20,28 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   useEffect(() => {
-    document.documentElement.style.setProperty('--primary-color', currentTheme.primaryColor);
-    document.documentElement.style.setProperty('--secondary-color', currentTheme.secondaryColor);
-    document.documentElement.style.setProperty('--accent-color', currentTheme.accentColor);
+    // Set theme colors as CSS custom properties
+    document.documentElement.style.setProperty('--background', currentTheme.primaryColor);
+    document.documentElement.style.setProperty('--foreground', currentTheme.secondaryColor);
+    document.documentElement.style.setProperty('--primary', currentTheme.primaryColor);
+    document.documentElement.style.setProperty('--primary-foreground', currentTheme.secondaryColor);
+    document.documentElement.style.setProperty('--secondary', currentTheme.secondaryColor);
+    document.documentElement.style.setProperty('--secondary-foreground', currentTheme.primaryColor);
+    document.documentElement.style.setProperty('--accent', currentTheme.accentColor);
+    document.documentElement.style.setProperty('--accent-foreground', currentTheme.primaryColor);
     
-    // Set sticker colors as CSS variables
+    // Set sticker colors
     Object.entries(currentTheme.stickerColors.mood).forEach(([key, value]) => {
       document.documentElement.style.setProperty(`--mood-${key}-color`, value);
     });
     Object.entries(currentTheme.stickerColors.energy).forEach(([key, value]) => {
       document.documentElement.style.setProperty(`--energy-${key}-color`, value);
     });
+
+    // Update data-theme attribute for proper dark/light mode
+    document.documentElement.setAttribute('data-theme', 
+      currentTheme.type === 'masculine' ? 'dark' : 'light'
+    );
   }, [currentTheme]);
 
   return (

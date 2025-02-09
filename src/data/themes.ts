@@ -34,9 +34,9 @@ export const themes: Theme[] = [
     id: 'm1',
     name: 'Ocean Depths',
     type: 'masculine',
-    primaryColor: '#1E293B',
-    secondaryColor: '#334155',
-    accentColor: '#0EA5E9',
+    primaryColor: '#0F172A',
+    secondaryColor: '#1E293B',
+    accentColor: '#38BDF8',
     stickerColors: {
       mood: {
         happy: '#38BDF8',
