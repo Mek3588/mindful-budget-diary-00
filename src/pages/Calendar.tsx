@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -21,6 +20,8 @@ import { Label } from "@/components/ui/label";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import { PinDialog } from "@/components/PinDialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -62,7 +63,13 @@ const Calendar = () => {
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
 
   useEffect(() => {
-    // Load events from localStorage
+    document.documentElement.classList.add('dark');
+    return () => {
+      document.documentElement.classList.remove('dark');
+    };
+  }, []);
+
+  useEffect(() => {
     const loadEvents = () => {
       const savedEvents = localStorage.getItem('calendar-events');
       const savedDiaryEntries = localStorage.getItem('diary-entries');
@@ -77,7 +84,6 @@ const Calendar = () => {
         }));
       }
       
-      // Add diary entries as events
       if (savedDiaryEntries) {
         const diaryEvents = JSON.parse(savedDiaryEntries).map((entry: any) => ({
           id: `diary-${entry.id}`,
@@ -90,7 +96,6 @@ const Calendar = () => {
         allEvents = [...allEvents, ...diaryEvents];
       }
       
-      // Add notes as events
       if (savedNotes) {
         const noteEvents = JSON.parse(savedNotes).map((note: any) => ({
           id: `note-${note.id}`,
@@ -107,7 +112,6 @@ const Calendar = () => {
 
     loadEvents();
     
-    // Load stickers
     const savedStickers = localStorage.getItem('calendar-stickers');
     if (savedStickers) {
       setStickers(JSON.parse(savedStickers).map((sticker: any) => ({
@@ -190,7 +194,9 @@ const Calendar = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-white dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800">
+      <PinDialog onSuccess={() => console.log("PIN verified")} />
+      
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-lg border-b border-gray-200 dark:bg-gray-900/80 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
@@ -214,19 +220,19 @@ const Calendar = () => {
 
       <main className="pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-          <Card className="md:col-span-8 bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-6">
+          <Card className="md:col-span-8 bg-gray-800/50 backdrop-blur-sm border-gray-700 p-6">
             <CalendarComponent
               mode="single"
               selected={date}
               onSelect={(newDate) => newDate && setDate(newDate)}
-              className="rounded-md border"
+              className="rounded-md border border-gray-700"
               components={{
                 DayContent: ({ date }) => getDayContent(date),
               }}
             />
           </Card>
 
-          <Card className="md:col-span-4 bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-6">
+          <Card className="md:col-span-4 bg-gray-800/50 backdrop-blur-sm border-gray-700 p-6">
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <h2 className="text-lg font-semibold">
