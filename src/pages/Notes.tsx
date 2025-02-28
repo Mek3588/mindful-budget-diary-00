@@ -7,12 +7,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, FileText, Plus, Save, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { format } from "date-fns";
 
 interface Note {
   id: string;
   title: string;
   content: string;
   date: Date;
+  updatedAt?: Date;
 }
 
 const Notes = () => {
@@ -27,7 +29,8 @@ const Notes = () => {
     if (savedNotes) {
       setNotes(JSON.parse(savedNotes).map((note: any) => ({
         ...note,
-        date: new Date(note.date)
+        date: new Date(note.date),
+        updatedAt: note.updatedAt ? new Date(note.updatedAt) : undefined
       })));
     }
   }, []);
@@ -43,11 +46,13 @@ const Notes = () => {
       return;
     }
 
+    const now = new Date();
     const note: Note = {
       id: Date.now().toString(),
       title: newNote.title,
       content: newNote.content,
-      date: new Date(),
+      date: now,
+      updatedAt: now,
     };
 
     // Create calendar event for the note
@@ -153,6 +158,16 @@ const Notes = () => {
                 <p className="text-sm text-gray-600 dark:text-gray-300 whitespace-pre-wrap">
                   {note.content}
                 </p>
+                <div className="mt-4 pt-2 border-t border-gray-200 dark:border-gray-700">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Created: {format(note.date, "MMM d, yyyy 'at' h:mm a")}
+                  </p>
+                  {note.updatedAt && note.updatedAt.getTime() !== note.date.getTime() && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Updated: {format(note.updatedAt, "MMM d, yyyy 'at' h:mm a")}
+                    </p>
+                  )}
+                </div>
               </Card>
             ))}
           </div>

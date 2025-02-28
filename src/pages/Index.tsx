@@ -42,6 +42,15 @@ interface MoodCount {
   heartbreak: number;
 }
 
+const moodOptions = [
+  { value: "happy", icon: Smile, label: "Happy", color: "text-green-500" },
+  { value: "neutral", icon: Meh, label: "Neutral", color: "text-gray-500" },
+  { value: "sad", icon: Frown, label: "Sad", color: "text-blue-500" },
+  { value: "angry", icon: Angry, label: "Angry", color: "text-red-500" },
+  { value: "love", icon: Heart, label: "Love", color: "text-pink-500" },
+  { value: "heartbreak", icon: HeartCrack, label: "Heartbreak", color: "text-purple-500" },
+];
+
 const Index = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [moodCounts, setMoodCounts] = useState<MoodCount>({
@@ -52,6 +61,7 @@ const Index = () => {
     love: 0,
     heartbreak: 0,
   });
+  const [latestMood, setLatestMood] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const navigate = useNavigate();
@@ -89,8 +99,21 @@ const Index = () => {
       heartbreak: 0,
     };
 
-    diaryEntries.forEach((entry: { mood: keyof MoodCount }) => {
-      counts[entry.mood]++;
+    // Sort entries by date (newest first)
+    const sortedEntries = diaryEntries.sort((a: any, b: any) => 
+      new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+
+    // Set the latest mood
+    if (sortedEntries.length > 0) {
+      setLatestMood(sortedEntries[0].mood);
+    }
+
+    // Count moods
+    sortedEntries.forEach((entry: { mood: keyof MoodCount }) => {
+      if (entry.mood in counts) {
+        counts[entry.mood]++;
+      }
     });
 
     setMoodCounts(counts);
@@ -132,6 +155,10 @@ const Index = () => {
       default:
         return 'text-gray-500';
     }
+  };
+
+  const getMoodLabel = (mood: string) => {
+    return moodOptions.find(option => option.value === mood)?.label || 'Neutral';
   };
 
   // Load calendar events
@@ -201,6 +228,8 @@ const Index = () => {
     setIsCalendarOpen(false);
     navigate('/calendar');
   };
+
+  const totalMoodEntries = Object.values(moodCounts).reduce((sum, count) => sum + count, 0);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-white dark:from-gray-900 dark:to-gray-800">
@@ -285,45 +314,114 @@ const Index = () => {
           <Card className="col-span-full md:col-span-1 bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
             <h2 className="text-lg font-semibold mb-4">Recent Activity</h2>
             <div className="space-y-4">
-              <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
-                <BookOpen className="h-4 w-4 mr-2" />
-                <span>Added new diary entry</span>
-              </div>
-              <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
-                <DollarSign className="h-4 w-4 mr-2" />
-                <span>Updated budget</span>
-              </div>
+              {events.length > 0 ? (
+                events
+                  .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                  .slice(0, 3)
+                  .map(event => (
+                    <div key={event.id} className="flex items-center text-sm text-gray-600 dark:text-gray-300">
+                      {event.category === 'diary' ? (
+                        <BookOpen className="h-4 w-4 mr-2" />
+                      ) : event.category === 'budget' ? (
+                        <DollarSign className="h-4 w-4 mr-2" />
+                      ) : (
+                        <FileText className="h-4 w-4 mr-2" />
+                      )}
+                      <div>
+                        <span className="font-medium">{event.title}</span>
+                        <span className="ml-2 text-xs text-gray-500">
+                          {format(new Date(event.date), "MMM dd 'at' h:mm a")}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+              ) : (
+                <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
+                  <BookOpen className="h-4 w-4 mr-2" />
+                  <span>No recent activity</span>
+                </div>
+              )}
             </div>
           </Card>
 
           {/* Mood Tracker */}
           <Card className="col-span-full md:col-span-1 bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
             <h2 className="text-lg font-semibold mb-4">Mood Tracker</h2>
-            <div className="space-y-4">
-              {Object.entries(moodCounts).map(([mood, count]) => {
-                const Icon = getMoodIcon(mood);
-                return (
-                  <div key={mood} className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <Icon className={`h-5 w-5 ${getMoodColor(mood)}`} />
-                      <span className="capitalize">{mood}</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <div className="bg-gray-200 dark:bg-gray-700 h-2 w-24 rounded-full overflow-hidden">
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ 
-                            width: `${(count / Math.max(...Object.values(moodCounts), 1)) * 100}%` 
-                          }}
-                          transition={{ duration: 0.5 }}
-                          className={`h-full ${getMoodColor(mood)} opacity-75`}
-                        />
-                      </div>
-                      <span className="text-sm text-gray-500">{count}</span>
-                    </div>
+            
+            {latestMood && (
+              <div className="mb-4 p-3 bg-gradient-to-r from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-700 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Your latest mood:</span>
+                  <div className="flex items-center">
+                    {(() => {
+                      const MoodIcon = getMoodIcon(latestMood);
+                      return <MoodIcon className={`h-5 w-5 mr-1 ${getMoodColor(latestMood)}`} />;
+                    })()}
+                    <span className={`text-sm ${getMoodColor(latestMood)}`}>
+                      {getMoodLabel(latestMood)}
+                    </span>
                   </div>
-                );
-              })}
+                </div>
+              </div>
+            )}
+            
+            <div className="space-y-4">
+              {totalMoodEntries > 0 ? (
+                Object.entries(moodCounts).map(([mood, count]) => {
+                  if (count === 0) return null;
+                  
+                  const Icon = getMoodIcon(mood);
+                  const percentage = Math.round((count / totalMoodEntries) * 100);
+                  
+                  return (
+                    <div key={mood} className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <Icon className={`h-5 w-5 ${getMoodColor(mood)}`} />
+                        <span className="capitalize">{mood}</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <div className="bg-gray-200 dark:bg-gray-700 h-2 w-24 rounded-full overflow-hidden">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ 
+                              width: `${percentage}%` 
+                            }}
+                            transition={{ duration: 0.5 }}
+                            className={`h-full ${getMoodColor(mood).replace('text-', 'bg-')} opacity-75`}
+                          />
+                        </div>
+                        <span className="text-sm text-gray-500">
+                          {percentage}% ({count})
+                        </span>
+                      </div>
+                    </div>
+                  );
+                }).filter(Boolean)
+              ) : (
+                <div className="text-center py-2">
+                  <p className="text-sm text-gray-500">No mood data available yet</p>
+                  <Button 
+                    variant="link" 
+                    onClick={() => navigate('/diary')}
+                    className="mt-2"
+                  >
+                    Add your first diary entry
+                  </Button>
+                </div>
+              )}
+              
+              {totalMoodEntries > 0 && (
+                <div className="pt-2 mt-2 border-t border-gray-200 dark:border-gray-700">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full"
+                    onClick={() => navigate('/diary')}
+                  >
+                    View full mood tracker
+                  </Button>
+                </div>
+              )}
             </div>
           </Card>
 

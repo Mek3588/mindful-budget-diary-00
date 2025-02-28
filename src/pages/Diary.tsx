@@ -8,11 +8,13 @@ import { useState, useEffect } from "react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { format } from "date-fns";
 
 interface DiaryEntry {
   id: string;
   content: string;
   date: Date;
+  updatedAt?: Date;
   mood: string;
   energy: string;
 }
@@ -49,17 +51,42 @@ const Diary = () => {
   const [isWriting, setIsWriting] = useState(false);
   const [selectedMood, setSelectedMood] = useState("neutral");
   const [selectedEnergy, setSelectedEnergy] = useState("calm");
+  const [moodStats, setMoodStats] = useState<Record<string, number>>({});
+  const [energyStats, setEnergyStats] = useState<Record<string, number>>({});
 
   // Load entries from localStorage on component mount
   useEffect(() => {
     const savedEntries = localStorage.getItem('diary-entries');
     if (savedEntries) {
-      setEntries(JSON.parse(savedEntries).map((entry: any) => ({
+      const loadedEntries = JSON.parse(savedEntries).map((entry: any) => ({
         ...entry,
-        date: new Date(entry.date)
-      })));
+        date: new Date(entry.date),
+        updatedAt: entry.updatedAt ? new Date(entry.updatedAt) : undefined
+      }));
+      setEntries(loadedEntries);
+      
+      // Calculate mood and energy stats
+      updateStats(loadedEntries);
     }
   }, []);
+
+  const updateStats = (entriesData: DiaryEntry[]) => {
+    // Initialize all possible values to 0
+    const moodCounts: Record<string, number> = {};
+    moodOptions.forEach(mood => { moodCounts[mood.value] = 0 });
+    
+    const energyCounts: Record<string, number> = {};
+    energyOptions.forEach(energy => { energyCounts[energy.value] = 0 });
+    
+    // Count occurrences
+    entriesData.forEach(entry => {
+      if (entry.mood) moodCounts[entry.mood] = (moodCounts[entry.mood] || 0) + 1;
+      if (entry.energy) energyCounts[entry.energy] = (energyCounts[entry.energy] || 0) + 1;
+    });
+    
+    setMoodStats(moodCounts);
+    setEnergyStats(energyCounts);
+  };
 
   // Save entries to localStorage whenever they change
   useEffect(() => {
@@ -72,10 +99,12 @@ const Diary = () => {
       return;
     }
 
+    const now = new Date();
     const entry: DiaryEntry = {
       id: Date.now().toString(),
       content: newEntry,
-      date: new Date(),
+      date: now,
+      updatedAt: now,
       mood: selectedMood,
       energy: selectedEnergy,
     };
@@ -104,7 +133,10 @@ const Diary = () => {
     // Save stickers to localStorage
     localStorage.setItem('calendar-stickers', JSON.stringify(updatedStickers));
 
-    setEntries([entry, ...entries]);
+    const updatedEntries = [entry, ...entries];
+    setEntries(updatedEntries);
+    updateStats(updatedEntries);
+    
     setNewEntry("");
     setSelectedMood("neutral");
     setSelectedEnergy("calm");
@@ -115,6 +147,15 @@ const Diary = () => {
 
   const MoodIcon = moodOptions.find(mood => mood.value === selectedMood)?.icon || Meh;
   const EnergyIcon = energyOptions.find(energy => energy.value === selectedEnergy)?.icon || Stars;
+
+  // Calculate mood percentages for visualization
+  const calculatePercentage = (value: string, stats: Record<string, number>, options: { value: string }[]) => {
+    const total = Object.values(stats).reduce((sum, count) => sum + count, 0);
+    if (total === 0) return 0;
+    
+    const count = stats[value] || 0;
+    return Math.round((count / total) * 100);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-white dark:from-gray-900 dark:to-gray-800">
@@ -140,6 +181,64 @@ const Diary = () => {
       </nav>
 
       <main className="pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        {/* Mood Tracker Stats */}
+        <Card className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-6 mb-6">
+          <h2 className="text-lg font-semibold mb-4">Mood Tracker</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <h3 className="text-md font-medium">Mood Distribution</h3>
+              <div className="space-y-3">
+                {moodOptions.map(mood => {
+                  const MoodIcon = mood.icon;
+                  const percentage = calculatePercentage(mood.value, moodStats, moodOptions);
+                  return (
+                    <div key={mood.value} className="flex items-center">
+                      <MoodIcon className={`h-5 w-5 mr-2 ${mood.color}`} />
+                      <div className="flex-1 mx-2">
+                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                          <div
+                            className={`h-2 rounded-full ${mood.color.replace('text-', 'bg-')}`}
+                            style={{ width: `${percentage}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                      <span className="text-xs text-gray-500 dark:text-gray-400 w-12 text-right">
+                        {percentage}% ({moodStats[mood.value] || 0})
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <h3 className="text-md font-medium">Energy Distribution</h3>
+              <div className="space-y-3">
+                {energyOptions.map(energy => {
+                  const EnergyIcon = energy.icon;
+                  const percentage = calculatePercentage(energy.value, energyStats, energyOptions);
+                  return (
+                    <div key={energy.value} className="flex items-center">
+                      <EnergyIcon className={`h-5 w-5 mr-2 ${energy.color}`} />
+                      <div className="flex-1 mx-2">
+                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                          <div
+                            className={`h-2 rounded-full ${energy.color.replace('text-', 'bg-')}`}
+                            style={{ width: `${percentage}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                      <span className="text-xs text-gray-500 dark:text-gray-400 w-12 text-right">
+                        {percentage}% ({energyStats[energy.value] || 0})
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </Card>
+
         {!isWriting ? (
           <Card className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-6 mb-6">
             <div className="text-center">
@@ -266,7 +365,7 @@ const Diary = () => {
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-500">
-                      {entry.date.toLocaleDateString()}
+                      {format(entry.date, "MMM d, yyyy 'at' h:mm a")}
                     </span>
                     <div className="flex items-center space-x-4">
                       <div className="flex items-center space-x-2">
@@ -280,6 +379,13 @@ const Diary = () => {
                     </div>
                   </div>
                   <p className="whitespace-pre-wrap">{entry.content}</p>
+                  {entry.updatedAt && entry.updatedAt.getTime() !== entry.date.getTime() && (
+                    <div className="mt-4 pt-2 border-t border-gray-200 dark:border-gray-700">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Updated: {format(entry.updatedAt, "MMM d, yyyy 'at' h:mm a")}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </Card>
             );

@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeft, DollarSign, Plus, Save, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { format } from "date-fns";
 
 interface Transaction {
   id: string;
@@ -14,6 +15,7 @@ interface Transaction {
   amount: number;
   type: TransactionType;
   date: Date;
+  updatedAt?: Date;
 }
 
 type TransactionType = 'income' | 'expense';
@@ -34,7 +36,8 @@ const Budget = () => {
     if (savedTransactions) {
       setTransactions(JSON.parse(savedTransactions).map((transaction: any) => ({
         ...transaction,
-        date: new Date(transaction.date)
+        date: new Date(transaction.date),
+        updatedAt: transaction.updatedAt ? new Date(transaction.updatedAt) : undefined
       })));
     }
   }, []);
@@ -50,12 +53,14 @@ const Budget = () => {
       return;
     }
 
+    const now = new Date();
     const transaction: Transaction = {
       id: Date.now().toString(),
       description: newTransaction.description,
       amount: parseFloat(newTransaction.amount),
       type: newTransaction.type,
-      date: new Date(),
+      date: now,
+      updatedAt: now,
     };
 
     // Create calendar event for the transaction
@@ -201,6 +206,12 @@ const Budget = () => {
                     <X className="h-4 w-4" />
                   </Button>
                 </div>
+                <div className="mt-4 pt-2 border-t border-gray-200 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400">
+                  <p>Created: {format(transaction.date, "MMM d, yyyy 'at' h:mm a")}</p>
+                  {transaction.updatedAt && transaction.updatedAt.getTime() !== transaction.date.getTime() && (
+                    <p>Updated: {format(transaction.updatedAt, "MMM d, yyyy 'at' h:mm a")}</p>
+                  )}
+                </div>
               </Card>
             ))}
           </div>
@@ -211,4 +222,3 @@ const Budget = () => {
 };
 
 export default Budget;
-
