@@ -39,12 +39,12 @@ export function AppPinDialog() {
       if (!sessionStorage.getItem("has-entered-pin")) return;
       setIsOpen(open);
     }}>
-      <DialogContent className="bg-gray-900 border-gray-800">
+      <DialogContent className="bg-background border-border shadow-lg">
         <DialogHeader>
-          <DialogTitle className="text-white">Enter PIN to Access Your App</DialogTitle>
+          <DialogTitle>Enter PIN to Access Your App</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          <p className="text-gray-400 text-sm">
+          <p className="text-muted-foreground text-sm">
             Please enter your security PIN to continue. Default PIN is 1234.
           </p>
           <Input
@@ -53,7 +53,7 @@ export function AppPinDialog() {
             maxLength={4}
             value={pin}
             onChange={(e) => setPin(e.target.value)}
-            className="bg-gray-800 border-gray-700 text-white"
+            className="bg-background border-input"
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 handlePinSubmit();
@@ -62,7 +62,7 @@ export function AppPinDialog() {
           />
           <Button 
             onClick={handlePinSubmit}
-            className="w-full bg-purple-600 hover:bg-purple-700"
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
           >
             Submit
           </Button>

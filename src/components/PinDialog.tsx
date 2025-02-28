@@ -62,9 +62,9 @@ export function PinDialog({ onSuccess }: PinDialogProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="bg-gray-900 border-gray-800">
+      <DialogContent className="bg-background border-border shadow-lg">
         <DialogHeader>
-          <DialogTitle className="text-white">
+          <DialogTitle>
             {isChangingPin ? "Change PIN" : "Enter Security PIN"}
           </DialogTitle>
         </DialogHeader>
@@ -76,7 +76,7 @@ export function PinDialog({ onSuccess }: PinDialogProps) {
               maxLength={4}
               value={pin}
               onChange={(e) => setPin(e.target.value)}
-              className="bg-gray-800 border-gray-700 text-white"
+              className="bg-background border-input"
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   handlePinSubmit();
@@ -86,14 +86,14 @@ export function PinDialog({ onSuccess }: PinDialogProps) {
             <div className="flex gap-2">
               <Button 
                 onClick={handlePinSubmit}
-                className="w-full bg-purple-600 hover:bg-purple-700"
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
               >
                 Submit
               </Button>
               <Button 
                 onClick={() => setIsChangingPin(true)}
                 variant="outline"
-                className="w-full border-purple-600 text-purple-600 hover:bg-purple-600/20"
+                className="w-full"
               >
                 Change PIN
               </Button>
@@ -107,7 +107,7 @@ export function PinDialog({ onSuccess }: PinDialogProps) {
               maxLength={4}
               value={newPin}
               onChange={(e) => setNewPin(e.target.value)}
-              className="bg-gray-800 border-gray-700 text-white"
+              className="bg-background border-input"
             />
             <Input
               type="password"
@@ -115,7 +115,7 @@ export function PinDialog({ onSuccess }: PinDialogProps) {
               maxLength={4}
               value={confirmPin}
               onChange={(e) => setConfirmPin(e.target.value)}
-              className="bg-gray-800 border-gray-700 text-white"
+              className="bg-background border-input"
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && newPin && confirmPin) {
                   handlePinChange();
@@ -125,14 +125,14 @@ export function PinDialog({ onSuccess }: PinDialogProps) {
             <div className="flex gap-2">
               <Button 
                 onClick={handlePinChange}
-                className="w-full bg-purple-600 hover:bg-purple-700"
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
               >
                 Change PIN
               </Button>
               <Button 
                 onClick={() => setIsChangingPin(false)}
                 variant="outline"
-                className="w-full border-purple-600 text-purple-600 hover:bg-purple-600/20"
+                className="w-full"
               >
                 Back
               </Button>

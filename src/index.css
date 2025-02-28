@@ -101,13 +101,32 @@
   }
 }
 
-/* Improved menu styles */
+/* Improved menu styles with opaque backgrounds */
 .radix-dropdown-content,
 .radix-popover-content,
 .radix-dialog-content {
-  background: hsl(var(--background)) !important;
+  background-color: hsl(var(--background)) !important;
   color: hsl(var(--foreground)) !important;
   border: 1px solid hsl(var(--border)) !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Ensuring dropdown menus are fully opaque */
+[data-radix-popper-content-wrapper] {
+  background-color: transparent !important; /* Keep wrapper transparent */
+}
+
+/* Ensure all dropdown menus have proper background */
+[data-state="open"].radix-dropdown-content,
+[data-state="open"].radix-popover-content {
+  background-color: hsl(var(--background)) !important;
+  backdrop-filter: none !important;
+}
+
+/* Sheet content needs to be opaque */
+.SheetContent {
+  background-color: hsl(var(--background)) !important;
+  color: hsl(var(--foreground)) !important;
 }
 
 /* Mobile responsive improvements */
@@ -117,6 +136,12 @@
     max-width: 95% !important;
   }
 
+  /* Calendar mobile improvements */
+  .calendar-container {
+    width: 100%;
+    overflow-x: auto;
+  }
+
   .calendar-container .rdp {
     margin: 0 auto;
   }
@@ -124,4 +149,37 @@
   .calendar-container .rdp-month {
     width: 100%;
   }
+  
+  /* Make sure tabs don't overflow on mobile */
+  .tabs-container {
+    overflow-x: auto;
+    width: 100%;
+  }
+  
+  /* Smaller padding for mobile dialogs */
+  .dialog-content {
+    padding: 1rem !important;
+  }
+  
+  /* Help dialog content mobile optimizations */
+  .help-dialog-content {
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+}
+
+/* Fix for sheet content in mobile view */
+@media (max-width: 640px) {
+  .SheetContent,
+  [data-radix-sheet-content] {
+    width: 85% !important;
+  }
+}
+
+/* Ensure menus always have the proper z-index */
+.radix-dropdown-content,
+.radix-popover-content,
+.radix-dialog-content,
+[data-radix-popper-content-wrapper] {
+  z-index: 50 !important;
 }
