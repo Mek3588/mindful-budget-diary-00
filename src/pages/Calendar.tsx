@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -132,16 +131,13 @@ const Calendar = () => {
     }
   }, []);
 
-  // Filter events when date, searchTerm, or filterCategory changes
   useEffect(() => {
     let filtered = events;
 
-    // Filter by date
     filtered = filtered.filter(event => 
       isSameDay(new Date(event.date), date)
     );
 
-    // Filter by search term
     if (searchTerm) {
       filtered = filtered.filter(event => 
         event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -149,7 +145,6 @@ const Calendar = () => {
       );
     }
 
-    // Filter by category
     if (filterCategory !== "all") {
       filtered = filtered.filter(event => 
         event.category === filterCategory
@@ -175,13 +170,11 @@ const Calendar = () => {
     };
 
     if (editingEvent) {
-      // Update existing event
       const updatedEvents = events.map(e => e.id === editingEvent.id ? event : e);
       setEvents(updatedEvents);
       localStorage.setItem('calendar-events', JSON.stringify(updatedEvents));
       toast.success("Event updated successfully!");
     } else {
-      // Add new event
       setEvents(prev => [...prev, event]);
       localStorage.setItem('calendar-events', JSON.stringify([...events, event]));
       toast.success("Event added successfully!");
@@ -237,9 +230,13 @@ const Calendar = () => {
   };
 
   const getDayContent = (day: Date) => {
-    const dayEvents = events.filter(event => 
+    let dayEvents = events.filter(event => 
       format(new Date(event.date), 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd')
     );
+    
+    if (filterCategory !== "all") {
+      dayEvents = dayEvents.filter(event => event.category === filterCategory);
+    }
     
     const dayStickers = stickers.filter(sticker =>
       format(new Date(sticker.date), 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd')
@@ -368,6 +365,11 @@ const Calendar = () => {
               <div className="flex justify-between items-center">
                 <h2 className="text-lg font-semibold">
                   {format(date, 'MMMM d, yyyy')}
+                  {filterCategory !== "all" && (
+                    <span className="ml-2 text-sm">
+                      ({filterCategory} items)
+                    </span>
+                  )}
                 </h2>
                 <Dialog open={isAddingEvent} onOpenChange={setIsAddingEvent}>
                   <DialogTrigger asChild>
