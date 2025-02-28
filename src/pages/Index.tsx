@@ -13,6 +13,7 @@ import {
   Settings,
   PlusCircle,
   Sun,
+  Moon,
   Menu,
   Smile,
   Meh,
@@ -21,6 +22,16 @@ import {
   HeartCrack,
   Angry,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { useTheme } from "@/contexts/ThemeContext";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { format } from "date-fns";
 
 interface MoodCount {
   happy: number;
@@ -41,7 +52,10 @@ const Index = () => {
     love: 0,
     heartbreak: 0,
   });
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const navigate = useNavigate();
+  const { currentTheme, setTheme, themes } = useTheme();
 
   const menuItems = [
     { icon: BookOpen, label: "Diary", route: "/diary" },
@@ -51,6 +65,17 @@ const Index = () => {
     { icon: Lock, label: "Security", route: "/security" },
     { icon: Settings, label: "Settings", route: "/settings" },
   ];
+
+  const toggleTheme = () => {
+    // Cycle through themes: dark -> blue -> light (rose garden) -> dark
+    if (currentTheme.id === 'dark') {
+      setTheme('blue');
+    } else if (currentTheme.id === 'blue') {
+      setTheme('f1');
+    } else {
+      setTheme('dark');
+    }
+  };
 
   useEffect(() => {
     // Load diary entries and count moods
@@ -109,6 +134,74 @@ const Index = () => {
     }
   };
 
+  // Load calendar events
+  const [events, setEvents] = useState<any[]>([]);
+  
+  useEffect(() => {
+    const loadEvents = () => {
+      const savedEvents = localStorage.getItem('calendar-events');
+      const savedDiaryEntries = localStorage.getItem('diary-entries');
+      const savedNotes = localStorage.getItem('quick-notes');
+      
+      let allEvents: any[] = [];
+      
+      if (savedEvents) {
+        allEvents = JSON.parse(savedEvents).map((event: any) => ({
+          ...event,
+          date: new Date(event.date)
+        }));
+      }
+      
+      if (savedDiaryEntries) {
+        const diaryEvents = JSON.parse(savedDiaryEntries).map((entry: any) => ({
+          id: `diary-${entry.id}`,
+          title: "Diary Entry",
+          description: entry.content,
+          date: new Date(entry.date),
+          category: 'diary',
+          tags: [`mood-${entry.mood}`, `energy-${entry.energy}`]
+        }));
+        allEvents = [...allEvents, ...diaryEvents];
+      }
+      
+      if (savedNotes) {
+        const noteEvents = JSON.parse(savedNotes).map((note: any) => ({
+          id: `note-${note.id}`,
+          title: note.title,
+          description: note.content,
+          date: new Date(note.date),
+          category: 'note'
+        }));
+        allEvents = [...allEvents, ...noteEvents];
+      }
+      
+      setEvents(allEvents);
+    };
+
+    loadEvents();
+  }, []);
+
+  const getDayContent = (day: Date) => {
+    const dayEvents = events.filter(event => 
+      format(new Date(event.date), 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd')
+    );
+
+    return (
+      <div className="relative w-full h-full p-1">
+        {dayEvents.length > 0 && (
+          <div className="absolute bottom-1 right-1">
+            <div className="w-2 h-2 bg-accent rounded-full"></div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const navigateToCalendarWithDate = () => {
+    setIsCalendarOpen(false);
+    navigate('/calendar');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-white dark:from-gray-900 dark:to-gray-800">
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-lg border-b border-gray-200 dark:bg-gray-900/80 dark:border-gray-700">
@@ -128,8 +221,12 @@ const Index = () => {
               </h1>
             </div>
             <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="icon">
-                <Sun className="h-5 w-5" />
+              <Button variant="ghost" size="icon" onClick={toggleTheme}>
+                {currentTheme.type === 'masculine' ? (
+                  <Sun className="h-5 w-5" />
+                ) : (
+                  <Moon className="h-5 w-5" />
+                )}
               </Button>
               <Button variant="ghost" size="icon">
                 <PlusCircle className="h-5 w-5" />
@@ -216,7 +313,7 @@ const Index = () => {
                         <motion.div
                           initial={{ width: 0 }}
                           animate={{ 
-                            width: `${(count / Math.max(...Object.values(moodCounts))) * 100}%` 
+                            width: `${(count / Math.max(...Object.values(moodCounts), 1)) * 100}%` 
                           }}
                           transition={{ duration: 0.5 }}
                           className={`h-full ${getMoodColor(mood)} opacity-75`}
@@ -232,12 +329,66 @@ const Index = () => {
 
           {/* Calendar Preview */}
           <Card className="col-span-full md:col-span-1 bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-            <h2 className="text-lg font-semibold mb-4">Upcoming</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold">Calendar</h2>
+              <Dialog open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    <span>Open Calendar</span>
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[600px] bg-white dark:bg-gray-800">
+                  <DialogHeader>
+                    <DialogTitle>Calendar</DialogTitle>
+                  </DialogHeader>
+                  <div className="py-4">
+                    <CalendarComponent
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={(date) => date && setSelectedDate(date)}
+                      components={{
+                        DayContent: ({ date }) => getDayContent(date),
+                      }}
+                      className="mx-auto"
+                    />
+                    <div className="mt-4 flex justify-end">
+                      <Button 
+                        onClick={navigateToCalendarWithDate}
+                        className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                      >
+                        Go to Calendar
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
             <div className="space-y-4">
-              <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
-                <Calendar className="h-4 w-4 mr-2" />
-                <span>No upcoming events</span>
-              </div>
+              {events.length > 0 ? (
+                events
+                  .filter(event => {
+                    const today = new Date();
+                    const eventDate = new Date(event.date);
+                    return eventDate >= today;
+                  })
+                  .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+                  .slice(0, 3)
+                  .map(event => (
+                    <div key={event.id} className="flex items-center text-sm text-gray-600 dark:text-gray-300">
+                      <Calendar className="h-4 w-4 mr-2" />
+                      <div>
+                        <span className="font-medium">{event.title}</span>
+                        <span className="ml-2 text-xs text-gray-500">{format(new Date(event.date), 'MMM dd')}</span>
+                      </div>
+                    </div>
+                  ))
+              ) : (
+                <div className="flex items-center text-sm text-gray-600 dark:text-gray-300">
+                  <Calendar className="h-4 w-4 mr-2" />
+                  <span>No upcoming events</span>
+                </div>
+              )}
             </div>
           </Card>
         </div>
@@ -247,4 +398,3 @@ const Index = () => {
 };
 
 export default Index;
-
