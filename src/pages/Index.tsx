@@ -136,7 +136,10 @@ export default function Index() {
                     <Menu className="h-6 w-6" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="p-0 bg-background border border-border">
+                <SheetContent 
+                  side="left" 
+                  className="p-0 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700"
+                >
                   <SheetHeader className="p-4 border-b border-gray-200 dark:border-gray-700">
                     <SheetTitle>Menu</SheetTitle>
                   </SheetHeader>

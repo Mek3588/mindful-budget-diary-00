@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -10,14 +11,18 @@ import {
   DollarSign,
   Pencil,
   Trash2,
-  Tag
+  Tag,
+  ChevronLeft,
+  ChevronRight,
+  Search,
+  Filter
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { format } from "date-fns";
+import { format, isSameDay, addMonths, subMonths, parseISO, isValid } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -31,6 +36,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface Event {
   id: string;
@@ -52,6 +58,7 @@ const Calendar = () => {
   const navigate = useNavigate();
   const [date, setDate] = useState<Date>(new Date());
   const [events, setEvents] = useState<Event[]>([]);
+  const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
   const [stickers, setStickers] = useState<Sticker[]>([]);
   const [newEvent, setNewEvent] = useState<Partial<Event>>({
     title: "",
@@ -61,6 +68,10 @@ const Calendar = () => {
   });
   const [isAddingEvent, setIsAddingEvent] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterCategory, setFilterCategory] = useState<string>("all");
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
+  const [customDate, setCustomDate] = useState<Date | undefined>(undefined);
 
   useEffect(() => {
     document.documentElement.classList.add('dark');
@@ -121,6 +132,33 @@ const Calendar = () => {
     }
   }, []);
 
+  // Filter events when date, searchTerm, or filterCategory changes
+  useEffect(() => {
+    let filtered = events;
+
+    // Filter by date
+    filtered = filtered.filter(event => 
+      isSameDay(new Date(event.date), date)
+    );
+
+    // Filter by search term
+    if (searchTerm) {
+      filtered = filtered.filter(event => 
+        event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (event.description && event.description.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+    }
+
+    // Filter by category
+    if (filterCategory !== "all") {
+      filtered = filtered.filter(event => 
+        event.category === filterCategory
+      );
+    }
+
+    setFilteredEvents(filtered);
+  }, [events, date, searchTerm, filterCategory]);
+
   const handleAddEvent = () => {
     if (!newEvent.title) {
       toast.error("Please enter an event title");
@@ -128,7 +166,7 @@ const Calendar = () => {
     }
 
     const event: Event = {
-      id: Date.now().toString(),
+      id: editingEvent ? editingEvent.id : Date.now().toString(),
       title: newEvent.title!,
       description: newEvent.description,
       date: date,
@@ -136,11 +174,22 @@ const Calendar = () => {
       tags: newEvent.tags
     };
 
-    setEvents(prev => [...prev, event]);
-    localStorage.setItem('calendar-events', JSON.stringify([...events, event]));
+    if (editingEvent) {
+      // Update existing event
+      const updatedEvents = events.map(e => e.id === editingEvent.id ? event : e);
+      setEvents(updatedEvents);
+      localStorage.setItem('calendar-events', JSON.stringify(updatedEvents));
+      toast.success("Event updated successfully!");
+    } else {
+      // Add new event
+      setEvents(prev => [...prev, event]);
+      localStorage.setItem('calendar-events', JSON.stringify([...events, event]));
+      toast.success("Event added successfully!");
+    }
+    
     setNewEvent({ title: "", description: "", category: "todo", tags: [] });
+    setEditingEvent(null);
     setIsAddingEvent(false);
-    toast.success("Event added successfully!");
   };
 
   const handleDeleteEvent = (eventId: string) => {
@@ -153,6 +202,38 @@ const Calendar = () => {
     setEditingEvent(event);
     setNewEvent(event);
     setIsAddingEvent(true);
+  };
+
+  const handlePrevMonth = () => {
+    setDate(subMonths(date, 1));
+  };
+
+  const handleNextMonth = () => {
+    setDate(addMonths(date, 1));
+  };
+
+  const handleDateSelect = (selectedDate: Date | undefined) => {
+    if (selectedDate) {
+      setDate(selectedDate);
+      setCustomDate(undefined);
+      setDatePickerOpen(false);
+    }
+  };
+
+  const handleCustomDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const dateValue = e.target.value;
+    const parsedDate = parseISO(dateValue);
+    
+    if (isValid(parsedDate)) {
+      setCustomDate(parsedDate);
+    }
+  };
+
+  const handleCustomDateSubmit = () => {
+    if (customDate) {
+      setDate(customDate);
+      setDatePickerOpen(false);
+    }
   };
 
   const getDayContent = (day: Date) => {
@@ -197,7 +278,7 @@ const Calendar = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800">
       <PinDialog onSuccess={() => console.log("PIN verified")} />
       
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-lg border-b border-gray-200 dark:bg-gray-900/80 dark:border-gray-700">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-gray-900/90 backdrop-blur-lg border-b border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
@@ -221,6 +302,56 @@ const Calendar = () => {
       <main className="pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
           <Card className="md:col-span-8 bg-gray-800/50 backdrop-blur-sm border-gray-700 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center space-x-4">
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  onClick={handlePrevMonth}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                
+                <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline">
+                      {format(date, 'MMMM yyyy')}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="p-4 bg-gray-800 border-gray-700 text-white">
+                    <div className="space-y-4">
+                      <h3 className="text-sm font-medium">Go to date</h3>
+                      <Input
+                        type="date"
+                        onChange={handleCustomDateChange}
+                        className="w-full"
+                      />
+                      <Button 
+                        onClick={handleCustomDateSubmit}
+                        className="w-full"
+                      >
+                        Apply
+                      </Button>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+                
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  onClick={handleNextMonth}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Button onClick={() => setDate(new Date())}>
+                  Today
+                </Button>
+              </div>
+            </div>
+            
             <CalendarComponent
               mode="single"
               selected={date}
@@ -245,7 +376,7 @@ const Calendar = () => {
                       Add Event
                     </Button>
                   </DialogTrigger>
-                  <DialogContent>
+                  <DialogContent className="bg-gray-800 border-gray-700 text-white">
                     <DialogHeader>
                       <DialogTitle>
                         {editingEvent ? "Edit Event" : "Add New Event"}
@@ -258,6 +389,7 @@ const Calendar = () => {
                           id="title"
                           value={newEvent.title}
                           onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
+                          className="bg-gray-700 border-gray-600"
                         />
                       </div>
                       <div className="space-y-2">
@@ -266,6 +398,7 @@ const Calendar = () => {
                           id="description"
                           value={newEvent.description}
                           onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
+                          className="bg-gray-700 border-gray-600"
                         />
                       </div>
                       <div className="space-y-2">
@@ -274,10 +407,10 @@ const Calendar = () => {
                           value={newEvent.category}
                           onValueChange={(value) => setNewEvent({ ...newEvent, category: value as any })}
                         >
-                          <SelectTrigger>
+                          <SelectTrigger className="bg-gray-700 border-gray-600">
                             <SelectValue placeholder="Select category" />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="bg-gray-800 border-gray-700 text-white">
                             <SelectItem value="todo">Todo</SelectItem>
                             <SelectItem value="diary">Diary</SelectItem>
                             <SelectItem value="budget">Budget</SelectItem>
@@ -296,19 +429,45 @@ const Calendar = () => {
                 </Dialog>
               </div>
 
-              <div className="space-y-2">
-                {events
-                  .filter(event => format(new Date(event.date), 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd'))
-                  .map(event => (
+              <div className="flex items-center space-x-2 mb-4">
+                <div className="relative flex-grow">
+                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="Search events..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-8 bg-gray-700 border-gray-600"
+                  />
+                </div>
+                <Select
+                  value={filterCategory}
+                  onValueChange={setFilterCategory}
+                >
+                  <SelectTrigger className="w-[120px] bg-gray-700 border-gray-600">
+                    <SelectValue placeholder="Filter" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-800 border-gray-700 text-white">
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="todo">Todo</SelectItem>
+                    <SelectItem value="diary">Diary</SelectItem>
+                    <SelectItem value="budget">Budget</SelectItem>
+                    <SelectItem value="note">Note</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
+                {filteredEvents.length > 0 ? (
+                  filteredEvents.map(event => (
                     <Card 
                       key={event.id} 
-                      className="p-4 bg-gradient-to-r from-white/30 to-white/10 dark:from-gray-700/30 dark:to-gray-700/10 backdrop-blur-sm border border-white/20 dark:border-gray-700/20"
+                      className="p-4 bg-gradient-to-r from-gray-700/30 to-gray-700/10 backdrop-blur-sm border border-gray-700/20"
                     >
                       <div className="flex justify-between items-start">
                         <div className="space-y-1">
                           <h3 className="font-medium text-lg">{event.title}</h3>
                           {event.description && (
-                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                            <p className="text-sm text-gray-400">
                               {event.description}
                             </p>
                           )}
@@ -352,16 +511,16 @@ const Calendar = () => {
                               </svg>
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent>
+                          <DropdownMenuContent className="bg-gray-800 border-gray-700 text-white">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => handleEditEvent(event)}>
+                            <DropdownMenuSeparator className="bg-gray-700" />
+                            <DropdownMenuItem onClick={() => handleEditEvent(event)} className="focus:bg-gray-700">
                               <Pencil className="h-4 w-4 mr-2" />
                               Edit
                             </DropdownMenuItem>
                             <DropdownMenuItem 
                               onClick={() => handleDeleteEvent(event.id)}
-                              className="text-red-600"
+                              className="text-red-400 focus:bg-gray-700"
                             >
                               <Trash2 className="h-4 w-4 mr-2" />
                               Delete
@@ -370,7 +529,12 @@ const Calendar = () => {
                         </DropdownMenu>
                       </div>
                     </Card>
-                  ))}
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-gray-400">
+                    <p>No events for this date</p>
+                  </div>
+                )}
               </div>
             </div>
           </Card>

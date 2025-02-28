@@ -105,7 +105,7 @@
 .radix-dropdown-content,
 .radix-popover-content,
 .radix-dialog-content {
-  background-color: hsl(var(--background)) !important;
+  @apply bg-white dark:bg-gray-900 !important;
   color: hsl(var(--foreground)) !important;
   border: 1px solid hsl(var(--border)) !important;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
@@ -182,4 +182,14 @@
 .radix-dialog-content,
 [data-radix-popper-content-wrapper] {
   z-index: 50 !important;
+}
+
+/* Custom styles for dropdown menus in our app */
+.dropdown-menu-content,
+.select-content {
+  @apply bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 rounded-md shadow-lg !important;
+}
+
+.dropdown-menu-item {
+  @apply cursor-pointer px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 !important;
 }
