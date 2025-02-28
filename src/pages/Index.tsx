@@ -1,18 +1,17 @@
-import { useState, useContext } from "react";
+
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Calculator,
   Calendar as CalendarIcon,
   Settings as SettingsIcon,
   Menu,
-  X,
-  BookText,
   PenLine,
   DollarSign,
   Moon,
   Sun,
   Lock,
-  HelpCircle
+  HelpCircle,
+  BookText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -24,7 +23,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { ThemeContext } from "@/contexts/ThemeContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { useMobile } from "@/hooks/use-mobile";
 import { HelpDialog } from "@/components/HelpDialog";
 
@@ -121,7 +120,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 export default function Index() {
   const navigate = useNavigate();
   const isMobile = useMobile();
-  const { currentTheme, toggleTheme } = useContext(ThemeContext);
+  const { currentTheme, toggleTheme } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
   const [showHelpDialog, setShowHelpDialog] = useState(false);
 
@@ -165,7 +164,7 @@ export default function Index() {
                 onClick={toggleTheme}
                 className="text-gray-600 dark:text-gray-300"
               >
-                {currentTheme === "dark" ? (
+                {currentTheme.type === "masculine" ? (
                   <Moon className="h-5 w-5" />
                 ) : (
                   <Sun className="h-5 w-5" />

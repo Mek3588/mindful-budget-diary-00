@@ -30,4 +30,5 @@ export type ThemeContextType = {
   currentTheme: Theme;
   setTheme: (themeId: string) => void;
   themes: Theme[];
+  toggleTheme: () => void;
 };

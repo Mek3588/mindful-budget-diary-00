@@ -3,7 +3,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { Theme, ThemeContextType } from "../types/theme";
 import { themes } from "../data/themes";
 
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+export const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   const [currentTheme, setCurrentTheme] = useState<Theme>(() => {
@@ -17,6 +17,13 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
       setCurrentTheme(theme);
       localStorage.setItem('selected-theme', themeId);
     }
+  };
+
+  // For backward compatibility with toggleTheme usage
+  const toggleTheme = () => {
+    const currentThemeType = currentTheme.type;
+    const nextTheme = themes.find(theme => theme.type !== currentThemeType) || themes[0];
+    setTheme(nextTheme.id);
   };
 
   useEffect(() => {
@@ -51,7 +58,7 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   }, [currentTheme]);
 
   return (
-    <ThemeContext.Provider value={{ currentTheme, setTheme, themes }}>
+    <ThemeContext.Provider value={{ currentTheme, setTheme, themes, toggleTheme }}>
       {children}
     </ThemeContext.Provider>
   );
