@@ -48,6 +48,7 @@ export function PinDialog({ onSuccess }: PinDialogProps) {
       return;
     }
     localStorage.setItem("security-pin", newPin);
+    sessionStorage.removeItem("has-entered-pin");
     setIsChangingPin(false);
     setNewPin("");
     setConfirmPin("");

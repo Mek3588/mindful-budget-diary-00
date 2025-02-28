@@ -17,11 +17,14 @@ const Security = () => {
 
   const handlePinSuccess = () => {
     setShowPinDialog(false);
+    // Clear session storage so the user has to enter the new PIN on next app start
+    sessionStorage.removeItem("has-entered-pin");
   };
 
   const handleResetPin = () => {
     localStorage.removeItem("security-pin");
     localStorage.removeItem("has-entered-pin");
+    sessionStorage.removeItem("has-entered-pin");
     toast.success("PIN has been reset to default (1234)");
   };
 
@@ -65,6 +68,14 @@ const Security = () => {
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">
               Default PIN: 1234
             </p>
+            <div className="bg-gray-100 dark:bg-gray-700 p-4 rounded-md mt-6 text-left">
+              <h3 className="font-medium mb-2">About PIN Security</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-300">
+                Your PIN protects access to the app and is required once per session. 
+                The PIN is stored securely on your device and is not transmitted to any servers.
+                If you forget your PIN, you can always reset it to the default (1234).
+              </p>
+            </div>
           </div>
         </Card>
       </main>

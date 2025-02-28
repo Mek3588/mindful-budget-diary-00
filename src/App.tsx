@@ -13,6 +13,7 @@ import Notes from "./pages/Notes";
 import Calendar from "./pages/Calendar";
 import Security from "./pages/Security";
 import Settings from "./pages/Settings";
+import { AppPinDialog } from "./components/AppPinDialog";
 
 const queryClient = new QueryClient();
 
@@ -23,6 +24,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <AppPinDialog />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/diary" element={<Diary />} />
