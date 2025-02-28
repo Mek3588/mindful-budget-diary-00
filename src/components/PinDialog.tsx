@@ -11,20 +11,22 @@ interface PinDialogProps {
 
 export function PinDialog({ onSuccess }: PinDialogProps) {
   const [pin, setPin] = useState("");
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
   const [isChangingPin, setIsChangingPin] = useState(false);
   const [newPin, setNewPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
 
+  const DEFAULT_PIN = "1234";
+
   useEffect(() => {
-    const hasEnteredPin = localStorage.getItem("has-entered-pin");
-    if (!hasEnteredPin) {
-      setIsOpen(true);
+    // Check if there's a PIN set in localStorage, if not, use the default
+    if (!localStorage.getItem("security-pin")) {
+      localStorage.setItem("security-pin", DEFAULT_PIN);
     }
   }, []);
 
   const handlePinSubmit = () => {
-    const storedPin = localStorage.getItem("security-pin") || "1234";
+    const storedPin = localStorage.getItem("security-pin") || DEFAULT_PIN;
     if (pin === storedPin) {
       localStorage.setItem("has-entered-pin", "true");
       setIsOpen(false);
@@ -52,6 +54,11 @@ export function PinDialog({ onSuccess }: PinDialogProps) {
     toast.success("PIN changed successfully!");
   };
 
+  const handleClose = () => {
+    setIsOpen(false);
+    onSuccess();
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="bg-gray-900 border-gray-800">
@@ -69,6 +76,11 @@ export function PinDialog({ onSuccess }: PinDialogProps) {
               value={pin}
               onChange={(e) => setPin(e.target.value)}
               className="bg-gray-800 border-gray-700 text-white"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handlePinSubmit();
+                }
+              }}
             />
             <div className="flex gap-2">
               <Button 
@@ -103,6 +115,11 @@ export function PinDialog({ onSuccess }: PinDialogProps) {
               value={confirmPin}
               onChange={(e) => setConfirmPin(e.target.value)}
               className="bg-gray-800 border-gray-700 text-white"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && newPin && confirmPin) {
+                  handlePinChange();
+                }
+              }}
             />
             <div className="flex gap-2">
               <Button 
