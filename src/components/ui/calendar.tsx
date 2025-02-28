@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { DayPicker } from "react-day-picker";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
+import { useMobile } from "@/hooks/use-mobile";
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>;
 
@@ -13,6 +14,8 @@ function Calendar({
   showOutsideDays = true,
   ...props
 }: CalendarProps) {
+  const isMobile = useMobile();
+  
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
@@ -31,7 +34,10 @@ function Calendar({
         nav_button_next: "absolute right-1",
         table: "w-full border-collapse space-y-1",
         head_row: "flex",
-        head_cell: "text-gray-400 rounded-md w-16 font-normal text-[0.9rem] h-10 flex items-center justify-center",
+        head_cell: cn(
+          "text-gray-400 rounded-md font-normal text-[0.9rem] h-10 flex items-center justify-center",
+          isMobile ? "w-10" : "w-16"
+        ),
         row: "flex w-full mt-2",
         cell: cn(
           "relative p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-gray-800 rounded-lg border border-gray-700",
@@ -41,7 +47,8 @@ function Calendar({
         ),
         day: cn(
           buttonVariants({ variant: "ghost" }),
-          "h-16 w-16 p-0 font-normal text-gray-100 aria-selected:opacity-100 hover:bg-gray-800 hover:text-white"
+          "font-normal text-gray-100 aria-selected:opacity-100 hover:bg-gray-800 hover:text-white",
+          isMobile ? "h-10 w-10 p-0" : "h-16 w-16 p-0"
         ),
         day_selected:
           "bg-purple-600 text-white hover:bg-purple-700 hover:text-white focus:bg-purple-700 focus:text-white",

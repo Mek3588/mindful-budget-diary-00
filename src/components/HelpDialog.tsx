@@ -12,7 +12,7 @@ interface HelpDialogProps {
 export function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[80vh]">
+      <DialogContent className="sm:max-w-[600px] max-h-[80vh] bg-background border border-border">
         <DialogHeader>
           <DialogTitle className="text-xl flex items-center gap-2">
             <BookText className="h-5 w-5" />
@@ -21,7 +21,7 @@ export function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
         </DialogHeader>
         
         <Tabs defaultValue="dashboard" className="w-full">
-          <TabsList className="grid grid-cols-4 sm:grid-cols-7 mb-4">
+          <TabsList className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 mb-4 overflow-x-auto">
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="diary">Diary</TabsTrigger>
             <TabsTrigger value="budget">Budget</TabsTrigger>
@@ -31,7 +31,7 @@ export function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
           
-          <ScrollArea className="h-[60vh] pr-4">
+          <ScrollArea className="h-[60vh] max-h-[60vh] pr-4">
             <TabsContent value="dashboard" className="space-y-4">
               <h3 className="text-lg font-medium">Dashboard Overview</h3>
               <p>The dashboard provides a quick overview of all your important information:</p>

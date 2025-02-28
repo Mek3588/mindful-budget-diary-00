@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -97,5 +98,30 @@
 
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* Improved menu styles */
+.radix-dropdown-content,
+.radix-popover-content,
+.radix-dialog-content {
+  background: hsl(var(--background)) !important;
+  color: hsl(var(--foreground)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+}
+
+/* Mobile responsive improvements */
+@media (max-width: 640px) {
+  .dialog-content {
+    width: 95% !important;
+    max-width: 95% !important;
+  }
+
+  .calendar-container .rdp {
+    margin: 0 auto;
+  }
+
+  .calendar-container .rdp-month {
+    width: 100%;
   }
 }
