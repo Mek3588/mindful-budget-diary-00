@@ -38,10 +38,16 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
       document.documentElement.style.setProperty(`--energy-${key}-color`, value);
     });
 
-    // Update data-theme attribute for proper dark/light mode
-    document.documentElement.setAttribute('data-theme', 
-      currentTheme.type === 'masculine' ? 'dark' : 'light'
-    );
+    // Ensure we're setting dark mode correctly
+    if (currentTheme.type === 'masculine') {
+      document.documentElement.classList.add('dark');
+      document.documentElement.classList.remove('light');
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+      document.documentElement.classList.add('light');
+      document.documentElement.classList.remove('dark');
+      document.documentElement.setAttribute('data-theme', 'light');
+    }
   }, [currentTheme]);
 
   return (

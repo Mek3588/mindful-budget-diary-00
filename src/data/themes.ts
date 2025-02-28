@@ -82,5 +82,32 @@ export const themes: Theme[] = [
         down: '#4C1D95'
       }
     }
+  },
+  // Blue Mode
+  {
+    id: 'blue',
+    name: 'Blue Mode',
+    type: 'masculine',
+    primaryColor: '#0D2B45',
+    secondaryColor: '#1E3A5F',
+    accentColor: '#33C3F0',
+    stickerColors: {
+      mood: {
+        happy: '#1EAEDB',
+        neutral: '#D3E4FD',
+        sad: '#0FA0CE',
+        angry: '#F56565',
+        love: '#ED64A6',
+        heartbreak: '#9F7AEA'
+      },
+      energy: {
+        energetic: '#33C3F0',
+        calm: '#4FD1C5',
+        productive: '#0FA0CE',
+        tired: '#8A898C',
+        stressed: '#F56565',
+        down: '#403E43'
+      }
+    }
   }
 ];
