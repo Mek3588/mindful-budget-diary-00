@@ -28,10 +28,8 @@ export function PinDialog({ onSuccess }: PinDialogProps) {
   const handlePinSubmit = () => {
     const storedPin = localStorage.getItem("security-pin") || DEFAULT_PIN;
     if (pin === storedPin) {
-      localStorage.setItem("has-entered-pin", "true");
-      setIsOpen(false);
-      onSuccess();
-      toast.success("PIN verified successfully!");
+      setIsChangingPin(true);
+      setPin("");
     } else {
       toast.error("Incorrect PIN");
       setPin("");
@@ -47,21 +45,21 @@ export function PinDialog({ onSuccess }: PinDialogProps) {
       toast.error("PINs do not match");
       return;
     }
+    
     localStorage.setItem("security-pin", newPin);
+    // Clear session storage so the user has to enter the new PIN on next app start
     sessionStorage.removeItem("has-entered-pin");
-    setIsChangingPin(false);
-    setNewPin("");
-    setConfirmPin("");
+    setIsOpen(false);
+    onSuccess();
     toast.success("PIN changed successfully!");
   };
 
-  const handleClose = () => {
-    setIsOpen(false);
-    onSuccess();
-  };
-
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      // Don't allow closing the dialog by clicking outside
+      if (!open) return;
+      setIsOpen(open);
+    }}>
       <DialogContent className="bg-background border-border shadow-lg">
         <DialogHeader>
           <DialogTitle>
@@ -72,7 +70,7 @@ export function PinDialog({ onSuccess }: PinDialogProps) {
           <div className="space-y-4">
             <Input
               type="password"
-              placeholder="Enter PIN"
+              placeholder="Enter current PIN"
               maxLength={4}
               value={pin}
               onChange={(e) => setPin(e.target.value)}
@@ -91,11 +89,11 @@ export function PinDialog({ onSuccess }: PinDialogProps) {
                 Submit
               </Button>
               <Button 
-                onClick={() => setIsChangingPin(true)}
+                onClick={() => setIsOpen(false)}
                 variant="outline"
                 className="w-full"
               >
-                Change PIN
+                Cancel
               </Button>
             </div>
           </div>

@@ -4,10 +4,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 export function AppPinDialog() {
   const [pin, setPin] = useState("");
   const [isOpen, setIsOpen] = useState(false);
+  const navigate = useNavigate();
   const DEFAULT_PIN = "1234";
 
   useEffect(() => {
@@ -22,6 +24,7 @@ export function AppPinDialog() {
 
   const handlePinSubmit = () => {
     const storedPin = localStorage.getItem("security-pin") || DEFAULT_PIN;
+    
     if (pin === storedPin) {
       // Store in sessionStorage instead of localStorage to make it last only for this session
       sessionStorage.setItem("has-entered-pin", "true");
@@ -32,6 +35,19 @@ export function AppPinDialog() {
       setPin("");
     }
   };
+
+  // Prevent back navigation if PIN hasn't been entered
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (!sessionStorage.getItem("has-entered-pin")) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, []);
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {

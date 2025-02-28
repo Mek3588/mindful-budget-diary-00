@@ -19,13 +19,13 @@ const Security = () => {
     setShowPinDialog(false);
     // Clear session storage so the user has to enter the new PIN on next app start
     sessionStorage.removeItem("has-entered-pin");
+    toast.success("PIN updated successfully. You'll need to enter it next time you open the app.");
   };
 
   const handleResetPin = () => {
     localStorage.removeItem("security-pin");
-    localStorage.removeItem("has-entered-pin");
     sessionStorage.removeItem("has-entered-pin");
-    toast.success("PIN has been reset to default (1234)");
+    toast.success("PIN has been reset to default (1234). You'll need to enter it next time you open the app.");
   };
 
   return (
