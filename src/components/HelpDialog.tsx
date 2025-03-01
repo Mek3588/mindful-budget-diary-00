@@ -1,3 +1,4 @@
+
 import { 
   Dialog, DialogContent, DialogHeader, DialogTitle, 
   DialogDescription, DialogFooter 
@@ -160,166 +161,255 @@ export function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
       case "dashboard":
         return (
           <div className="space-y-4">
-            <p>The dashboard provides a quick overview of all your important information:</p>
+            <p>The dashboard serves as your personal command center, providing quick access to all essential features:</p>
             <ul className="list-disc pl-5 space-y-2">
-              <li><strong>Mood Tracker:</strong> Shows your recent mood entries and overall stats.</li>
-              <li><strong>Calendar:</strong> View upcoming events and important dates.</li>
-              <li><strong>Notes:</strong> Access your recent notes and add new ones.</li>
-              <li><strong>Budget:</strong> See a summary of your financial status.</li>
-              <li><strong>Theme Toggle:</strong> Use the icon to switch between light, dark, and blue themes.</li>
+              <li><strong>Quick Navigation:</strong> Access all major sections through intuitive cards with distinctive colors.</li>
+              <li><strong>Mood Tracker Summary:</strong> View your recent emotional patterns at a glance with percentage breakdowns.</li>
+              <li><strong>Recent Notes:</strong> Access your latest notes directly from the dashboard without navigating to the Notes section.</li>
+              <li><strong>Calendar Preview:</strong> See upcoming events for the next few days without opening the full Calendar.</li>
+              <li><strong>Budget Overview:</strong> Monitor your financial status with quick expense and income summaries.</li>
+              <li><strong>Goals Preview:</strong> Track your progress toward personal objectives with visual indicators.</li>
+              <li><strong>Medical Reminders:</strong> Get alerts about upcoming appointments and medication schedules.</li>
+              <li><strong>Theme Toggle:</strong> Easily switch between light, dark, and custom themes via the icon in the top bar.</li>
+              <li><strong>Help Access:</strong> Open this documentation through the question mark icon whenever you need guidance.</li>
             </ul>
-            <p>Click on any card to navigate to the corresponding section for more details.</p>
+            <p>The dashboard is fully responsive and adapts to all screen sizes, making it perfect for both desktop and mobile use.</p>
           </div>
         );
       case "diary":
         return (
           <div className="space-y-4">
-            <p>The Diary section helps you record your daily thoughts and track your mood:</p>
+            <p>The Diary section is your personal journal and emotional wellness tracker:</p>
             <ul className="list-disc pl-5 space-y-2">
-              <li><strong>Daily Entries:</strong> Write and save your thoughts with the current date and time.</li>
-              <li><strong>Mood Selection:</strong> Choose your current mood from multiple options.</li>
-              <li><strong>Mood Statistics:</strong> View your mood patterns over time with percentages.</li>
-              <li><strong>Entry History:</strong> Browse through all your previous diary entries.</li>
-              <li><strong>Timestamps:</strong> Each entry shows when it was created or updated.</li>
-              <li><strong>Edit & Delete:</strong> Modify or remove your existing entries.</li>
-              <li><strong>Calendar View:</strong> Select different dates to view entries from those days.</li>
-              <li><strong>Collapsible Sections:</strong> Dropdown menus for mood options and previous entries.</li>
-              <li><strong>Mood Trends:</strong> Access detailed mood analytics through a dedicated popup.</li>
+              <li><strong>Daily Entries:</strong> Record your thoughts, experiences, and reflections with rich text formatting.</li>
+              <li><strong>Mood Tracking:</strong> Select from multiple mood options to monitor your emotional well-being over time.</li>
+              <li><strong>Voice Input:</strong> Record entries by speaking instead of typing using the microphone button.</li>
+              <li><strong>Photo Attachment:</strong> Add images to your entries using the camera or file upload features.</li>
+              <li><strong>Advanced Analytics:</strong> View detailed mood statistics with interactive charts showing patterns and trends.</li>
+              <li><strong>Calendar Integration:</strong> Navigate to specific dates to view or add entries from those days.</li>
+              <li><strong>Entry Management:</strong> Edit, delete, or categorize previous entries for better organization.</li>
+              <li><strong>Search Functionality:</strong> Find specific entries using keywords or date ranges.</li>
+              <li><strong>Privacy Protection:</strong> Optionally secure your diary with PIN protection for sensitive entries.</li>
+              <li><strong>Export Options:</strong> Save your diary entries as PDF or JSON files for backup or printing.</li>
             </ul>
-            <p>Your diary entries are stored locally on your device and are not shared with anyone.</p>
+            <p>All diary entries are stored securely on your device and can be protected with a PIN for additional privacy.</p>
           </div>
         );
       case "budget":
         return (
           <div className="space-y-4">
-            <p>The Budget section helps you manage your finances:</p>
+            <p>The Budget section provides powerful tools for managing your personal finances:</p>
             <ul className="list-disc pl-5 space-y-2">
-              <li><strong>Income & Expenses:</strong> Track your money coming in and going out.</li>
-              <li><strong>Categories:</strong> Organize transactions by category for better insights.</li>
-              <li><strong>Balance:</strong> See your current financial standing at a glance.</li>
-              <li><strong>History:</strong> Review past transactions with timestamps.</li>
-              <li><strong>Charts:</strong> Visualize your spending patterns.</li>
-              <li><strong>Edit & Delete:</strong> Modify or remove transactions as needed.</li>
+              <li><strong>Transaction Recording:</strong> Add income and expenses with detailed categories, dates, and descriptions.</li>
+              <li><strong>Financial Overview:</strong> See your current balance, recent transactions, and financial health at a glance.</li>
+              <li><strong>Category Management:</strong> Organize spending into customizable categories for better tracking.</li>
+              <li><strong>Interactive Charts:</strong> Visualize your financial patterns with pie charts, bar graphs, and trend lines.</li>
+              <li><strong>Budget Planning:</strong> Set monthly or category-specific budgets and track your progress.</li>
+              <li><strong>Recurring Transactions:</strong> Set up automatic entries for regular income or expenses.</li>
+              <li><strong>Expense Analysis:</strong> Identify spending patterns and opportunities for savings.</li>
+              <li><strong>Date Range Filtering:</strong> View transactions from specific time periods for better analysis.</li>
+              <li><strong>Export Functionality:</strong> Generate financial reports as PDF or spreadsheet files.</li>
+              <li><strong>Currency Support:</strong> Track finances in your preferred currency format.</li>
             </ul>
-            <p>All budget data is stored locally for your privacy and can be exported if needed.</p>
+            <p>Your financial data is stored locally for privacy and can be exported or printed for record-keeping purposes.</p>
           </div>
         );
       case "notes":
         return (
           <div className="space-y-4">
-            <p>The Notes section is your personal information organizer:</p>
+            <p>The Notes section is your versatile information management system:</p>
             <ul className="list-disc pl-5 space-y-2">
-              <li><strong>Create Notes:</strong> Quickly jot down ideas, lists, or information.</li>
-              <li><strong>Categorize:</strong> Organize notes by topic or importance.</li>
-              <li><strong>Edit & Delete:</strong> Modify or remove notes as needed.</li>
-              <li><strong>Search:</strong> Find specific notes using the search feature.</li>
-              <li><strong>Timestamps:</strong> See when notes were created or last updated.</li>
+              <li><strong>Quick Capture:</strong> Instantly record ideas, lists, or important information in a clean interface.</li>
+              <li><strong>Rich Text Editor:</strong> Format your notes with headings, bullet points, numbered lists, and emphasis.</li>
+              <li><strong>Voice Input:</strong> Create notes hands-free by using the voice-to-text functionality.</li>
+              <li><strong>Image Integration:</strong> Add photos or images to your notes for visual reference.</li>
+              <li><strong>Categorization:</strong> Organize notes with tags, folders, or color-coding for easy retrieval.</li>
+              <li><strong>Pinned Notes:</strong> Keep important information readily accessible by pinning notes to the top.</li>
+              <li><strong>Search Capabilities:</strong> Find specific notes quickly with full-text search functionality.</li>
+              <li><strong>Checklist Support:</strong> Create interactive to-do lists with checkable items within notes.</li>
+              <li><strong>Sharing Options:</strong> Export notes as text, PDF, or images for sharing with others.</li>
+              <li><strong>Archiving:</strong> Keep your workspace clean by archiving notes you don't need regularly.</li>
             </ul>
-            <p>Notes are saved automatically and accessible from any page through the dashboard.</p>
+            <p>Notes sync across your sessions and are accessible from any device where you use this application.</p>
           </div>
         );
       case "calendar":
         return (
           <div className="space-y-4">
-            <p>The Calendar helps you stay organized and never miss important dates:</p>
+            <p>The Calendar provides comprehensive scheduling and event management:</p>
             <ul className="list-disc pl-5 space-y-2">
-              <li><strong>Mobile Responsive:</strong> Calendar adapts to different screen sizes for easy viewing.</li>
-              <li><strong>Monthly View:</strong> See your entire month at a glance with clear day separations.</li>
-              <li><strong>Add Events:</strong> Create new events with titles, descriptions, and times.</li>
-              <li><strong>Navigation:</strong> Easily move between months with the ← and → buttons.</li>
-              <li><strong>Month Selection:</strong> Jump to any month using the dropdown selector.</li>
-              <li><strong>Today Button:</strong> Quickly return to the current date.</li>
-              <li><strong>Event Filtering:</strong> Filter events by category to focus on specific types.</li>
-              <li><strong>Events List:</strong> View and manage all events in a separate section.</li>
-              <li><strong>Edit & Delete:</strong> Modify or remove existing events.</li>
-              <li><strong>Event Indicators:</strong> Small dots appear on days with scheduled events.</li>
-              <li><strong>Date Range Selection:</strong> Filter events by selecting a date range.</li>
-              <li><strong>Dark Mode Support:</strong> Attractive calendar display in both light and dark themes.</li>
+              <li><strong>Monthly View:</strong> See your entire month at a glance with clear day separations and event indicators.</li>
+              <li><strong>Event Creation:</strong> Add detailed events with titles, descriptions, times, and categories.</li>
+              <li><strong>Multi-Day Events:</strong> Schedule activities that span multiple days with proper visual representation.</li>
+              <li><strong>Category System:</strong> Organize events by type with color-coding for visual differentiation.</li>
+              <li><strong>Reminder Settings:</strong> Set notifications for upcoming events to ensure you never miss important dates.</li>
+              <li><strong>Recurring Events:</strong> Create patterns for regular activities (daily, weekly, monthly, yearly).</li>
+              <li><strong>Month Navigation:</strong> Easily move between months with intuitive controls and direct month selection.</li>
+              <li><strong>Event List View:</strong> See all upcoming events in a chronological list for quick reference.</li>
+              <li><strong>Filter Options:</strong> Focus on specific event types or date ranges to reduce visual clutter.</li>
+              <li><strong>Integration:</strong> Calendar events connect with other app sections like Goals and Medical Records.</li>
+              <li><strong>Mobile-Friendly:</strong> The calendar adapts perfectly to smaller screens for on-the-go access.</li>
             </ul>
-            <p>Your calendar helps you maintain a balanced schedule and prepare for upcoming events.</p>
+            <p>Your calendar helps you maintain balance by visualizing your commitments and important dates in one organized system.</p>
           </div>
         );
       case "security":
         return (
           <div className="space-y-4">
-            <p>The Security section helps protect your personal information:</p>
+            <p>The Security section provides robust privacy protection for your personal information:</p>
             <ul className="list-disc pl-5 space-y-2">
-              <li><strong>PIN Protection:</strong> Secure app access with a 4-digit PIN (default: 1234).</li>
-              <li><strong>Change PIN:</strong> Create a custom PIN that's easy for you to remember.</li>
-              <li><strong>Reset PIN:</strong> Return to the default PIN if you forget yours.</li>
-              <li><strong>Session Security:</strong> PIN is required once per browser session.</li>
+              <li><strong>PIN Protection:</strong> Secure access to the app with a customizable 4-digit PIN (default: 1234).</li>
+              <li><strong>Feature-Specific Security:</strong> Choose which sections of the app require PIN verification:</li>
+              <ul className="list-disc pl-5 mt-1 mb-2">
+                <li><strong>Diary:</strong> Protect personal journal entries</li>
+                <li><strong>Budget:</strong> Secure financial information</li>
+                <li><strong>Notes:</strong> Safeguard sensitive notes</li>
+                <li><strong>Calendar:</strong> Control access to your schedule</li>
+                <li><strong>Goals:</strong> Keep personal objectives private</li>
+                <li><strong>Medical Records:</strong> Ensure health information confidentiality</li>
+              </ul>
+              <li><strong>PIN Management:</strong> Easily change your security PIN or reset to the default if forgotten.</li>
+              <li><strong>Session Security:</strong> PIN verification is required once per browser session for protected features.</li>
+              <li><strong>Local Storage:</strong> Security information is stored only on your device, not on external servers.</li>
+              <li><strong>Clear Indicators:</strong> Protected sections are clearly marked so you know when security is active.</li>
             </ul>
-            <p>Your security PIN is stored locally on your device and is never shared with external servers.</p>
+            <p>All security features are designed to protect your privacy while maintaining a smooth user experience. The PIN is stored securely on your device and is never transmitted over the internet.</p>
           </div>
         );
       case "settings":
         return (
           <div className="space-y-4">
-            <p>The Settings section allows you to customize your experience:</p>
+            <p>The Settings section lets you personalize your experience and manage your data:</p>
             <ul className="list-disc pl-5 space-y-2">
-              <li><strong>Theme Selection:</strong> Choose between various themes including masculine and feminine styles.</li>
-              <li><strong>Data Management:</strong> Export your data and print sections of the app.</li>
-              <li><strong>Personalization:</strong> Adjust how information is displayed.</li>
+              <li><strong>Theme Selection:</strong> Choose from multiple visual themes to match your personal style:</li>
+              <ul className="list-disc pl-5 mt-1 mb-2">
+                <li>Standard light and dark modes</li>
+                <li>Specialized masculine and feminine aesthetic options</li>
+                <li>Custom color schemes for personalization</li>
+              </ul>
+              <li><strong>Data Management:</strong></li>
+              <ul className="list-disc pl-5 mt-1 mb-2">
+                <li><strong>Export:</strong> Save your data in JSON format for backup or transfer</li>
+                <li><strong>Print:</strong> Create physical copies of sections like diary entries, budgets, or medical records</li>
+                <li><strong>Clear Data:</strong> Option to reset specific sections or the entire application</li>
+              </ul>
+              <li><strong>Notification Preferences:</strong> Control when and how you receive reminders and alerts.</li>
+              <li><strong>Language Settings:</strong> Choose your preferred language for the application interface.</li>
+              <li><strong>Accessibility Options:</strong> Adjust text size, contrast, and interaction methods for better usability.</li>
+              <li><strong>Default Views:</strong> Set your preferred initial views for calendar, budget, and other sections.</li>
+              <li><strong>Import Functionality:</strong> Bring in data from external sources or previous exports.</li>
             </ul>
-            <p>Customize the app to work exactly how you prefer through the settings page.</p>
+            <p>All settings are automatically saved and apply immediately across the application. Your preferences are stored locally for privacy.</p>
           </div>
         );
       case "themes":
         return (
           <div className="space-y-4">
-            <p>The Theme Selection feature allows you to personalize your journal experience:</p>
+            <p>The Theme Selection feature offers extensive visual customization options:</p>
             <ul className="list-disc pl-5 space-y-2">
-              <li><strong>Dark Theme:</strong> A darker color scheme designed with masculine aesthetics.</li>
-              <li><strong>Rose Garden:</strong> A light color scheme designed with feminine aesthetics.</li>
-              <li><strong>Quick Toggle:</strong> Switch between themes using the icon in the header.</li>
-              <li><strong>Custom Colors:</strong> Each theme has unique primary, secondary, and accent colors.</li>
+              <li><strong>Light & Dark Modes:</strong> Standard light and dark themes that follow your device preferences.</li>
+              <li><strong>Aesthetic Themes:</strong> Specialized designs catering to different style preferences:</li>
+              <ul className="list-disc pl-5 mt-1 mb-2">
+                <li><strong>Dark Theme:</strong> Clean, modern interface with deep blues and grays.</li>
+                <li><strong>Rose Garden:</strong> Soft, warm palette with gentle pinks and rose tones.</li>
+              </ul>
+              <li><strong>Color Customization:</strong> Each theme includes carefully selected:</li>
+              <ul className="list-disc pl-5 mt-1 mb-2">
+                <li>Background colors and gradients</li>
+                <li>Text and accent colors for optimal readability</li>
+                <li>Button and interactive element styling</li>
+                <li>Card and container visual treatments</li>
+              </ul>
+              <li><strong>Section-Specific Colors:</strong> Distinctive color coding for different app sections:</li>
+              <ul className="list-disc pl-5 mt-1 mb-2">
+                <li>Diary: Soft purple tones</li>
+                <li>Budget: Fresh green palette</li>
+                <li>Notes: Calm blue hues</li>
+                <li>Calendar: Bright blue accents</li>
+                <li>Goals: Energetic orange tones</li>
+                <li>Medical: Gentle pink shades</li>
+                <li>Security: Trustworthy blue colors</li>
+                <li>Settings: Rich purple scheme</li>
+              </ul>
+              <li><strong>Accessibility Considerations:</strong> All themes maintain strong contrast ratios for readability.</li>
+              <li><strong>Quick Switching:</strong> Change themes instantly via the toggle in the top navigation bar.</li>
+              <li><strong>Persistent Selection:</strong> Your theme choice is remembered between sessions.</li>
             </ul>
-            <p>Your theme preference is saved and will be remembered the next time you use the app.</p>
+            <p>Theme settings apply globally throughout the application and persist until you change them again. The theme engine is designed to ensure consistent styling across all components.</p>
           </div>
         );
       case "export":
         return (
           <div className="space-y-4">
-            <p>The Data Export feature helps you back up your important information:</p>
+            <p>The Data Export feature provides flexible options for saving and backing up your information:</p>
             <ul className="list-disc pl-5 space-y-2">
-              <li><strong>Section Selection:</strong> Choose which part of the app you want to export (or all sections).</li>
-              <li><strong>JSON Format:</strong> Data is exported in JSON format, which is widely compatible.</li>
-              <li><strong>Local Download:</strong> Exported files are downloaded to your device, not sent to any server.</li>
-              <li><strong>Date Stamped:</strong> Files include the date of export for easy organization.</li>
-              <li><strong>Available Sections:</strong>
-                <ul className="list-disc pl-5 mt-1">
-                  <li>Diary entries and mood data</li>
-                  <li>Budget and financial records</li>
-                  <li>Notes and their categories</li>
-                  <li>Calendar events and schedules</li>
-                  <li>Goal planning information</li>
-                  <li>Medical records and reminders</li>
-                </ul>
-              </li>
+              <li><strong>Comprehensive Selection:</strong> Choose exactly what data you want to export:</li>
+              <ul className="list-disc pl-5 mt-1 mb-2">
+                <li><strong>Complete Export:</strong> All application data in one file</li>
+                <li><strong>Section-Specific:</strong> Export only diary, budget, notes, calendar, goals, or medical records</li>
+                <li><strong>Date Range:</strong> Export data from specific time periods only</li>
+              </ul>
+              <li><strong>Format Options:</strong></li>
+              <ul className="list-disc pl-5 mt-1 mb-2">
+                <li><strong>JSON:</strong> Standard format for data portability and backup</li>
+                <li><strong>CSV:</strong> Compatible with spreadsheet applications (for budget and structured data)</li>
+                <li><strong>Plain Text:</strong> Simple option for diary entries and notes</li>
+              </ul>
+              <li><strong>Export Process:</strong></li>
+              <ul className="list-disc pl-5 mt-1 mb-2">
+                <li>Select data type and parameters from the export menu</li>
+                <li>Preview what will be included in your export</li>
+                <li>Generate and download the export file directly to your device</li>
+                <li>Clear confirmation when the export is complete</li>
+              </ul>
+              <li><strong>Privacy & Security:</strong></li>
+              <ul className="list-disc pl-5 mt-1 mb-2">
+                <li>All exports happen locally - no data is sent to external servers</li>
+                <li>Option to password-protect sensitive exports</li>
+                <li>Clear indication of what data is included in each export</li>
+              </ul>
+              <li><strong>Recommended Use:</strong> Regular exports (monthly or quarterly) are suggested for data backup.</li>
             </ul>
-            <p>Regular exports are recommended to ensure you don't lose important information.</p>
+            <p>Exported files are downloaded directly to your device and can be used for backup purposes or transferring data to other systems. Regular exports help ensure you never lose important information.</p>
           </div>
         );
       case "print":
         return (
           <div className="space-y-4">
-            <p>The Print feature allows you to create physical copies of your digital information:</p>
+            <p>The Print functionality allows you to create physical copies of your digital information:</p>
             <ul className="list-disc pl-5 space-y-2">
-              <li><strong>Section Selection:</strong> Choose which part of the app you want to print (or the entire app).</li>
-              <li><strong>Print Preview:</strong> View how your content will look before printing.</li>
-              <li><strong>Printer Options:</strong> Access your system's printer dialog for additional settings.</li>
-              <li><strong>Available Sections:</strong>
-                <ul className="list-disc pl-5 mt-1">
-                  <li>Diary entries for journaling records</li>
-                  <li>Budget reports for financial tracking</li>
-                  <li>Notes for important information</li>
-                  <li>Calendar for schedule planning</li>
-                  <li>Goals for tracking your objectives</li>
-                  <li>Medical records for health tracking</li>
-                </ul>
-              </li>
+              <li><strong>Content Selection:</strong> Choose specific sections to print:</li>
+              <ul className="list-disc pl-5 mt-1 mb-2">
+                <li><strong>Diary Entries:</strong> Print journal entries with dates, moods, and full content</li>
+                <li><strong>Budget Reports:</strong> Print financial summaries, transactions, and analysis</li>
+                <li><strong>Notes Collection:</strong> Print individual notes or categorized collections</li>
+                <li><strong>Calendar:</strong> Print monthly views or event lists for planning</li>
+                <li><strong>Goals:</strong> Print goal plans with progress tracking and deadlines</li>
+                <li><strong>Medical Records:</strong> Print health information, appointments, and medication schedules</li>
+              </ul>
+              <li><strong>Print Options:</strong></li>
+              <ul className="list-disc pl-5 mt-1 mb-2">
+                <li><strong>Date Range Selection:</strong> Print information from specific time periods</li>
+                <li><strong>Content Filtering:</strong> Include only the information you need</li>
+                <li><strong>Format Optimization:</strong> Layouts designed specifically for printed output</li>
+                <li><strong>Header & Footer:</strong> Include dates, page numbers, and section identifiers</li>
+              </ul>
+              <li><strong>Print Process:</strong></li>
+              <ul className="list-disc pl-5 mt-1 mb-2">
+                <li>Select content type and customize print options</li>
+                <li>Preview the formatted output before printing</li>
+                <li>Send directly to printer or save as PDF</li>
+                <li>Access system print dialog for advanced printer settings</li>
+              </ul>
+              <li><strong>Print Quality:</strong> Content is formatted with:</li>
+              <ul className="list-disc pl-5 mt-1 mb-2">
+                <li>Clear, readable fonts and appropriate text sizing</li>
+                <li>Proper spacing and margins for legibility</li>
+                <li>Optimized image quality when photos are included</li>
+                <li>Printer-friendly color schemes that work well in black and white</li>
+              </ul>
             </ul>
-            <p>Create physical backups or share your information with people who prefer paper documents.</p>
+            <p>The print function creates clean, well-formatted documents that include both field headings and your actual data. All printed content is formatted to be highly readable and well-organized on physical paper.</p>
           </div>
         );
       case "goals":
@@ -327,40 +417,89 @@ export function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
           <div className="space-y-4">
             <p>The Goal Planner helps you set, track, and achieve your personal objectives:</p>
             <ul className="list-disc pl-5 space-y-2">
-              <li><strong>Create Goals:</strong> Set specific, measurable goals with deadlines.</li>
-              <li><strong>Progress Tracking:</strong> Monitor your advancement toward each goal.</li>
-              <li><strong>Task Breakdown:</strong> Break down large goals into manageable tasks.</li>
-              <li><strong>Categorization:</strong> Organize goals by area of life (career, health, personal, etc.).</li>
-              <li><strong>Priority Levels:</strong> Assign importance to focus on what matters most.</li>
-              <li><strong>Completion Status:</strong> Mark goals as in-progress, completed, or on hold.</li>
-              <li><strong>Reward System:</strong> Set rewards for achieving your goals to stay motivated.</li>
-              <li><strong>Timeline View:</strong> See your goals organized by deadline and status.</li>
-              <li><strong>Reflection:</strong> Record insights on completed goals to improve future planning.</li>
-              <li><strong>Voice Input:</strong> Use speech-to-text to quickly capture your goals.</li>
-              <li><strong>Photo Attachments:</strong> Add images to visualize your goals and track progress.</li>
+              <li><strong>Goal Creation:</strong></li>
+              <ul className="list-disc pl-5 mt-1 mb-2">
+                <li>Set specific, measurable objectives with clear success criteria</li>
+                <li>Assign target completion dates and track deadlines</li>
+                <li>Categorize goals by life area (health, career, personal, etc.)</li>
+                <li>Set priority levels to focus your efforts effectively</li>
+              </ul>
+              <li><strong>Action Planning:</strong></li>
+              <ul className="list-disc pl-5 mt-1 mb-2">
+                <li>Break down goals into manageable action steps</li>
+                <li>Set milestones to mark progress points</li>
+                <li>Schedule specific tasks in the integrated calendar</li>
+                <li>Create checklists for complex multi-step goals</li>
+              </ul>
+              <li><strong>Progress Tracking:</strong></li>
+              <ul className="list-disc pl-5 mt-1 mb-2">
+                <li>Update completion percentage as you work toward goals</li>
+                <li>Visual progress bars show advancement at a glance</li>
+                <li>Track time spent on different objectives</li>
+                <li>Record notes and observations about your progress</li>
+              </ul>
+              <li><strong>Enhanced Features:</strong></li>
+              <ul className="list-disc pl-5 mt-1 mb-2">
+                <li><strong>Voice Input:</strong> Add goals and updates using speech-to-text</li>
+                <li><strong>Photo Attachments:</strong> Visualize goals with images</li>
+                <li><strong>Reminder System:</strong> Get notifications about upcoming deadlines</li>
+                <li><strong>Achievement Celebration:</strong> Record and recognize completed goals</li>
+              </ul>
+              <li><strong>Goal Management:</strong></li>
+              <ul className="list-disc pl-5 mt-1 mb-2">
+                <li>Filter and sort goals by category, priority, or completion status</li>
+                <li>Archive completed goals while maintaining your record of achievement</li>
+                <li>Adjust deadlines and parameters as circumstances change</li>
+                <li>Analyze patterns in goal completion for better future planning</li>
+              </ul>
             </ul>
-            <p>The Goal Planner helps you turn your aspirations into achievements through structured planning and tracking.</p>
+            <p>The Goal Planner is designed to turn aspirations into concrete achievements through structured planning, regular tracking, and clear visibility of your progress.</p>
           </div>
         );
       case "medical":
         return (
           <div className="space-y-4">
-            <p>The Medical Records & Reminders section helps you manage your health information and appointments:</p>
+            <p>The Medical Records & Reminders section helps you manage your health information:</p>
             <ul className="list-disc pl-5 space-y-2">
-              <li><strong>Medical Calendar:</strong> Dedicated calendar for health-related events and reminders.</li>
-              <li><strong>Appointment Tracking:</strong> Record doctor visits with provider names, locations, and notes.</li>
-              <li><strong>Medication Management:</strong> Track prescriptions, dosages, and refill schedules.</li>
-              <li><strong>Vital Signs:</strong> Log important health metrics like blood pressure, heart rate, or blood sugar.</li>
-              <li><strong>Medical Notes:</strong> Store observations, symptoms, or questions for your next appointment.</li>
-              <li><strong>Reminder System:</strong> Get alerts before appointments or when it's time to take medication.</li>
-              <li><strong>Filtering Options:</strong> View records by date, type, or status (upcoming, completed).</li>
-              <li><strong>Privacy:</strong> All medical information is stored locally on your device for security.</li>
-              <li><strong>Voice Input:</strong> Use speech-to-text to record medical information hands-free.</li>
-              <li><strong>Photo Upload:</strong> Attach images of prescriptions or medical documents for reference.</li>
-              <li><strong>Camera Integration:</strong> Take photos of medication labels or insurance cards directly.</li>
-              <li><strong>Improved Dialogs:</strong> Easy-to-read dialog boxes with clear text and contrast.</li>
+              <li><strong>Comprehensive Health Tracking:</strong></li>
+              <ul className="list-disc pl-5 mt-1 mb-2">
+                <li><strong>Appointment Management:</strong> Record past and upcoming medical visits</li>
+                <li><strong>Medication Tracking:</strong> Log prescriptions with dosages and schedules</li>
+                <li><strong>Vital Signs:</strong> Monitor important health metrics over time</li>
+                <li><strong>Symptoms Journal:</strong> Document health concerns and observations</li>
+                <li><strong>Medical History:</strong> Maintain records of conditions and procedures</li>
+              </ul>
+              <li><strong>Record Creation:</strong></li>
+              <ul className="list-disc pl-5 mt-1 mb-2">
+                <li>Add detailed records with date/time, type, and descriptions</li>
+                <li>Categorize by medical specialties or record types</li>
+                <li>Include provider information and location details</li>
+                <li>Set reminders for follow-ups and medication times</li>
+                <li>Attach relevant images like prescription labels or documents</li>
+              </ul>
+              <li><strong>Organization & Navigation:</strong></li>
+              <ul className="list-disc pl-5 mt-1 mb-2">
+                <li>View records by date, type, or status (upcoming, completed)</li>
+                <li>Filter options for focused review of specific information</li>
+                <li>Calendar integration shows medical events in your schedule</li>
+                <li>Chronological timeline of your medical history</li>
+              </ul>
+              <li><strong>Advanced Features:</strong></li>
+              <ul className="list-disc pl-5 mt-1 mb-2">
+                <li><strong>Voice Input:</strong> Record medical information hands-free</li>
+                <li><strong>Camera Integration:</strong> Capture images of medical documents</li>
+                <li><strong>Reminder System:</strong> Get alerts for appointments and medications</li>
+                <li><strong>Privacy Protection:</strong> Optional PIN security for sensitive information</li>
+              </ul>
+              <li><strong>Management Tools:</strong></li>
+              <ul className="list-disc pl-5 mt-1 mb-2">
+                <li>Edit or update existing records as information changes</li>
+                <li>Quick duplication of recurring appointments or medications</li>
+                <li>Search functionality to find specific health information</li>
+                <li>Export and print options for sharing with healthcare providers</li>
+              </ul>
             </ul>
-            <p>This section helps you stay on top of your health management by organizing all medical information in one secure place.</p>
+            <p>The Medical section provides a secure, organized way to maintain your health records in one place, helping you stay on top of appointments, medications, and important health information.</p>
           </div>
         );
       default:
