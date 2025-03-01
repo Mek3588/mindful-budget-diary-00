@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -40,7 +41,8 @@ import {
   Image,
   ChevronDown,
   ChevronUp,
-  CheckCircle2
+  CheckCircle2,
+  X
 } from "lucide-react";
 import { format, addDays, isAfter } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -54,7 +56,6 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
 
 type RecordType = "appointment" | "medication" | "vital" | "note";
 
@@ -80,13 +81,23 @@ interface MedicalRecord {
   reminderShown?: boolean;
 }
 
+// New interface for reminders
+interface Reminder {
+  id: string;
+  recordId: string;
+  title: string;
+  date: Date;
+  time?: string;
+  dismissed: boolean;
+}
+
 const generateId = () => {
   return Date.now().toString(36) + Math.random().toString(36).substring(2);
 };
 
 const Medical = () => {
   const navigate = useNavigate();
-  const { toast: uiToast } = useToast();
+  const { toast } = useToast();
   const [records, setRecords] = useState<MedicalRecord[]>(() => {
     const savedRecords = localStorage.getItem("medical-records");
     return savedRecords ? JSON.parse(savedRecords).map((record: MedicalRecord) => ({
@@ -95,6 +106,18 @@ const Medical = () => {
       isExpanded: false
     })) : [];
   });
+  
+  // New state for reminders
+  const [reminders, setReminders] = useState<Reminder[]>(() => {
+    const savedReminders = localStorage.getItem("medical-reminders");
+    return savedReminders ? JSON.parse(savedReminders).map((reminder: Reminder) => ({
+      ...reminder,
+      date: new Date(reminder.date)
+    })) : [];
+  });
+  
+  // New state for showing reminders dialog
+  const [showRemindersDialog, setShowRemindersDialog] = useState(false);
   
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isAddingRecord, setIsAddingRecord] = useState(false);
@@ -116,10 +139,14 @@ const Medical = () => {
   
   const [selectedTab, setSelectedTab] = useState<string>("upcoming");
   
+  // Count active reminders
+  const activeRemindersCount = reminders.filter(r => !r.dismissed).length;
+  
   useEffect(() => {
     const now = new Date();
     now.setHours(0, 0, 0, 0);
     
+    // Check for new reminders
     records.forEach(record => {
       if (record.reminder && !record.completed && !record.reminderShown) {
         const recordDate = new Date(record.date);
@@ -127,31 +154,48 @@ const Medical = () => {
         reminderDate.setHours(0, 0, 0, 0);
         
         if (!isAfter(reminderDate, now)) {
-          toast.info(
-            <div className="flex items-start">
-              <BellRing className="h-5 w-5 text-blue-500 mr-2 flex-shrink-0 mt-0.5" />
-              <div>
-                <h3 className="font-medium">Reminder: {record.title}</h3>
-                <p className="text-sm text-gray-500">
-                  {format(new Date(record.date), "MMMM d, yyyy")}
-                  {record.time && ` at ${record.time}`}
-                </p>
-              </div>
-            </div>,
-            {
-              duration: 8000,
-              action: {
-                label: "Dismiss",
-                onClick: () => {
-                  updateRecord(record.id, {reminderShown: true});
-                }
-              }
+          // Instead of showing toast, add to reminders list
+          const reminderExists = reminders.some(r => r.recordId === record.id && !r.dismissed);
+          
+          if (!reminderExists) {
+            const newReminder: Reminder = {
+              id: generateId(),
+              recordId: record.id,
+              title: record.title,
+              date: new Date(record.date),
+              time: record.time,
+              dismissed: false
+            };
+            
+            setReminders(prev => [...prev, newReminder]);
+            updateRecord(record.id, { reminderShown: true });
+            
+            // Only show a single toast notification that reminders are available
+            if (activeRemindersCount === 0) {
+              toast({
+                title: "Medical Reminders Available",
+                description: "You have new medical reminders to review.",
+                action: (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setShowRemindersDialog(true)}
+                  >
+                    View
+                  </Button>
+                ),
+              });
             }
-          );
+          }
         }
       }
     });
   }, [records]);
+  
+  // Save reminders to localStorage
+  useEffect(() => {
+    localStorage.setItem("medical-reminders", JSON.stringify(reminders));
+  }, [reminders]);
   
   useEffect(() => {
     localStorage.setItem("medical-records", JSON.stringify(records));
@@ -182,9 +226,27 @@ const Medical = () => {
     setRecords(updatedRecords);
   };
   
+  // Handle reminder dismissal
+  const dismissReminder = (id: string) => {
+    setReminders(reminders.map(reminder => 
+      reminder.id === id ? { ...reminder, dismissed: true } : reminder
+    ));
+  };
+  
+  // Dismiss all reminders
+  const dismissAllReminders = () => {
+    setReminders(reminders.map(reminder => ({ ...reminder, dismissed: true })));
+    setShowRemindersDialog(false);
+  };
+  
+  // Get record from reminder
+  const getRecordFromReminder = (recordId: string) => {
+    return records.find(record => record.id === recordId);
+  };
+  
   const handleAddRecord = () => {
     if (!newRecord.title) {
-      uiToast({
+      toast({
         title: "Required Field Missing",
         description: "Please enter a title for your record.",
         variant: "destructive",
@@ -217,10 +279,16 @@ const Medical = () => {
     if (editingRecord) {
       setRecords(records.map(r => r.id === editingRecord.id ? {...recordToAdd, id: editingRecord.id} : r));
       setEditingRecord(null);
-      toast.success("Record updated successfully");
+      toast({
+        title: "Success",
+        description: "Record updated successfully",
+      });
     } else {
       setRecords([...records, recordToAdd]);
-      toast.success("Record added successfully");
+      toast({
+        title: "Success",
+        description: "Record added successfully",
+      });
     }
     
     setNewRecord({
@@ -239,7 +307,12 @@ const Medical = () => {
   
   const handleDeleteRecord = (id: string) => {
     setRecords(records.filter(record => record.id !== id));
-    toast.success("Record deleted");
+    // Also delete any reminders for this record
+    setReminders(reminders.filter(reminder => reminder.recordId !== id));
+    toast({
+      title: "Success",
+      description: "Record deleted",
+    });
   };
   
   const handleToggleCompletion = (id: string) => {
@@ -249,7 +322,17 @@ const Medical = () => {
     
     const record = records.find(r => r.id === id);
     if (record) {
-      toast.success(record.completed ? "Record marked as incomplete" : "Record marked as complete");
+      // If marked as completed, dismiss any reminders
+      if (!record.completed) {
+        setReminders(reminders.map(reminder => 
+          reminder.recordId === id ? { ...reminder, dismissed: true } : reminder
+        ));
+      }
+      
+      toast({
+        title: "Status Changed",
+        description: record.completed ? "Record marked as incomplete" : "Record marked as complete",
+      });
     }
   };
   
@@ -279,7 +362,10 @@ const Medical = () => {
       return record;
     }));
     
-    toast.success("Photo added to record");
+    toast({
+      title: "Success",
+      description: "Photo added to record",
+    });
   };
   
   const handleCameraCapture = (imageDataUrl: string) => {
@@ -437,9 +523,26 @@ const Medical = () => {
           <div className="lg:col-span-1">
             <Card className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 h-full">
               <CardHeader>
-                <CardTitle className="flex items-center">
-                  <CalendarIcon className="h-5 w-5 mr-2 text-purple-500" />
-                  Medical Calendar
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <CalendarIcon className="h-5 w-5 mr-2 text-purple-500" />
+                    Medical Calendar
+                  </div>
+                  
+                  {/* Reminders indicator */}
+                  {activeRemindersCount > 0 && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex items-center gap-1" 
+                      onClick={() => setShowRemindersDialog(true)}
+                    >
+                      <BellRing className="h-4 w-4 text-amber-500" />
+                      <span className="bg-amber-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                        {activeRemindersCount}
+                      </span>
+                    </Button>
+                  )}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -498,21 +601,38 @@ const Medical = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="block md:hidden mb-4">
-                  <Select
-                    value={selectedTab}
-                    onValueChange={setSelectedTab}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select view" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="date">By Date</SelectItem>
-                      <SelectItem value="upcoming">Upcoming</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                      <SelectItem value="all">All Records</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="block md:hidden w-full">
+                    <Select
+                      value={selectedTab}
+                      onValueChange={setSelectedTab}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select view" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="date">By Date</SelectItem>
+                        <SelectItem value="upcoming">Upcoming</SelectItem>
+                        <SelectItem value="completed">Completed</SelectItem>
+                        <SelectItem value="all">All Records</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {/* Reminders button for mobile */}
+                  {activeRemindersCount > 0 && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex items-center gap-1 md:hidden ml-2 flex-shrink-0" 
+                      onClick={() => setShowRemindersDialog(true)}
+                    >
+                      <BellRing className="h-4 w-4 text-amber-500" />
+                      <span className="bg-amber-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                        {activeRemindersCount}
+                      </span>
+                    </Button>
+                  )}
                 </div>
                 
                 <div className="hidden md:block">
@@ -590,7 +710,8 @@ const Medical = () => {
                                     }>
                                       {record.type.charAt(0).toUpperCase() + record.type.slice(1)}
                                     </Badge>
-                                    {record.reminder && !record.completed && (
+                                    {record.reminder && !record.completed && 
+                                     reminders.some(r => r.recordId === record.id && !r.dismissed) && (
                                       <Badge variant="outline" className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 border-blue-300 dark:border-blue-700">
                                         <BellRing className="h-3 w-3 mr-1" />
                                         Reminder
@@ -719,6 +840,95 @@ const Medical = () => {
           </div>
         </div>
       </div>
+
+      {/* Reminders Dialog */}
+      <Dialog open={showRemindersDialog} onOpenChange={setShowRemindersDialog}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <BellRing className="h-5 w-5 mr-2 text-amber-500" />
+              Medical Reminders
+            </DialogTitle>
+            <DialogDescription>
+              Your upcoming medical reminders and appointments
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {reminders.filter(r => !r.dismissed).length === 0 ? (
+              <div className="text-center py-6">
+                <BellRing className="mx-auto h-10 w-10 text-gray-400 mb-3" />
+                <p className="text-gray-500">No active reminders</p>
+              </div>
+            ) : (
+              <ScrollArea className="h-[300px] pr-2">
+                <div className="space-y-3">
+                  {reminders
+                    .filter(r => !r.dismissed)
+                    .map(reminder => {
+                      const record = getRecordFromReminder(reminder.recordId);
+                      if (!record) return null;
+                      
+                      return (
+                        <div 
+                          key={reminder.id}
+                          className="flex items-start justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
+                        >
+                          <div className="flex items-start space-x-3">
+                            <div className="pt-1">
+                              {record && getRecordIcon(record.type)}
+                            </div>
+                            <div>
+                              <h3 className="font-medium">{reminder.title}</h3>
+                              <p className="text-sm text-gray-500 dark:text-gray-400">
+                                {format(new Date(reminder.date), "MMMM d, yyyy")}
+                                {reminder.time && ` at ${reminder.time}`}
+                              </p>
+                              {record && record.type === "appointment" && (
+                                <p className="text-xs text-gray-500 mt-1">
+                                  {record.doctor && `Dr. ${record.doctor}`}
+                                  {record.doctor && record.location && ` • `}
+                                  {record.location}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => dismissReminder(reminder.id)}
+                            title="Dismiss reminder"
+                            className="flex-shrink-0"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      );
+                    })}
+                </div>
+              </ScrollArea>
+            )}
+          </div>
+          
+          <DialogFooter className="flex justify-between sm:justify-between">
+            <Button
+              variant="outline"
+              onClick={() => setShowRemindersDialog(false)}
+            >
+              Close
+            </Button>
+            {reminders.filter(r => !r.dismissed).length > 0 && (
+              <Button
+                variant="default"
+                onClick={dismissAllReminders}
+              >
+                Dismiss All
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <CameraCapture 
         open={cameraOpen} 
