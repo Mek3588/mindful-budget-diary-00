@@ -21,7 +21,8 @@ export const themes: Theme[] = [
       calendar: '#3B82F6',
       security: '#4A5568',
       settings: '#9333EA',
-      goals: '#F59E0B'
+      goals: '#F59E0B',
+      medical: '#EC4899'
     },
     stickerColors: {
       mood: {
@@ -42,7 +43,7 @@ export const themes: Theme[] = [
       }
     }
   },
-  // Rose Garden theme
+  // Rose Garden theme (updated to match screenshot)
   {
     id: 'rose-garden',
     name: 'Rose Garden',
@@ -56,12 +57,13 @@ export const themes: Theme[] = [
     },
     pageColors: {
       diary: '#FFDEE2',
-      budget: '#F2FCE2',
+      budget: '#F2FCE2', 
       notes: '#E5DEFF',
       calendar: '#D3E4FD',
       security: '#D3E4FD',
       settings: '#D6BCFA',
-      goals: '#FDE1D3'
+      goals: '#FDE1D3',
+      medical: '#FDF2F8'
     },
     stickerColors: {
       mood: {

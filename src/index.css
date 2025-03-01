@@ -187,7 +187,7 @@
   background-color: var(--menu-settings-dark-color) !important;
 }
 
-/* Improved menu styles with opaque backgrounds */
+/* Fixed popup and dialog styles for better visibility */
 .radix-dropdown-content,
 .radix-popover-content,
 .radix-dialog-content {
@@ -207,6 +207,23 @@
 [data-state="open"].radix-popover-content {
   background-color: hsl(var(--background)) !important;
   backdrop-filter: none !important;
+}
+
+/* Dialog background overlay fix */
+[data-radix-dialog-overlay] {
+  background-color: rgba(0, 0, 0, 0.75) !important; /* Darker overlay */
+}
+
+/* Improved dialog content scrolling */
+[data-radix-dialog-content] {
+  max-height: 85vh !important;
+  overflow-y: auto !important;
+}
+
+/* Ensure Medical dialog fits and scrolls properly */
+.sm\:max-w-\[600px\] {
+  max-height: 85vh !important;
+  overflow-y: auto !important;
 }
 
 /* Sheet content needs to be opaque */
@@ -278,4 +295,10 @@
 
 .dropdown-menu-item {
   @apply cursor-pointer px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 !important;
+}
+
+/* Improved dialog content - ensure proper scrolling */
+.DialogContent {
+  max-height: 85vh !important;
+  overflow-y: auto !important;
 }
