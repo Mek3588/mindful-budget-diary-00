@@ -50,6 +50,26 @@
     --sidebar-border: 220 13% 91%;
 
     --sidebar-ring: 217.2 91.2% 59.8%;
+    
+    /* Menu item colors */
+    --menu-diary-color: #FFDEE2;
+    --menu-budget-color: #F2FCE2;
+    --menu-notes-color: #E5DEFF;
+    --menu-calendar-color: #D3E4FD;
+    --menu-goals-color: #FDE1D3;
+    --menu-medical-color: #FDF2F8;
+    --menu-security-color: #D3E4FD;
+    --menu-settings-color: #D6BCFA;
+    
+    /* Dark mode menu colors */
+    --menu-diary-dark-color: #2D3748;
+    --menu-budget-dark-color: #2D3748;
+    --menu-notes-dark-color: #2D3748;
+    --menu-calendar-dark-color: #2D3748;
+    --menu-goals-dark-color: #2D3748;
+    --menu-medical-dark-color: #2D3748;
+    --menu-security-dark-color: #2D3748;
+    --menu-settings-dark-color: #2D3748;
   }
 
   .dark {
@@ -99,6 +119,72 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Menu item styling */
+.menu-item-diary {
+  background-color: var(--menu-diary-color) !important;
+}
+
+.menu-item-budget {
+  background-color: var(--menu-budget-color) !important;
+}
+
+.menu-item-notes {
+  background-color: var(--menu-notes-color) !important;
+}
+
+.menu-item-calendar {
+  background-color: var(--menu-calendar-color) !important;
+}
+
+.menu-item-goals {
+  background-color: var(--menu-goals-color) !important;
+}
+
+.menu-item-medical {
+  background-color: var(--menu-medical-color) !important;
+}
+
+.menu-item-security {
+  background-color: var(--menu-security-color) !important;
+}
+
+.menu-item-settings {
+  background-color: var(--menu-settings-color) !important;
+}
+
+/* Dark mode versions */
+.dark .menu-item-diary {
+  background-color: var(--menu-diary-dark-color) !important;
+}
+
+.dark .menu-item-budget {
+  background-color: var(--menu-budget-dark-color) !important;
+}
+
+.dark .menu-item-notes {
+  background-color: var(--menu-notes-dark-color) !important;
+}
+
+.dark .menu-item-calendar {
+  background-color: var(--menu-calendar-dark-color) !important;
+}
+
+.dark .menu-item-goals {
+  background-color: var(--menu-goals-dark-color) !important;
+}
+
+.dark .menu-item-medical {
+  background-color: var(--menu-medical-dark-color) !important;
+}
+
+.dark .menu-item-security {
+  background-color: var(--menu-security-dark-color) !important;
+}
+
+.dark .menu-item-settings {
+  background-color: var(--menu-settings-dark-color) !important;
 }
 
 /* Improved menu styles with opaque backgrounds */

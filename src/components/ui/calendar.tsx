@@ -1,7 +1,7 @@
 
 import * as React from "react";
 import { ChevronLeft, ChevronRight, Dot } from "lucide-react";
-import { DayPicker } from "react-day-picker";
+import { DayPicker, DayContentProps } from "react-day-picker";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import { useMobile } from "@/hooks/use-mobile";
@@ -63,9 +63,9 @@ function Calendar({
       components={{
         IconLeft: () => <ChevronLeft className="h-5 w-5" />,
         IconRight: () => <ChevronRight className="h-5 w-5" />,
-        DayContent: (props) => (
+        DayContent: (props: DayContentProps) => (
           <div className="relative w-full h-full flex flex-col items-center justify-center">
-            <span>{props.day.getDate()}</span>
+            <span>{props.date.getDate()}</span>
             {props.displayMonth && props.activeModifiers.outside === true ? null : (
               <>
                 {props.activeModifiers.has_event && (

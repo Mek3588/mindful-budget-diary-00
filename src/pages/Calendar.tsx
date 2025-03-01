@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
@@ -85,7 +84,6 @@ const Calendar = () => {
 
   const [isEditMode, setIsEditMode] = useState(false);
   
-  // Date range selection
   const [dateRange, setDateRange] = useState<{
     from: Date | undefined;
     to: Date | undefined;
@@ -184,17 +182,14 @@ const Calendar = () => {
     setCurrentMonth(new Date());
   };
 
-  // Function to determine dates with events
   const getEventsForDate = (date: Date) => {
     return events.filter(event => isSameDay(new Date(event.date), date));
   };
 
-  // Function to check if a date has any events
   const hasEventsOnDate = (date: Date) => {
     return getEventsForDate(date).length > 0;
   };
 
-  // Custom modifiers for the calendar to show dots for dates with events
   const modifiers = {
     has_event: (date: Date) => hasEventsOnDate(date)
   };
@@ -205,7 +200,6 @@ const Calendar = () => {
       setSelectedEvent(eventsOnDate[0]);
       setShowEventDetailsDialog(true);
     } else {
-      // Open add event dialog when clicking on a date with no events
       setNewEvent({
         ...newEvent,
         date: date
@@ -327,12 +321,9 @@ const Calendar = () => {
     }
   };
 
-  // Filter events based on active category filters and date range
   const filteredEvents = events.filter(event => {
-    // Check if the event's category is in the active filters
     const categoryMatches = activeFilters.includes(event.category);
     
-    // Check if the event's date is within the selected date range
     let dateMatches = true;
     if (dateRange.from && dateRange.to) {
       const eventDate = new Date(event.date);
@@ -391,7 +382,6 @@ const Calendar = () => {
                 </div>
               </div>
               
-              {/* Date Range Selector */}
               <div className="mb-4 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <CalendarDays className="h-4 w-4" />
@@ -415,7 +405,7 @@ const Calendar = () => {
               <CalendarComponent
                 mode="range"
                 selected={dateRange}
-                onSelect={(range) => range && setDateRange(range)}
+                onSelect={(range) => setDateRange(range || { from: undefined, to: undefined })}
                 month={startOfMonth(currentMonth)}
                 onDayClick={handleDayClick}
                 className="rounded-md border"

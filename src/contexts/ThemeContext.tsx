@@ -65,6 +65,24 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
       document.documentElement.classList.remove('dark');
       document.documentElement.setAttribute('data-theme', 'light');
     }
+    
+    // Make sure menu colors are properly set for the homepage
+    const menuColors = {
+      'diary': '#FFDEE2',
+      'budget': '#F2FCE2',
+      'notes': '#E5DEFF',
+      'calendar': '#D3E4FD',
+      'goals': '#FDE1D3',
+      'medical': '#FDF2F8',
+      'security': '#D3E4FD',
+      'settings': '#D6BCFA'
+    };
+    
+    // Apply these colors to CSS variables for use in menu items
+    Object.entries(menuColors).forEach(([key, value]) => {
+      document.documentElement.style.setProperty(`--menu-${key}-color`, value);
+      document.documentElement.style.setProperty(`--menu-${key}-dark-color`, currentTheme.type === 'masculine' ? '#2D3748' : value);
+    });
   }, [currentTheme]);
 
   return (
