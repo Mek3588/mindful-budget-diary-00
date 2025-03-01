@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { CalendarIcon, Check, ChevronLeft, ChevronRight, настроение } from 'lucide-react';
+import { CalendarIcon, Check, ChevronLeft, ChevronRight } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, isSameDay, isSameMonth, addMonths, subMonths } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -194,6 +195,7 @@ const Diary = () => {
         formattedDate = format(day, dateFormat);
         const cloneDay = day;
         const isSelected = isSameDay(day, selectedDate);
+        // Fixed: Converting Date to string for key comparison
         const hasEntry = diaryEntries.some(entry => isSameDay(entry.date, day));
         const dayClasses = cn(
           "text-sm rounded-full w-9 h-9 flex items-center justify-center hover:bg-accent hover:text-accent-foreground focus:outline-none",
@@ -207,7 +209,7 @@ const Diary = () => {
         days.push(
           <div
             className="col cell"
-            key={day}
+            key={day.toString()} // Fixed: Converting Date to string for key
           >
             {isSameMonth(day, monthStart) ? (
               <Button
@@ -231,7 +233,7 @@ const Diary = () => {
         day = new Date(day.getFullYear(), day.getMonth(), day.getDate() + 1);
       }
       rows.push(
-        <div className="row" key={day}>
+        <div className="row" key={day.toString()}> {/* Fixed: Converting Date to string for key */}
           {days}
         </div>
       );
