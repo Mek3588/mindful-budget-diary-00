@@ -61,7 +61,7 @@ export function PinDialog({ onSuccess }: PinDialogProps) {
       if (!open) return;
       setIsOpen(open);
     }}>
-      <DialogContent className="bg-gray-800 border-purple-500/30 text-white shadow-xl shadow-purple-500/10 rounded-xl">
+      <DialogContent className="bg-gray-900 border-purple-500/30 text-white shadow-xl shadow-purple-500/10 rounded-xl">
         <DialogHeader>
           <div className="flex flex-col items-center mb-4">
             <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-3 rounded-full mb-4">

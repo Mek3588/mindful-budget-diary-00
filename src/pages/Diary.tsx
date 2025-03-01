@@ -6,14 +6,22 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { 
   ArrowLeft, Calendar as CalendarIcon, Save, Trash2, 
-  Edit, ChevronLeft, ChevronRight, Mic, Camera, Image as ImageIcon
+  Edit, ChevronLeft, ChevronRight, Mic, Camera, Image as ImageIcon,
+  ChevronDown, ChevronUp, Search, Filter, Calendar
 } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
-import { format, isSameDay, parseISO } from "date-fns";
+import { format, isSameDay, parseISO, startOfMonth, endOfMonth } from "date-fns";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
 import VoiceToText from "@/components/VoiceToText";
 import CameraCapture from "@/components/CameraCapture";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { 
+  Collapsible, 
+  CollapsibleContent, 
+  CollapsibleTrigger 
+} from "@/components/ui/collapsible";
 
 // Mood types definition
 type MoodType = "happy" | "calm" | "sad" | "angry" | "anxious";
@@ -67,7 +75,15 @@ const Diary = () => {
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [images, setImages] = useState<string[]>([]);
   const [showCamera, setShowCamera] = useState(false);
-
+  const [showMoodSelector, setShowMoodSelector] = useState(false);
+  const [showEnergySelector, setShowEnergySelector] = useState(false);
+  const [showStatsDialog, setShowStatsDialog] = useState(false);
+  const [showCalendarDialog, setShowCalendarDialog] = useState(false);
+  const [filterStartDate, setFilterStartDate] = useState<Date>(startOfMonth(new Date()));
+  const [filterEndDate, setFilterEndDate] = useState<Date>(endOfMonth(new Date()));
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showFilterOptions, setShowFilterOptions] = useState(false);
+  
   // Load entries from localStorage on component mount
   useEffect(() => {
     const savedEntries = localStorage.getItem('diary-entries');
@@ -240,6 +256,23 @@ const Diary = () => {
     setImages(newImages);
   };
 
+  // Filter entries based on search and date range
+  const filteredEntries = entries.filter(entry => {
+    const entryDate = parseISO(entry.date);
+    const matchesDateRange = entryDate >= filterStartDate && entryDate <= filterEndDate;
+    const matchesSearchTerm = entry.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      entry.mood.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      entry.energy.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    return matchesDateRange && matchesSearchTerm;
+  });
+
+  // Set date filter
+  const handleDateFilterChange = (startDate: Date | undefined, endDate: Date | undefined) => {
+    if (startDate) setFilterStartDate(startDate);
+    if (endDate) setFilterEndDate(endDate);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-white dark:from-gray-900 dark:to-gray-800">
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-lg border-b border-gray-200 dark:bg-gray-900/80 dark:border-gray-700">
@@ -256,20 +289,46 @@ const Diary = () => {
               </Button>
               <h1 className="text-xl font-semibold">Personal Diary</h1>
             </div>
+            <div className="flex items-center space-x-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setShowStatsDialog(true)}
+                className="hidden sm:flex"
+              >
+                <ChevronUp className="h-4 w-4 mr-1" />
+                Mood Stats
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setShowCalendarDialog(true)}
+              >
+                <Calendar className="h-4 w-4 mr-1" />
+                Calendar
+              </Button>
+            </div>
           </div>
         </div>
       </nav>
 
-      <main className="pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          <div className="md:col-span-2 lg:col-span-2 space-y-6">
-            <Card className="p-6 bg-white/50 backdrop-blur-sm dark:bg-gray-800/50">
-              <div className="space-y-4">
+      <main className="pt-20 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <Card className="p-6 bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 mb-6">
+          <Collapsible>
+            <div className="flex justify-between items-center">
+              <h2 className="text-lg font-medium">
+                {editingEntryId ? "Edit Entry" : "New Entry"}
+              </h2>
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </CollapsibleTrigger>
+            </div>
+            
+            <CollapsibleContent>
+              <div className="space-y-4 mt-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <h2 className="text-lg font-medium">
-                    {editingEntryId ? "Edit Entry" : "New Entry"}
-                  </h2>
-                  
                   <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
                     <PopoverTrigger asChild>
                       <Button
@@ -280,7 +339,7 @@ const Diary = () => {
                         <span>{format(selectedDate, "MMM d, yyyy")}</span>
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
+                    <PopoverContent className="w-auto p-0 bg-gray-900">
                       <Calendar
                         mode="single"
                         selected={selectedDate}
@@ -300,40 +359,76 @@ const Diary = () => {
                   onChange={(e) => setContent(e.target.value)}
                 />
                 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Mood</label>
-                    <div className="flex flex-wrap gap-2">
-                      {Object.entries(moodEmojis).map(([mood, emoji]) => (
-                        <Button
-                          key={mood}
-                          variant={selectedMood === mood ? "default" : "outline"}
-                          className="flex-1"
-                          onClick={() => setSelectedMood(mood as MoodType)}
-                        >
-                          <span className="text-xl mr-1">{emoji}</span>
-                          <span className="capitalize">{mood}</span>
+                <div className="space-y-4">
+                  <Collapsible open={showMoodSelector} onOpenChange={setShowMoodSelector}>
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium">Current Mood:</span>
+                        <span className="flex items-center">
+                          <span className="text-xl mr-1">{moodEmojis[selectedMood]}</span>
+                          <span className="capitalize">{selectedMood}</span>
+                        </span>
+                      </div>
+                      <CollapsibleTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          {showMoodSelector ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                         </Button>
-                      ))}
+                      </CollapsibleTrigger>
                     </div>
-                  </div>
+                    
+                    <CollapsibleContent>
+                      <div className="grid grid-cols-3 gap-2 mt-2">
+                        {Object.entries(moodEmojis).map(([mood, emoji]) => (
+                          <Button
+                            key={mood}
+                            variant={selectedMood === mood ? "default" : "outline"}
+                            onClick={() => {
+                              setSelectedMood(mood as MoodType);
+                              setShowMoodSelector(false);
+                            }}
+                          >
+                            <span className="text-xl mr-1">{emoji}</span>
+                            <span className="capitalize">{mood}</span>
+                          </Button>
+                        ))}
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
                   
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Energy Level</label>
-                    <div className="flex flex-wrap gap-2">
-                      {Object.entries(energyEmojis).map(([energy, emoji]) => (
-                        <Button
-                          key={energy}
-                          variant={selectedEnergy === energy ? "default" : "outline"}
-                          className="flex-1"
-                          onClick={() => setSelectedEnergy(energy as EnergyType)}
-                        >
-                          <span className="text-xl mr-1">{emoji}</span>
-                          <span className="capitalize">{energy}</span>
+                  <Collapsible open={showEnergySelector} onOpenChange={setShowEnergySelector}>
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium">Energy Level:</span>
+                        <span className="flex items-center">
+                          <span className="text-xl mr-1">{energyEmojis[selectedEnergy]}</span>
+                          <span className="capitalize">{selectedEnergy}</span>
+                        </span>
+                      </div>
+                      <CollapsibleTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          {showEnergySelector ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                         </Button>
-                      ))}
+                      </CollapsibleTrigger>
                     </div>
-                  </div>
+                    
+                    <CollapsibleContent>
+                      <div className="grid grid-cols-3 gap-2 mt-2">
+                        {Object.entries(energyEmojis).map(([energy, emoji]) => (
+                          <Button
+                            key={energy}
+                            variant={selectedEnergy === energy ? "default" : "outline"}
+                            onClick={() => {
+                              setSelectedEnergy(energy as EnergyType);
+                              setShowEnergySelector(false);
+                            }}
+                          >
+                            <span className="text-xl mr-1">{emoji}</span>
+                            <span className="capitalize">{energy}</span>
+                          </Button>
+                        ))}
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
                 </div>
                 
                 <div className="space-y-3">
@@ -410,79 +505,179 @@ const Diary = () => {
                   </Button>
                 </div>
               </div>
-            </Card>
+            </CollapsibleContent>
+          </Collapsible>
+        </Card>
             
-            <div className="space-y-6">
-              <h2 className="text-lg font-medium">Previous Entries</h2>
-              
-              {entries.length === 0 ? (
-                <Card className="p-6 bg-white/50 backdrop-blur-sm dark:bg-gray-800/50">
-                  <p className="text-center text-muted-foreground">No entries yet. Create your first diary entry above.</p>
-                </Card>
-              ) : (
-                entries.map(entry => (
-                  <Card key={entry.id} className="p-6 bg-white/50 backdrop-blur-sm dark:bg-gray-800/50">
-                    <div className="space-y-4">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="text-sm text-muted-foreground">
-                            {format(parseISO(entry.date), "MMMM d, yyyy 'at' h:mm a")}
-                          </p>
-                          <div className="flex items-center gap-2 mt-1">
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-lg font-medium">Previous Entries</h2>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setShowFilterOptions(!showFilterOptions)}
+              className="flex items-center gap-1"
+            >
+              <Filter className="h-4 w-4" />
+              <span className="hidden sm:inline">Filter</span>
+            </Button>
+          </div>
+          
+          {showFilterOptions && (
+            <Card className="p-4 bg-white/50 backdrop-blur-sm dark:bg-gray-800/50">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Search in entries</label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search entries..."
+                      className="pl-10"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">From</label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className="w-full justify-start text-left">
+                          <CalendarIcon className="h-4 w-4 mr-2" />
+                          {format(filterStartDate, "PPP")}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 bg-gray-900" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={filterStartDate}
+                          onSelect={(date) => date && handleDateFilterChange(date, undefined)}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium mb-1">To</label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className="w-full justify-start text-left">
+                          <CalendarIcon className="h-4 w-4 mr-2" />
+                          {format(filterEndDate, "PPP")}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 bg-gray-900" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={filterEndDate}
+                          onSelect={(date) => date && handleDateFilterChange(undefined, date)}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )}
+          
+          {filteredEntries.length === 0 ? (
+            <Card className="p-6 bg-white/50 backdrop-blur-sm dark:bg-gray-800/50">
+              <p className="text-center text-muted-foreground">No entries found. Adjust your filters or create a new entry.</p>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {filteredEntries.map(entry => (
+                <Collapsible key={entry.id}>
+                  <Card className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 overflow-hidden">
+                    <CollapsibleTrigger asChild>
+                      <div className="p-4 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                          <div className="flex">
                             <span className="text-xl" title={`Mood: ${entry.mood}`}>
                               {moodEmojis[entry.mood]}
                             </span>
-                            <span className="text-xl" title={`Energy: ${entry.energy}`}>
+                            <span className="text-xl ml-1" title={`Energy: ${entry.energy}`}>
                               {energyEmojis[entry.energy]}
                             </span>
                           </div>
+                          <div>
+                            <p className="font-medium truncate max-w-[200px] sm:max-w-[300px]">
+                              {entry.content.substring(0, 30)}
+                              {entry.content.length > 30 ? "..." : ""}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {format(parseISO(entry.date), "MMM d, yyyy")}
+                            </p>
+                          </div>
+                        </div>
+                        <ChevronDown className="h-4 w-4 transition-transform ui-expanded:rotate-180" />
+                      </div>
+                    </CollapsibleTrigger>
+                    
+                    <CollapsibleContent>
+                      <div className="p-4 pt-0 border-t dark:border-gray-700">
+                        <div className="flex justify-between items-start mb-2">
+                          <p className="text-sm text-muted-foreground">
+                            {format(parseISO(entry.date), "MMMM d, yyyy 'at' h:mm a")}
+                          </p>
+                          <div className="flex gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleEditEntry(entry.id)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDeleteEntry(entry.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
                         
-                        <div className="flex gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleEditEntry(entry.id)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDeleteEntry(entry.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
+                        <p className="whitespace-pre-wrap my-2">{entry.content}</p>
+                        
+                        {entry.images && entry.images.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {entry.images.map((image, index) => (
+                              <div key={index} className="w-20 h-20 rounded-md overflow-hidden">
+                                <img 
+                                  src={image} 
+                                  alt={`Entry ${index}`} 
+                                  className="w-full h-full object-cover" 
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                      
-                      <p className="whitespace-pre-wrap">{entry.content}</p>
-                      
-                      {entry.images && entry.images.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mt-2">
-                          {entry.images.map((image, index) => (
-                            <div key={index} className="w-20 h-20 rounded-md overflow-hidden">
-                              <img 
-                                src={image} 
-                                alt={`Entry ${index}`} 
-                                className="w-full h-full object-cover" 
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                    </CollapsibleContent>
                   </Card>
-                ))
-              )}
+                </Collapsible>
+              ))}
             </div>
-          </div>
+          )}
+        </div>
+      </main>
+
+      {/* Stats Dialog */}
+      <Dialog open={showStatsDialog} onOpenChange={setShowStatsDialog}>
+        <DialogContent className="bg-gray-900 text-white border-purple-500/30">
+          <DialogHeader>
+            <DialogTitle className="text-white">Mood & Energy Statistics</DialogTitle>
+          </DialogHeader>
           
           <div className="space-y-6">
-            <Card className="p-6 bg-white/50 backdrop-blur-sm dark:bg-gray-800/50">
-              <h2 className="text-lg font-medium mb-4">Mood Trends</h2>
-              
+            <div>
+              <h3 className="text-lg font-medium mb-4">Mood Trends</h3>
               <div className="space-y-3">
                 {Object.entries(moodStats).map(([mood, count]) => (
                   <div key={mood} className="space-y-1">
@@ -493,18 +688,19 @@ const Diary = () => {
                       </span>
                       <span className="text-sm font-medium">{calculatePercentage(count)}%</span>
                     </div>
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <div className="w-full bg-gray-700 rounded-full h-2">
                       <div
-                        className="bg-primary h-2 rounded-full"
+                        className="bg-gradient-to-r from-purple-600 to-pink-600 h-2 rounded-full"
                         style={{ width: `${calculatePercentage(count)}%` }}
                       ></div>
                     </div>
                   </div>
                 ))}
               </div>
-              
-              <h2 className="text-lg font-medium mt-6 mb-4">Energy Levels</h2>
-              
+            </div>
+            
+            <div>
+              <h3 className="text-lg font-medium mb-4">Energy Levels</h3>
               <div className="space-y-3">
                 {Object.entries(energyStats).map(([energy, count]) => (
                   <div key={energy} className="space-y-1">
@@ -515,29 +711,45 @@ const Diary = () => {
                       </span>
                       <span className="text-sm font-medium">{calculatePercentage(count)}%</span>
                     </div>
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <div className="w-full bg-gray-700 rounded-full h-2">
                       <div
-                        className="bg-primary h-2 rounded-full"
+                        className="bg-gradient-to-r from-purple-600 to-pink-600 h-2 rounded-full"
                         style={{ width: `${calculatePercentage(count)}%` }}
                       ></div>
                     </div>
                   </div>
                 ))}
               </div>
-            </Card>
-            
-            <Card className="p-6 bg-white/50 backdrop-blur-sm dark:bg-gray-800/50">
-              <h2 className="text-lg font-medium mb-4">Calendar Navigation</h2>
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={handleDaySelect}
-                className="rounded-md border"
-              />
-            </Card>
+            </div>
           </div>
-        </div>
-      </main>
+        </DialogContent>
+      </Dialog>
+
+      {/* Calendar Dialog */}
+      <Dialog open={showCalendarDialog} onOpenChange={setShowCalendarDialog}>
+        <DialogContent className="bg-gray-900 text-white border-purple-500/30">
+          <DialogHeader>
+            <DialogTitle className="text-white">Calendar Navigation</DialogTitle>
+          </DialogHeader>
+          
+          <Calendar
+            mode="single"
+            selected={selectedDate}
+            onSelect={(date) => {
+              if (date) {
+                setSelectedDate(date);
+                setShowCalendarDialog(false);
+                // Filter to show entries for this date
+                const formattedDate = format(date, "yyyy-MM-dd");
+                setFilterStartDate(new Date(formattedDate));
+                setFilterEndDate(new Date(formattedDate + "T23:59:59"));
+                setShowFilterOptions(true);
+              }
+            }}
+            className="rounded-md border"
+          />
+        </DialogContent>
+      </Dialog>
 
       <CameraCapture 
         open={showCamera} 
