@@ -36,7 +36,7 @@ function Calendar({
         head_row: "flex",
         head_cell: cn(
           "text-purple-200 rounded-md font-normal text-[0.8rem] h-8 flex items-center justify-center",
-          isMobile ? "w-9" : "w-12 sm:w-16"
+          isMobile ? "w-9" : "w-10 sm:w-12"
         ),
         row: "flex w-full mt-2",
         cell: cn(
@@ -48,7 +48,7 @@ function Calendar({
         day: cn(
           buttonVariants({ variant: "ghost" }),
           "font-normal text-gray-100 aria-selected:opacity-100 hover:bg-gradient-to-br hover:from-purple-800/30 hover:to-pink-800/30 hover:text-white transition-all duration-200",
-          isMobile ? "h-8 w-8 sm:h-10 sm:w-10 p-0 text-xs" : "h-10 w-10 sm:h-16 sm:w-16 p-0"
+          isMobile ? "h-8 w-8 p-0 text-xs" : "h-8 w-8 sm:h-10 sm:w-10 p-0 text-sm"
         ),
         day_selected:
           "bg-gradient-to-br from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 hover:text-white focus:from-purple-700 focus:to-pink-700 focus:text-white shadow-lg shadow-purple-500/20",
@@ -61,8 +61,8 @@ function Calendar({
         ...classNames,
       }}
       components={{
-        IconLeft: () => <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />,
-        IconRight: () => <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />,
+        IconLeft: () => <ChevronLeft className="h-4 w-4" />,
+        IconRight: () => <ChevronRight className="h-4 w-4" />,
         DayContent: (props) => {
           // Extract date from props to show event indicator
           const date = props.date;
@@ -73,7 +73,7 @@ function Calendar({
             <div className="relative w-full h-full flex flex-col items-center justify-center">
               <span>{date.getDate()}</span>
               {hasEvent && (
-                <Dot className="h-2 w-2 sm:h-3 sm:w-3 text-purple-400 absolute bottom-0" />
+                <Dot className="h-2 w-2 text-purple-400 absolute bottom-0" />
               )}
             </div>
           );

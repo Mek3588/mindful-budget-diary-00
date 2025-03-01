@@ -16,7 +16,6 @@ import {
 } from "@/components/ui/select";
 import { 
   ArrowLeft, 
-  ChevronLeft, 
   ChevronRight, 
   Plus, 
   X, 
@@ -25,12 +24,23 @@ import {
   Trash,
   Sticker,
   CalendarDays,
-  Filter
+  Filter,
+  Menu
 } from "lucide-react";
 import { format, addMonths, subMonths, isSameDay, startOfMonth, isWithinInterval, endOfMonth, parseISO } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { DateRange } from "react-day-picker";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 type EventCategory = 'personal' | 'work' | 'health' | 'birthday' | 'note' | 'diary' | 'goal' | 'medical';
 
@@ -84,6 +94,7 @@ const Calendar = () => {
   const [stickerDate, setStickerDate] = useState<Date>(new Date());
   
   const [selectedCategory, setSelectedCategory] = useState<EventCategory | "all">("all");
+  const [showCategoriesPopover, setShowCategoriesPopover] = useState(false);
   
   const commonEmojis = ["😊", "😂", "❤️", "👍", "🎉", "🎂", "🏆", "⭐", "🔥", "💯", "🙏", "✅", "💪"];
 
@@ -135,8 +146,8 @@ const Calendar = () => {
       // Add events from other sources, ensuring no duplicate IDs
       const processSources = (source: any[], category: EventCategory, prefix: string) => {
         if (!source || !Array.isArray(source)) return [];
-        return source.map((item: any) => {
-          const id = `${prefix}-${item.id}`;
+        return source.map((item: any, index: number) => {
+          const id = `${prefix}-${item.id || index}-${Date.now()}`;
           // Check if this event already exists in allEvents
           if (allEvents.some(e => e.id === id)) return null;
           
@@ -174,10 +185,7 @@ const Calendar = () => {
       if (savedMedical) {
         const medical = JSON.parse(savedMedical);
         // Generate unique keys for medical events to avoid duplicates
-        const medicalEvents = processSources(medical, 'medical', 'medical').map((event, index) => ({
-          ...event,
-          id: `medical-${index}-${Date.now()}`
-        }));
+        const medicalEvents = processSources(medical, 'medical', 'medical');
         allEvents = [...allEvents, ...medicalEvents];
       }
       
@@ -212,7 +220,13 @@ const Calendar = () => {
   };
 
   const goToToday = () => {
-    setCurrentMonth(new Date());
+    const today = new Date();
+    setCurrentMonth(today);
+    // Also update dateRange to show current month
+    setDateRange({
+      from: startOfMonth(today),
+      to: endOfMonth(today)
+    });
   };
 
   const getEventsForDate = (date: Date) => {
@@ -311,20 +325,17 @@ const Calendar = () => {
   };
 
   const handleAddStickerToEvent = (eventId: string) => {
-    setStickerDate(new Date());
-    setShowStickerDialog(true);
-    setSelectedEvent(events.find(event => event.id === eventId) || null);
+    const event = events.find(event => event.id === eventId);
+    if (event) {
+      setStickerDate(new Date(event.date));
+      setShowStickerDialog(true);
+      setSelectedEvent(event);
+    }
   };
 
   const handleSaveSticker = () => {
-    const sticker: Sticker = {
-      id: Date.now().toString(),
-      emoji: stickerEmoji,
-      date: stickerDate,
-      position: { x: 50, y: 50 }
-    };
-
     if (selectedEvent) {
+      // Add sticker to event
       const updatedEvents = events.map(event => 
         event.id === selectedEvent.id ? {
           ...event,
@@ -335,7 +346,16 @@ const Calendar = () => {
       setEvents(updatedEvents);
       localStorage.setItem('calendar-events', JSON.stringify(updatedEvents));
       toast.success(`Sticker added to "${selectedEvent.title}"`);
+      setSelectedEvent(null);
     } else {
+      // Add standalone sticker
+      const sticker: Sticker = {
+        id: Date.now().toString(),
+        emoji: stickerEmoji,
+        date: stickerDate,
+        position: { x: 50, y: 50 }
+      };
+      
       setStickers([...stickers, sticker]);
       localStorage.setItem('calendar-stickers', JSON.stringify([...stickers, sticker]));
       toast.success("Sticker added to calendar!");
@@ -343,7 +363,6 @@ const Calendar = () => {
     
     setShowStickerDialog(false);
     setStickerEmoji("😊");
-    setSelectedEvent(null);
   };
 
   // Reset date range to current month
@@ -406,53 +425,51 @@ const Calendar = () => {
       </nav>
 
       <main className="pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-3">
-          <div className="lg:col-span-2 space-y-6">
+        <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-7">
+          {/* Main Calendar Section - Takes 5/7 of the grid on large screens */}
+          <div className="lg:col-span-5 space-y-6">
             <Card className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-4 sm:p-6">
               <div className="flex flex-wrap items-center justify-between mb-4 gap-2">
-                <div>
+                <div className="flex items-center space-x-2">
                   <h2 className="text-lg font-semibold">
                     {format(currentMonth, "MMMM yyyy")}
                   </h2>
+                  <div className="flex items-center space-x-2">
+                    <Button variant="outline" size="icon" onClick={prevMonth} aria-label="Previous month">
+                      <ChevronRight className="h-4 w-4 rotate-180" />
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={goToToday}>
+                      Today
+                    </Button>
+                    <Button variant="outline" size="icon" onClick={nextMonth} aria-label="Next month">
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Button variant="outline" size="icon" onClick={prevMonth}>
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" size="icon" onClick={nextMonth}>
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={goToToday}>
-                    Today
-                  </Button>
-                </div>
-              </div>
-              
-              <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+                
                 <div className="flex items-center gap-2">
-                  <CalendarDays className="h-4 w-4" />
-                  <span className="text-sm">
-                    {dateRange.from ? format(dateRange.from, "MMM d, yyyy") : "Select start date"} 
-                    {dateRange.to ? ` - ${format(dateRange.to, "MMM d, yyyy")}` : ""}
+                  <span className="text-sm hidden sm:inline-block">
+                    {dateRange.from ? format(dateRange.from, "MMM d") : ""} 
+                    {dateRange.to ? ` - ${format(dateRange.to, "MMM d")}` : ""}
                   </span>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleResetDateRange}
+                  >
+                    Reset Range
+                  </Button>
                 </div>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleResetDateRange}
-                >
-                  Reset Range
-                </Button>
               </div>
               
-              <div className="overflow-x-auto calendar-container">
+              <div className="w-full overflow-hidden calendar-container">
                 <CalendarComponent
                   mode="range"
                   selected={dateRange}
                   onSelect={handleDateRangeChange}
                   month={currentMonth}
                   onDayClick={handleDayClick}
-                  className="rounded-md border w-full"
+                  className="rounded-md border w-full max-w-full"
                   modifiers={modifiers}
                 />
               </div>
@@ -466,7 +483,7 @@ const Calendar = () => {
                     value={selectedCategory}
                     onValueChange={(value) => setSelectedCategory(value as EventCategory | "all")}
                   >
-                    <SelectTrigger className="w-[140px] sm:w-[180px]">
+                    <SelectTrigger className="w-[120px] sm:w-[140px]">
                       <SelectValue placeholder="Filter by category" />
                     </SelectTrigger>
                     <SelectContent>
@@ -520,8 +537,47 @@ const Calendar = () => {
             </Card>
           </div>
 
-          <div className="space-y-6">
-            <Card className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-4 sm:p-6">
+          {/* Sidebar - Takes 2/7 of the grid on large screens */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Categories dropdown for mobile */}
+            <div className="lg:hidden">
+              <Popover open={showCategoriesPopover} onOpenChange={setShowCategoriesPopover}>
+                <PopoverTrigger asChild>
+                  <Button className="w-full" variant="outline">
+                    <Menu className="h-4 w-4 mr-2" />
+                    Categories
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0 bg-white dark:bg-gray-800">
+                  <div className="p-4 space-y-2">
+                    <h3 className="text-sm font-medium">Categories</h3>
+                    <div className="space-y-1">
+                      {Object.entries(CategoryColors).map(([category, color]) => (
+                        <div 
+                          key={category} 
+                          className={`flex items-center justify-between p-2 rounded-md cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 ${selectedCategory === category ? 'bg-gray-100 dark:bg-gray-700' : ''}`}
+                          onClick={() => {
+                            setSelectedCategory(selectedCategory === category ? "all" : category as EventCategory);
+                            setShowCategoriesPopover(false);
+                          }}
+                        >
+                          <div className="flex items-center">
+                            <div className={`w-3 h-3 rounded-full mr-2 ${color}`}></div>
+                            <span className="capitalize">{category}</span>
+                          </div>
+                          <Badge variant="outline" className="text-xs">
+                            {events.filter(e => e.category === category).length}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* Categories card for desktop */}
+            <Card className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-4 sm:p-6 hidden lg:block">
               <h2 className="text-lg font-semibold mb-4">Categories</h2>
               <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
                 {Object.entries(CategoryColors).map(([category, color]) => (
@@ -542,23 +598,32 @@ const Calendar = () => {
               </div>
             </Card>
 
+            {/* Stickers section */}
             <Card className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-4 sm:p-6">
-              <h2 className="text-lg font-semibold mb-4">Stickers</h2>
-              <div className="grid grid-cols-4 gap-2">
-                {commonEmojis.map((emoji) => (
-                  <Button key={emoji} variant="outline" onClick={() => {
-                    setStickerEmoji(emoji);
-                    handleAddSticker(new Date()); // Default to today
-                  }}>
-                    {emoji}
-                  </Button>
-                ))}
-              </div>
+              <Collapsible>
+                <CollapsibleTrigger className="flex items-center justify-between w-full">
+                  <h2 className="text-lg font-semibold">Stickers</h2>
+                  <ChevronRight className="h-4 w-4 transform transition-transform ui-open:rotate-90" />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-4">
+                  <div className="grid grid-cols-4 gap-2">
+                    {commonEmojis.map((emoji) => (
+                      <Button key={emoji} variant="outline" onClick={() => {
+                        setStickerEmoji(emoji);
+                        handleAddSticker(new Date()); // Default to today
+                      }}>
+                        {emoji}
+                      </Button>
+                    ))}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
             </Card>
           </div>
         </div>
       </main>
 
+      {/* Add/Edit Event Dialog */}
       <Dialog open={showAddEventDialog} onOpenChange={(open) => {
         setShowAddEventDialog(open);
         if (!open) {
@@ -639,6 +704,7 @@ const Calendar = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Event Details Dialog */}
       <Dialog open={showEventDetailsDialog} onOpenChange={setShowEventDetailsDialog}>
         <DialogContent className="sm:max-w-[425px] bg-gray-900 text-white border border-gray-700 overflow-y-auto max-h-[90vh]">
           <DialogHeader>
@@ -702,6 +768,7 @@ const Calendar = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Sticker Dialog */}
       <Dialog open={showStickerDialog} onOpenChange={setShowStickerDialog}>
         <DialogContent className="sm:max-w-[425px] bg-gray-900 text-white border border-gray-700 overflow-y-auto max-h-[90vh]">
           <DialogHeader>
