@@ -31,6 +31,10 @@ const Settings = () => {
         contentToPrint = "Budget";
       } else if (printSectionValue === "notes") {
         contentToPrint = "Notes";
+      } else if (printSectionValue === "goals") {
+        contentToPrint = "Goal Planner";
+      } else if (printSectionValue === "medical") {
+        contentToPrint = "Medical Records & Reminders";
       }
       
       // In a real application, you would build a targeted print view
@@ -177,6 +181,8 @@ const Settings = () => {
                         <SelectItem value="diary">Diary</SelectItem>
                         <SelectItem value="budget">Budget</SelectItem>
                         <SelectItem value="notes">Notes</SelectItem>
+                        <SelectItem value="goals">Goal Planner</SelectItem>
+                        <SelectItem value="medical">Medical Records & Reminders</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

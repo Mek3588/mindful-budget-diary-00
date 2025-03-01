@@ -1,338 +1,213 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { HelpDialog } from "@/components/HelpDialog";
+import { ModeToggle } from "@/components/ModeToggle";
+import { useToast } from "@/hooks/use-toast";
 import {
-  Calendar as CalendarIcon,
-  Settings as SettingsIcon,
-  Menu,
-  PenLine,
+  BookOpen,
+  BarChart,
+  BookmarkCheck,
+  Calendar,
+  CalendarDays,
+  ShieldCheck,
+  Settings,
+  Cog,
+  FileText,
   DollarSign,
-  Moon,
-  Sun,
+  Pencil,
   Lock,
   HelpCircle,
-  BookText,
-  Sparkles,
-  BookOpen,
-  Target
+  Target,
+  Stethoscope
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Card } from "@/components/ui/card";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-import { useTheme } from "@/contexts/ThemeContext";
-import { useMobile } from "@/hooks/use-mobile";
-import { HelpDialog } from "@/components/HelpDialog";
 
-function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
-  return (
-    <ScrollArea className="h-full">
-      <div className="p-4 space-y-4">
-        <Button
-          variant="ghost"
-          className="flex items-center justify-start w-full p-2"
-          onClick={() => {
-            if (onNavigate) onNavigate();
-            window.location.href = "/notes";
-          }}
-        >
-          <BookText className="mr-2 h-5 w-5" />
-          <span>Notes</span>
-        </Button>
-        <Button
-          variant="ghost"
-          className="flex items-center justify-start w-full p-2"
-          onClick={() => {
-            if (onNavigate) onNavigate();
-            window.location.href = "/diary";
-          }}
-        >
-          <PenLine className="mr-2 h-5 w-5" />
-          <span>Diary</span>
-        </Button>
-        <Button
-          variant="ghost"
-          className="flex items-center justify-start w-full p-2"
-          onClick={() => {
-            if (onNavigate) onNavigate();
-            window.location.href = "/budget";
-          }}
-        >
-          <DollarSign className="mr-2 h-5 w-5" />
-          <span>Budget</span>
-        </Button>
-        <Button
-          variant="ghost"
-          className="flex items-center justify-start w-full p-2"
-          onClick={() => {
-            if (onNavigate) onNavigate();
-            window.location.href = "/calendar";
-          }}
-        >
-          <CalendarIcon className="mr-2 h-5 w-5" />
-          <span>Calendar</span>
-        </Button>
-        <Button
-          variant="ghost"
-          className="flex items-center justify-start w-full p-2"
-          onClick={() => {
-            if (onNavigate) onNavigate();
-            window.location.href = "/goals";
-          }}
-        >
-          <Target className="mr-2 h-5 w-5" />
-          <span>Goal Planner</span>
-        </Button>
-        <Button
-          variant="ghost"
-          className="flex items-center justify-start w-full p-2"
-          onClick={() => {
-            if (onNavigate) onNavigate();
-            window.location.href = "/security";
-          }}
-        >
-          <Lock className="mr-2 h-5 w-5" />
-          <span>Security</span>
-        </Button>
-        <Button
-          variant="ghost"
-          className="flex items-center justify-start w-full p-2"
-          onClick={() => {
-            if (onNavigate) onNavigate();
-            window.location.href = "/settings";
-          }}
-        >
-          <SettingsIcon className="mr-2 h-5 w-5" />
-          <span>Settings</span>
-        </Button>
-      </div>
-    </ScrollArea>
-  );
-}
-
-export default function Index() {
+const Index = () => {
   const navigate = useNavigate();
-  const isMobile = useMobile();
-  const { currentTheme, toggleTheme } = useTheme();
-  const [isOpen, setIsOpen] = useState(false);
+  const { toast } = useToast();
   const [showHelpDialog, setShowHelpDialog] = useState(false);
 
   return (
-    <div className={`min-h-screen bg-gradient-to-br from-${currentTheme.backgroundGradient.from} to-${currentTheme.backgroundGradient.to} overflow-x-hidden`}>
-      <header className="fixed top-0 left-0 right-0 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center">
-              <Sheet open={isOpen} onOpenChange={setIsOpen}>
-                <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <Menu className="h-6 w-6" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent 
-                  side="left" 
-                  className="p-0 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700"
-                >
-                  <SheetHeader className="p-4 border-b border-gray-200 dark:border-gray-700">
-                    <SheetTitle>Menu</SheetTitle>
-                  </SheetHeader>
-                  <SidebarContent
-                    onNavigate={() => {
-                      setIsOpen(false);
-                    }}
-                  />
-                </SheetContent>
-              </Sheet>
-              <h1 className="ml-2 text-xl font-bold flex items-center">
-                <BookOpen className="h-6 w-6 mr-2" />
-                <span>My Personal Journal</span>
-              </h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowHelpDialog(true)}
-                aria-label="Help"
-                className="text-gray-600 dark:text-gray-300"
-              >
-                <HelpCircle className="h-5 w-5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={toggleTheme}
-                className="text-gray-600 dark:text-gray-300"
-              >
-                {currentTheme.id === 'dark' || currentTheme.id === 'm1' ? (
-                  <Moon className="h-5 w-5" />
-                ) : currentTheme.id === 'blue' ? (
-                  <Sun className="h-5 w-5 text-blue-500" />
-                ) : (
-                  <Sun className="h-5 w-5" />
-                )}
-              </Button>
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:via-purple-950 dark:to-gray-950">
+      <main className="container mx-auto py-6 px-4 space-y-8">
+        <div className="relative flex items-center justify-between">
+          <h1 className="text-3xl font-bold tracking-tight sm:text-center sm:text-4xl">
+            My Personal Journal
+          </h1>
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={() => setShowHelpDialog(true)}>
+              <HelpCircle className="h-5 w-5" />
+            </Button>
+            <ModeToggle />
           </div>
         </div>
-      </header>
 
-      <main className="pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <div className="mb-10">
-          <Card className="relative overflow-hidden bg-gradient-to-r from-[#FDE1D3] to-[#FFDEE2] dark:from-[#9b87f5] dark:to-[#D946EF] border-0 shadow-lg transform transition-all hover:scale-[1.01] animate-fade-in">
-            <div className="absolute top-0 right-0 w-32 h-32 -mt-8 -mr-8 bg-white/20 dark:bg-white/10 rounded-full blur-2xl"></div>
-            <div className="absolute bottom-0 left-0 w-24 h-24 -mb-6 -ml-6 bg-white/20 dark:bg-white/10 rounded-full blur-xl"></div>
-            
-            <div className="p-8 relative">
-              <div className="flex items-center mb-4">
-                <PenLine className="h-8 w-8 mr-3 text-pink-700 dark:text-pink-300" />
-                <h2 className="text-2xl font-bold text-pink-800 dark:text-pink-200 flex items-center">
-                  My Diary
-                  <Sparkles className="h-5 w-5 ml-2 text-yellow-500" />
-                </h2>
-              </div>
-              
-              <p className="text-md text-gray-700 dark:text-gray-200 mb-4 max-w-2xl">
-                Capture your thoughts, feelings, and daily moments in your personal diary. 
-                Write about your day, track your mood, and create memories you can look back on.
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <Card className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm hover:shadow-lg transition-all duration-200 hover:scale-[1.01]">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center">
+                <BookOpen className="h-5 w-5 mr-2 text-blue-500" />
+                Diary
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-600 dark:text-gray-300">
+                Record your thoughts and feelings in your personal diary.
               </p>
-              
-              <div className="mt-6">
-                <Button 
-                  className="w-full sm:w-auto bg-pink-600 hover:bg-pink-700 text-white shadow-md dark:bg-pink-700 dark:hover:bg-pink-800 transition-all hover:shadow-lg animate-pulse"
-                  onClick={() => navigate("/diary")}
-                >
-                  <PenLine className="mr-2 h-5 w-5" />
-                  Write Today's Entry
-                </Button>
-              </div>
-            </div>
-          </Card>
-        </div>
-
-        <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-          <Card className="bg-gradient-to-br from-[#E5DEFF] to-white dark:from-[#3A3B59] dark:to-gray-800 border-0 shadow-md hover:shadow-lg transition-all p-6 space-y-3 transform hover:scale-[1.02]">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-full">
-                <BookText className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-              </div>
-              <h2 className="text-lg font-semibold">Notes</h2>
-            </div>
-            <p className="text-sm text-gray-600 dark:text-gray-300">
-              Capture quick thoughts, lists, and ideas in your digital notebook.
-            </p>
-            <Button 
-              variant="secondary" 
-              className="w-full bg-purple-100 hover:bg-purple-200 text-purple-700 dark:bg-purple-900/50 dark:hover:bg-purple-800 dark:text-purple-300"
-              onClick={() => navigate("/notes")}
-            >
-              Take Notes
-            </Button>
+            </CardContent>
+            <CardFooter>
+              <Button onClick={() => navigate("/diary")} className="w-full">
+                <Pencil className="h-4 w-4 mr-2" />
+                Open Diary
+              </Button>
+            </CardFooter>
           </Card>
 
-          <Card className="bg-gradient-to-br from-[#D3E4FD] to-white dark:from-[#2E4066] dark:to-gray-800 border-0 shadow-md hover:shadow-lg transition-all p-6 space-y-3 transform hover:scale-[1.02]">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full">
-                <CalendarIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-              </div>
-              <h2 className="text-lg font-semibold">Calendar</h2>
-            </div>
-            <p className="text-sm text-gray-600 dark:text-gray-300">
-              Stay organized with your schedule and important dates.
-            </p>
-            <Button 
-              variant="secondary" 
-              className="w-full bg-blue-100 hover:bg-blue-200 text-blue-700 dark:bg-blue-900/50 dark:hover:bg-blue-800 dark:text-blue-300"
-              onClick={() => navigate("/calendar")}
-            >
-              View Calendar
-            </Button>
+          <Card className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm hover:shadow-lg transition-all duration-200 hover:scale-[1.01]">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center">
+                <BarChart className="h-5 w-5 mr-2 text-green-500" />
+                Budget
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-600 dark:text-gray-300">
+                Track your income and expenses to manage your finances.
+              </p>
+            </CardContent>
+            <CardFooter>
+              <Button onClick={() => navigate("/budget")} className="w-full">
+                <DollarSign className="h-4 w-4 mr-2" />
+                Open Budget
+              </Button>
+            </CardFooter>
           </Card>
 
-          <Card className="bg-gradient-to-br from-[#F2FCE2] to-white dark:from-[#324b33] dark:to-gray-800 border-0 shadow-md hover:shadow-lg transition-all p-6 space-y-3 transform hover:scale-[1.02]">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-full">
-                <DollarSign className="h-6 w-6 text-green-600 dark:text-green-400" />
-              </div>
-              <h2 className="text-lg font-semibold">Budget</h2>
-            </div>
-            <p className="text-sm text-gray-600 dark:text-gray-300">
-              Track your expenses and manage your finances effectively.
-            </p>
-            <Button 
-              variant="secondary" 
-              className="w-full bg-green-100 hover:bg-green-200 text-green-700 dark:bg-green-900/50 dark:hover:bg-green-800 dark:text-green-300"
-              onClick={() => navigate("/budget")}
-            >
-              Track Budget
-            </Button>
+          <Card className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm hover:shadow-lg transition-all duration-200 hover:scale-[1.01]">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center">
+                <BookmarkCheck className="h-5 w-5 mr-2 text-purple-500" />
+                Notes
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-600 dark:text-gray-300">
+                Keep track of important information in organized notes.
+              </p>
+            </CardContent>
+            <CardFooter>
+              <Button onClick={() => navigate("/notes")} className="w-full">
+                <FileText className="h-4 w-4 mr-2" />
+                Open Notes
+              </Button>
+            </CardFooter>
           </Card>
 
-          <Card className="bg-gradient-to-br from-[#FDE1D3] to-white dark:from-[#664d33] dark:to-gray-800 border-0 shadow-md hover:shadow-lg transition-all p-6 space-y-3 transform hover:scale-[1.02]">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-full">
-                <Target className="h-6 w-6 text-orange-600 dark:text-orange-400" />
-              </div>
-              <h2 className="text-lg font-semibold">Goal Planner</h2>
-            </div>
-            <p className="text-sm text-gray-600 dark:text-gray-300">
-              Set targets, track progress and achieve your personal and professional goals.
-            </p>
-            <Button 
-              variant="secondary" 
-              className="w-full bg-orange-100 hover:bg-orange-200 text-orange-700 dark:bg-orange-900/50 dark:hover:bg-orange-800 dark:text-orange-300"
-              onClick={() => navigate("/goals")}
-            >
-              Plan Goals
-            </Button>
+          <Card className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm hover:shadow-lg transition-all duration-200 hover:scale-[1.01]">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center">
+                <Calendar className="h-5 w-5 mr-2 text-red-500" />
+                Calendar
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-600 dark:text-gray-300">
+                Plan and organize your schedule with a personal calendar.
+              </p>
+            </CardContent>
+            <CardFooter>
+              <Button onClick={() => navigate("/calendar")} className="w-full">
+                <CalendarDays className="h-4 w-4 mr-2" />
+                Open Calendar
+              </Button>
+            </CardFooter>
+          </Card>
+          
+          <Card className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm hover:shadow-lg transition-all duration-200 hover:scale-[1.01]">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center">
+                <Target className="h-5 w-5 mr-2 text-green-500" />
+                Goals
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-600 dark:text-gray-300">
+                Set and track your personal goals and achievements.
+              </p>
+            </CardContent>
+            <CardFooter>
+              <Button onClick={() => navigate("/goals")} className="w-full">
+                <Target className="h-4 w-4 mr-2" />
+                Open Goals
+              </Button>
+            </CardFooter>
+          </Card>
+          
+          <Card className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm hover:shadow-lg transition-all duration-200 hover:scale-[1.01]">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center">
+                <Stethoscope className="h-5 w-5 mr-2 text-blue-500" />
+                Medical Records
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-600 dark:text-gray-300">
+                Track appointments, medications, and health information.
+              </p>
+            </CardContent>
+            <CardFooter>
+              <Button onClick={() => navigate("/medical")} className="w-full">
+                <Stethoscope className="h-4 w-4 mr-2" />
+                Open Medical Records
+              </Button>
+            </CardFooter>
           </Card>
 
-          <Card className="bg-gradient-to-br from-[#F1F0FB] to-white dark:from-[#2d2d3f] dark:to-gray-800 border-0 shadow-md hover:shadow-lg transition-all p-6 space-y-3 transform hover:scale-[1.02]">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full">
-                <Lock className="h-6 w-6 text-gray-600 dark:text-gray-400" />
-              </div>
-              <h2 className="text-lg font-semibold">Security</h2>
-            </div>
-            <p className="text-sm text-gray-600 dark:text-gray-300">
-              Keep your personal information safe and secure.
-            </p>
-            <Button 
-              variant="secondary" 
-              className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-300"
-              onClick={() => navigate("/security")}
-            >
-              Manage Security
-            </Button>
+          <Card className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm hover:shadow-lg transition-all duration-200 hover:scale-[1.01]">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center">
+                <ShieldCheck className="h-5 w-5 mr-2 text-violet-500" />
+                Security
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-600 dark:text-gray-300">
+                Protect your journal with PIN security settings.
+              </p>
+            </CardContent>
+            <CardFooter>
+              <Button onClick={() => navigate("/security")} className="w-full">
+                <Lock className="h-4 w-4 mr-2" />
+                Open Security
+              </Button>
+            </CardFooter>
           </Card>
 
-          <Card className="bg-gradient-to-br from-[#FFDEE2] to-white dark:from-[#40334d] dark:to-gray-800 border-0 shadow-md hover:shadow-lg transition-all p-6 space-y-3 transform hover:scale-[1.02]">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-pink-100 dark:bg-pink-900/30 rounded-full">
-                <SettingsIcon className="h-6 w-6 text-pink-600 dark:text-pink-400" />
-              </div>
-              <h2 className="text-lg font-semibold">Settings</h2>
-            </div>
-            <p className="text-sm text-gray-600 dark:text-gray-300">
-              Customize your app experience and preferences.
-            </p>
-            <Button 
-              variant="secondary" 
-              className="w-full bg-pink-100 hover:bg-pink-200 text-pink-700 dark:bg-pink-900/50 dark:hover:bg-pink-800 dark:text-pink-300"
-              onClick={() => navigate("/settings")}
-            >
-              Adjust Settings
-            </Button>
+          <Card className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm hover:shadow-lg transition-all duration-200 hover:scale-[1.01]">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center">
+                <Settings className="h-5 w-5 mr-2 text-gray-500" />
+                Settings
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-600 dark:text-gray-300">
+                Customize your journal appearance and preferences.
+              </p>
+            </CardContent>
+            <CardFooter>
+              <Button onClick={() => navigate("/settings")} className="w-full">
+                <Cog className="h-4 w-4 mr-2" />
+                Open Settings
+              </Button>
+            </CardFooter>
           </Card>
         </div>
       </main>
-      
       <HelpDialog open={showHelpDialog} onOpenChange={setShowHelpDialog} />
     </div>
   );
-}
+};
+
+export default Index;

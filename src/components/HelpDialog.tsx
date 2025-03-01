@@ -1,3 +1,4 @@
+
 import { 
   Dialog, DialogContent, DialogHeader, DialogTitle, 
   DialogDescription, DialogFooter 
@@ -5,7 +6,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { 
   CalendarIcon, PieChart, BookText, Pencil, DollarSign, 
-  Settings, Lock, ArrowLeft, ArrowRight, Download, Printer
+  Settings, Lock, ArrowLeft, ArrowRight, Download, Printer,
+  Target, Stethoscope
 } from "lucide-react";
 import { useState } from "react";
 
@@ -24,7 +26,9 @@ type SectionType =
   | "settings"
   | "themes"
   | "export"
-  | "print";
+  | "print"
+  | "goals"
+  | "medical";
 
 const sections: SectionType[] = [
   "dashboard", 
@@ -32,6 +36,8 @@ const sections: SectionType[] = [
   "budget", 
   "notes", 
   "calendar", 
+  "goals",
+  "medical",
   "security", 
   "settings",
   "themes",
@@ -124,6 +130,20 @@ export function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
           <div className="flex items-center gap-2">
             <Printer className="h-5 w-5 text-amber-500" />
             <h3 className="text-lg font-medium">Print Options</h3>
+          </div>
+        );
+      case "goals":
+        return (
+          <div className="flex items-center gap-2">
+            <Target className="h-5 w-5 text-green-500" />
+            <h3 className="text-lg font-medium">Goal Planner</h3>
+          </div>
+        );
+      case "medical":
+        return (
+          <div className="flex items-center gap-2">
+            <Stethoscope className="h-5 w-5 text-blue-500" />
+            <h3 className="text-lg font-medium">Medical Records & Reminders</h3>
           </div>
         );
       default:
@@ -267,6 +287,8 @@ export function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
                   <li>Budget and financial records</li>
                   <li>Notes and their categories</li>
                   <li>Calendar events and schedules</li>
+                  <li>Goal planning information</li>
+                  <li>Medical records and reminders</li>
                 </ul>
               </li>
             </ul>
@@ -287,10 +309,47 @@ export function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
                   <li>Budget reports for financial tracking</li>
                   <li>Notes for important information</li>
                   <li>Calendar for schedule planning</li>
+                  <li>Goals for tracking your objectives</li>
+                  <li>Medical records for health tracking</li>
                 </ul>
               </li>
             </ul>
             <p>Create physical backups or share your information with people who prefer paper documents.</p>
+          </div>
+        );
+      case "goals":
+        return (
+          <div className="space-y-4">
+            <p>The Goal Planner helps you set, track, and achieve your personal objectives:</p>
+            <ul className="list-disc pl-5 space-y-2">
+              <li><strong>Create Goals:</strong> Set specific, measurable goals with deadlines.</li>
+              <li><strong>Progress Tracking:</strong> Monitor your advancement toward each goal.</li>
+              <li><strong>Task Breakdown:</strong> Break down large goals into manageable tasks.</li>
+              <li><strong>Categorization:</strong> Organize goals by area of life (career, health, personal, etc.).</li>
+              <li><strong>Priority Levels:</strong> Assign importance to focus on what matters most.</li>
+              <li><strong>Completion Status:</strong> Mark goals as in-progress, completed, or on hold.</li>
+              <li><strong>Reward System:</strong> Set rewards for achieving your goals to stay motivated.</li>
+              <li><strong>Timeline View:</strong> See your goals organized by deadline and status.</li>
+              <li><strong>Reflection:</strong> Record insights on completed goals to improve future planning.</li>
+            </ul>
+            <p>The Goal Planner helps you turn your aspirations into achievements through structured planning and tracking.</p>
+          </div>
+        );
+      case "medical":
+        return (
+          <div className="space-y-4">
+            <p>The Medical Records & Reminders section helps you manage your health information and appointments:</p>
+            <ul className="list-disc pl-5 space-y-2">
+              <li><strong>Medical Calendar:</strong> Dedicated calendar for health-related events and reminders.</li>
+              <li><strong>Appointment Tracking:</strong> Record doctor visits with provider names, locations, and notes.</li>
+              <li><strong>Medication Management:</strong> Track prescriptions, dosages, and refill schedules.</li>
+              <li><strong>Vital Signs:</strong> Log important health metrics like blood pressure, heart rate, or blood sugar.</li>
+              <li><strong>Medical Notes:</strong> Store observations, symptoms, or questions for your next appointment.</li>
+              <li><strong>Reminder System:</strong> Get alerts before appointments or when it's time to take medication.</li>
+              <li><strong>Filtering Options:</strong> View records by date, type, or status (upcoming, completed).</li>
+              <li><strong>Privacy:</strong> All medical information is stored locally on your device for security.</li>
+            </ul>
+            <p>This section helps you stay on top of your health management by organizing all medical information in one secure place.</p>
           </div>
         );
       default:
