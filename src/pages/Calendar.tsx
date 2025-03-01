@@ -7,7 +7,19 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Toggle } from "@/components/ui/toggle";
-import { ArrowLeft, ChevronLeft, ChevronRight, Plus, X, Calendar as CalendarIcon, Target, Stethoscope } from "lucide-react";
+import { 
+  ArrowLeft, 
+  ChevronLeft, 
+  ChevronRight, 
+  Plus, 
+  X, 
+  Calendar as CalendarIcon, 
+  Target, 
+  Stethoscope, 
+  Edit, 
+  Trash,
+  Sticker 
+} from "lucide-react";
 import { format, addMonths, subMonths, isSameDay, startOfMonth } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
@@ -21,6 +33,7 @@ interface Event {
   date: Date;
   category: EventCategory;
   tags?: string[];
+  sticker?: string;
 }
 
 interface Sticker {
@@ -67,6 +80,8 @@ const Calendar = () => {
   ]);
   
   const commonEmojis = ["😊", "😂", "❤️", "👍", "🎉", "🎂", "🏆", "⭐", "🔥", "💯", "🙏", "✅", "💪"];
+
+  const [isEditMode, setIsEditMode] = useState(false);
 
   useEffect(() => {
     const loadEvents = () => {
@@ -170,25 +185,56 @@ const Calendar = () => {
     setShowAddEventDialog(true);
   };
 
+  const handleEditEvent = (event: Event) => {
+    setNewEvent({
+      title: event.title,
+      description: event.description,
+      date: event.date,
+      category: event.category
+    });
+    setIsEditMode(true);
+    setSelectedEvent(event);
+    setShowAddEventDialog(true);
+  };
+
   const handleSaveEvent = () => {
     if (!newEvent.title.trim() || !newEvent.description.trim()) {
       toast.error("Please fill in all fields");
       return;
     }
 
-    const event: Event = {
-      id: Date.now().toString(),
-      title: newEvent.title,
-      description: newEvent.description,
-      date: newEvent.date,
-      category: newEvent.category
-    };
+    if (isEditMode && selectedEvent) {
+      const updatedEvents = events.map(event => 
+        event.id === selectedEvent.id ? {
+          ...event,
+          title: newEvent.title,
+          description: newEvent.description,
+          date: newEvent.date,
+          category: newEvent.category
+        } : event
+      );
+      
+      setEvents(updatedEvents);
+      localStorage.setItem('calendar-events', JSON.stringify(updatedEvents));
+      toast.success("Event updated successfully!");
+    } else {
+      const event: Event = {
+        id: Date.now().toString(),
+        title: newEvent.title,
+        description: newEvent.description,
+        date: newEvent.date,
+        category: newEvent.category
+      };
 
-    setEvents([...events, event]);
-    localStorage.setItem('calendar-events', JSON.stringify([...events, event]));
+      setEvents([...events, event]);
+      localStorage.setItem('calendar-events', JSON.stringify([...events, event]));
+      toast.success("Event saved successfully!");
+    }
+    
     setShowAddEventDialog(false);
     setNewEvent({ title: "", description: "", date: new Date(), category: "personal" });
-    toast.success("Event saved successfully!");
+    setIsEditMode(false);
+    setSelectedEvent(null);
   };
 
   const handleDeleteEvent = (eventId: string) => {
@@ -204,6 +250,12 @@ const Calendar = () => {
     setShowStickerDialog(true);
   };
 
+  const handleAddStickerToEvent = (eventId: string) => {
+    setStickerDate(new Date());
+    setShowStickerDialog(true);
+    setSelectedEvent(events.find(event => event.id === eventId) || null);
+  };
+
   const handleSaveSticker = () => {
     const sticker: Sticker = {
       id: Date.now().toString(),
@@ -212,11 +264,26 @@ const Calendar = () => {
       position: { x: 50, y: 50 }
     };
 
-    setStickers([...stickers, sticker]);
-    localStorage.setItem('calendar-stickers', JSON.stringify([...stickers, sticker]));
+    if (selectedEvent) {
+      const updatedEvents = events.map(event => 
+        event.id === selectedEvent.id ? {
+          ...event,
+          sticker: stickerEmoji
+        } : event
+      );
+      
+      setEvents(updatedEvents);
+      localStorage.setItem('calendar-events', JSON.stringify(updatedEvents));
+      toast.success(`Sticker added to "${selectedEvent.title}"`);
+    } else {
+      setStickers([...stickers, sticker]);
+      localStorage.setItem('calendar-stickers', JSON.stringify([...stickers, sticker]));
+      toast.success("Sticker added to calendar!");
+    }
+    
     setShowStickerDialog(false);
     setStickerEmoji("😊");
-    toast.success("Sticker added successfully!");
+    setSelectedEvent(null);
   };
 
   const handleFilterToggle = (category: EventCategory) => {
@@ -290,12 +357,29 @@ const Calendar = () => {
                   Add Event
                 </Button>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {filteredEvents.length > 0 ? (
                   filteredEvents.map((event) => (
-                    <Badge key={event.id} className="w-full justify-start rounded-md" style={{ backgroundColor: CategoryColors[event.category] }}>
-                      {format(event.date, "MMM d")} - {event.title}
-                    </Badge>
+                    <div key={event.id} className="flex items-center justify-between p-2 border rounded-md">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: CategoryColors[event.category] }}></div>
+                        <span>
+                          {format(event.date, "MMM d")} - {event.title} 
+                          {event.sticker && <span className="ml-2">{event.sticker}</span>}
+                        </span>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button variant="ghost" size="icon" onClick={() => handleEditEvent(event)}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleAddStickerToEvent(event.id)}>
+                          <Sticker className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleDeleteEvent(event.id)}>
+                          <Trash className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
                   ))
                 ) : (
                   <p className="text-sm text-gray-500 dark:text-gray-400">No events for the selected filters.</p>
@@ -311,7 +395,7 @@ const Calendar = () => {
                 {Object.entries(CategoryColors).map(([category, color]) => (
                   <div key={category} className="flex items-center justify-between">
                     <div className="flex items-center">
-                      <div className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: color }}></div>
+                      <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: color }}></div>
                       <span className="capitalize">{category}</span>
                     </div>
                     <Toggle
@@ -341,10 +425,16 @@ const Calendar = () => {
         </div>
       </main>
 
-      <Dialog open={showAddEventDialog} onOpenChange={setShowAddEventDialog}>
+      <Dialog open={showAddEventDialog} onOpenChange={(open) => {
+        setShowAddEventDialog(open);
+        if (!open) {
+          setIsEditMode(false);
+          setNewEvent({ title: "", description: "", date: new Date(), category: "personal" });
+        }
+      }}>
         <DialogContent className="sm:max-w-[425px] bg-white dark:bg-gray-900">
           <DialogHeader>
-            <DialogTitle>Add Event</DialogTitle>
+            <DialogTitle>{isEditMode ? "Edit Event" : "Add Event"}</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
@@ -404,7 +494,7 @@ const Calendar = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button onClick={handleSaveEvent}>Save Event</Button>
+            <Button onClick={handleSaveEvent}>{isEditMode ? "Update Event" : "Save Event"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

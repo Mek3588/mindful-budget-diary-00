@@ -16,6 +16,7 @@ export function PageLayout({ children, title, icon, pageType }: PageLayoutProps)
   const navigate = useNavigate();
   const { currentTheme } = useTheme();
   
+  // Get the specific color for this page type from the theme
   const pageColor = currentTheme.pageColors[pageType];
   const isDark = currentTheme.type === 'masculine';
   
@@ -23,7 +24,8 @@ export function PageLayout({ children, title, icon, pageType }: PageLayoutProps)
   const gradientTo = isDark ? currentTheme.backgroundGradient.to : 'white';
   
   return (
-    <div className={`min-h-screen bg-gradient-to-br from-${gradientFrom} to-${gradientTo}`}>
+    <div className={`min-h-screen bg-gradient-to-br from-${gradientFrom} to-${gradientTo}`}
+         style={{ "--page-bg-color": pageColor } as React.CSSProperties}>
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-lg border-b border-gray-200 dark:bg-gray-900/80 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
@@ -37,7 +39,9 @@ export function PageLayout({ children, title, icon, pageType }: PageLayoutProps)
                 <ArrowLeft className="h-5 w-5" />
               </Button>
               <div className="flex items-center">
-                {icon}
+                <div className="mr-2 p-1 rounded" style={{ backgroundColor: pageColor }}>
+                  {icon}
+                </div>
                 <h1 className="text-xl font-semibold">{title}</h1>
               </div>
             </div>

@@ -2,7 +2,7 @@
 import { Theme } from '../types/theme';
 
 export const themes: Theme[] = [
-  // Default dark theme
+  // Dark theme
   {
     id: 'dark',
     name: 'Dark',
@@ -42,9 +42,9 @@ export const themes: Theme[] = [
       }
     }
   },
-  // Premium Feminine theme - Rose Garden
+  // Rose Garden theme
   {
-    id: 'f1',
+    id: 'rose-garden',
     name: 'Rose Garden',
     type: 'feminine',
     primaryColor: '#FDF2F8',
