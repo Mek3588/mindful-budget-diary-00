@@ -4,10 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, FileText, Plus, Save, X, Edit, Check } from "lucide-react";
+import { ArrowLeft, FileText, Plus, Save, X, Edit, Check, Mic, Camera, Image } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import VoiceToText from "@/components/VoiceToText";
+import CameraCapture from "@/components/CameraCapture";
 
 interface Note {
   id: string;
@@ -15,6 +17,7 @@ interface Note {
   content: string;
   date: Date;
   updatedAt?: Date;
+  images?: string[];
 }
 
 const Notes = () => {
@@ -24,6 +27,10 @@ const Notes = () => {
   const [isWriting, setIsWriting] = useState(false);
   const [editingNote, setEditingNote] = useState<string | null>(null);
   const [editedNote, setEditedNote] = useState({ title: "", content: "" });
+  const [images, setImages] = useState<string[]>([]);
+  const [editImages, setEditImages] = useState<string[]>([]);
+  const [showCamera, setShowCamera] = useState(false);
+  const [activeForCamera, setActiveForCamera] = useState<'new' | 'edit' | null>(null);
 
   // Load notes from localStorage on component mount
   useEffect(() => {
@@ -55,6 +62,7 @@ const Notes = () => {
       content: newNote.content,
       date: now,
       updatedAt: now,
+      images: images.length > 0 ? [...images] : undefined
     };
 
     // Create calendar event for the note
@@ -73,6 +81,7 @@ const Notes = () => {
     setNotes([note, ...notes]);
     setNewNote({ title: "", content: "" });
     setIsWriting(false);
+    setImages([]);
     toast.success("Note saved successfully!");
   };
 
@@ -95,6 +104,7 @@ const Notes = () => {
         title: noteToEdit.title,
         content: noteToEdit.content
       });
+      setEditImages(noteToEdit.images || []);
     }
   };
 
@@ -109,7 +119,13 @@ const Notes = () => {
     // Update note in notes array
     const updatedNotes = notes.map(note => 
       note.id === id 
-        ? { ...note, title: editedNote.title, content: editedNote.content, updatedAt: now }
+        ? { 
+            ...note, 
+            title: editedNote.title, 
+            content: editedNote.content, 
+            updatedAt: now,
+            images: editImages.length > 0 ? [...editImages] : undefined
+          }
         : note
     );
     
@@ -126,11 +142,66 @@ const Notes = () => {
     localStorage.setItem('calendar-events', JSON.stringify(updatedEvents));
     
     setEditingNote(null);
+    setEditImages([]);
     toast.success("Note updated successfully!");
   };
 
   const cancelEdit = () => {
     setEditingNote(null);
+    setEditImages([]);
+  };
+
+  const handleVoiceTranscriptNew = (text: string) => {
+    setNewNote(prev => ({
+      ...prev,
+      content: prev.content ? `${prev.content} ${text}` : text
+    }));
+  };
+
+  const handleVoiceTranscriptEdit = (text: string) => {
+    setEditedNote(prev => ({
+      ...prev,
+      content: prev.content ? `${prev.content} ${text}` : text
+    }));
+  };
+
+  const handleCameraCapture = (imageDataUrl: string) => {
+    if (activeForCamera === 'new') {
+      setImages([...images, imageDataUrl]);
+    } else if (activeForCamera === 'edit') {
+      setEditImages([...editImages, imageDataUrl]);
+    }
+    setActiveForCamera(null);
+  };
+
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>, type: 'new' | 'edit') => {
+    if (event.target.files && event.target.files.length > 0) {
+      const file = event.target.files[0];
+      const reader = new FileReader();
+      
+      reader.onloadend = () => {
+        const imageDataUrl = reader.result as string;
+        if (type === 'new') {
+          setImages([...images, imageDataUrl]);
+        } else {
+          setEditImages([...editImages, imageDataUrl]);
+        }
+      };
+      
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = (index: number, type: 'new' | 'edit') => {
+    if (type === 'new') {
+      const newImages = [...images];
+      newImages.splice(index, 1);
+      setImages(newImages);
+    } else {
+      const newImages = [...editImages];
+      newImages.splice(index, 1);
+      setEditImages(newImages);
+    }
   };
 
   return (
@@ -166,14 +237,77 @@ const Notes = () => {
                   value={newNote.title}
                   onChange={(e) => setNewNote({ ...newNote, title: e.target.value })}
                 />
+                
+                <VoiceToText onTranscript={handleVoiceTranscriptNew} />
+                
                 <Textarea
                   placeholder="Write your note here..."
                   value={newNote.content}
                   onChange={(e) => setNewNote({ ...newNote, content: e.target.value })}
                   className="min-h-[100px]"
                 />
+                
+                {images.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {images.map((image, index) => (
+                      <div key={index} className="relative w-20 h-20 rounded-md overflow-hidden group">
+                        <img 
+                          src={image} 
+                          alt={`Note ${index}`} 
+                          className="w-full h-full object-cover" 
+                        />
+                        <Button 
+                          variant="destructive" 
+                          size="icon" 
+                          className="absolute top-1 right-1 w-5 h-5 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => removeImage(index, 'new')}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setActiveForCamera('new');
+                      setShowCamera(true);
+                    }}
+                    className="flex items-center gap-1"
+                  >
+                    <Camera className="h-4 w-4" />
+                    <span>Take Photo</span>
+                  </Button>
+                  
+                  <label>
+                    <Button 
+                      variant="outline" 
+                      className="flex items-center gap-1"
+                      asChild
+                    >
+                      <span>
+                        <Image className="h-4 w-4" />
+                        <span>Upload Image</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => handleImageUpload(e, 'new')}
+                        />
+                      </span>
+                    </Button>
+                  </label>
+                </div>
+                
                 <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => setIsWriting(false)}>
+                  <Button variant="outline" onClick={() => {
+                    setIsWriting(false);
+                    setNewNote({ title: "", content: "" });
+                    setImages([]);
+                  }}>
                     Cancel
                   </Button>
                   <Button onClick={handleSaveNote}>
@@ -200,12 +334,71 @@ const Notes = () => {
                       value={editedNote.title}
                       onChange={(e) => setEditedNote({ ...editedNote, title: e.target.value })}
                     />
+                    
+                    <VoiceToText onTranscript={handleVoiceTranscriptEdit} />
+                    
                     <Textarea
                       placeholder="Write your note here..."
                       value={editedNote.content}
                       onChange={(e) => setEditedNote({ ...editedNote, content: e.target.value })}
                       className="min-h-[100px]"
                     />
+                    
+                    {editImages.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {editImages.map((image, index) => (
+                          <div key={index} className="relative w-20 h-20 rounded-md overflow-hidden group">
+                            <img 
+                              src={image} 
+                              alt={`Note ${index}`} 
+                              className="w-full h-full object-cover" 
+                            />
+                            <Button 
+                              variant="destructive" 
+                              size="icon" 
+                              className="absolute top-1 right-1 w-5 h-5 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => removeImage(index, 'edit')}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        onClick={() => {
+                          setActiveForCamera('edit');
+                          setShowCamera(true);
+                        }}
+                        className="flex items-center gap-1"
+                      >
+                        <Camera className="h-4 w-4" />
+                        <span>Take Photo</span>
+                      </Button>
+                      
+                      <label>
+                        <Button 
+                          variant="outline" 
+                          className="flex items-center gap-1"
+                          asChild
+                        >
+                          <span>
+                            <Image className="h-4 w-4" />
+                            <span>Upload Image</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => handleImageUpload(e, 'edit')}
+                            />
+                          </span>
+                        </Button>
+                      </label>
+                    </div>
+                    
                     <div className="flex justify-end gap-2">
                       <Button variant="outline" onClick={cancelEdit}>
                         Cancel
@@ -240,6 +433,21 @@ const Notes = () => {
                     <p className="text-sm text-gray-600 dark:text-gray-300 whitespace-pre-wrap">
                       {note.content}
                     </p>
+                    
+                    {note.images && note.images.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-3 mb-3">
+                        {note.images.map((image, index) => (
+                          <div key={index} className="w-20 h-20 rounded-md overflow-hidden">
+                            <img 
+                              src={image} 
+                              alt={`Note ${index}`} 
+                              className="w-full h-full object-cover" 
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
                     <div className="mt-4 pt-2 border-t border-gray-200 dark:border-gray-700">
                       <p className="text-xs text-gray-500 dark:text-gray-400">
                         Created: {format(note.date, "MMM d, yyyy 'at' h:mm a")}
@@ -257,6 +465,12 @@ const Notes = () => {
           </div>
         </div>
       </main>
+
+      <CameraCapture 
+        open={showCamera} 
+        onOpenChange={setShowCamera}
+        onCapture={handleCameraCapture}
+      />
     </div>
   );
 };

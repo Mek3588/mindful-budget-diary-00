@@ -1,4 +1,3 @@
-
 import { 
   Dialog, DialogContent, DialogHeader, DialogTitle, 
   DialogDescription, DialogFooter 
@@ -331,6 +330,8 @@ export function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
               <li><strong>Reward System:</strong> Set rewards for achieving your goals to stay motivated.</li>
               <li><strong>Timeline View:</strong> See your goals organized by deadline and status.</li>
               <li><strong>Reflection:</strong> Record insights on completed goals to improve future planning.</li>
+              <li><strong>Voice Input:</strong> Use speech-to-text to quickly capture your goals.</li>
+              <li><strong>Photo Attachments:</strong> Add images to visualize your goals and track progress.</li>
             </ul>
             <p>The Goal Planner helps you turn your aspirations into achievements through structured planning and tracking.</p>
           </div>
@@ -348,6 +349,9 @@ export function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
               <li><strong>Reminder System:</strong> Get alerts before appointments or when it's time to take medication.</li>
               <li><strong>Filtering Options:</strong> View records by date, type, or status (upcoming, completed).</li>
               <li><strong>Privacy:</strong> All medical information is stored locally on your device for security.</li>
+              <li><strong>Voice Input:</strong> Use speech-to-text to record medical information hands-free.</li>
+              <li><strong>Photo Upload:</strong> Attach images of prescriptions or medical documents for reference.</li>
+              <li><strong>Camera Integration:</strong> Take photos of medication labels or insurance cards directly.</li>
             </ul>
             <p>This section helps you stay on top of your health management by organizing all medical information in one secure place.</p>
           </div>
