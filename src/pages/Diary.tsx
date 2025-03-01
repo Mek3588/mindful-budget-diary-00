@@ -195,7 +195,6 @@ const Diary = () => {
         formattedDate = format(day, dateFormat);
         const cloneDay = day;
         const isSelected = isSameDay(day, selectedDate);
-        // Fixed: Converting Date to string for key comparison
         const hasEntry = diaryEntries.some(entry => isSameDay(entry.date, day));
         const dayClasses = cn(
           "text-sm rounded-full w-9 h-9 flex items-center justify-center hover:bg-accent hover:text-accent-foreground focus:outline-none",
@@ -209,7 +208,7 @@ const Diary = () => {
         days.push(
           <div
             className="col cell"
-            key={day.toString()} // Fixed: Converting Date to string for key
+            key={day.toString()}
           >
             {isSameMonth(day, monthStart) ? (
               <Button
@@ -233,7 +232,7 @@ const Diary = () => {
         day = new Date(day.getFullYear(), day.getMonth(), day.getDate() + 1);
       }
       rows.push(
-        <div className="row" key={day.toString()}> {/* Fixed: Converting Date to string for key */}
+        <div className="row" key={day.toString()}>
           {days}
         </div>
       );
