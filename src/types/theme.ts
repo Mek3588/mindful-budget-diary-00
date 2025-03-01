@@ -6,6 +6,19 @@ export type Theme = {
   primaryColor: string;
   secondaryColor: string;
   accentColor: string;
+  backgroundGradient: {
+    from: string;
+    to: string;
+  };
+  pageColors: {
+    diary: string;
+    budget: string;
+    notes: string;
+    calendar: string;
+    security: string;
+    settings: string;
+    goals: string;
+  };
   stickerColors: {
     mood: {
       happy: string;

@@ -10,6 +10,19 @@ export const themes: Theme[] = [
     primaryColor: '#1A1F2C',
     secondaryColor: '#2D3748',
     accentColor: '#4A5568',
+    backgroundGradient: {
+      from: 'gray-900',
+      to: 'gray-800'
+    },
+    pageColors: {
+      diary: '#9b87f5',
+      budget: '#22C55E',
+      notes: '#8B5CF6',
+      calendar: '#3B82F6',
+      security: '#4A5568',
+      settings: '#9333EA',
+      goals: '#F59E0B'
+    },
     stickerColors: {
       mood: {
         happy: '#48BB78',
@@ -37,6 +50,19 @@ export const themes: Theme[] = [
     primaryColor: '#FDF2F8',
     secondaryColor: '#FCE7F3',
     accentColor: '#EC4899',
+    backgroundGradient: {
+      from: 'purple-50',
+      to: 'white'
+    },
+    pageColors: {
+      diary: '#FFDEE2',
+      budget: '#F2FCE2',
+      notes: '#E5DEFF',
+      calendar: '#D3E4FD',
+      security: '#D3E4FD',
+      settings: '#D6BCFA',
+      goals: '#FDE1D3'
+    },
     stickerColors: {
       mood: {
         happy: '#14B8A6',

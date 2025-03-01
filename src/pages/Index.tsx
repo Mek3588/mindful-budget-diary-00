@@ -12,7 +12,8 @@ import {
   HelpCircle,
   BookText,
   Sparkles,
-  BookOpen
+  BookOpen,
+  Target
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -81,6 +82,17 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           className="flex items-center justify-start w-full p-2"
           onClick={() => {
             if (onNavigate) onNavigate();
+            window.location.href = "/goals";
+          }}
+        >
+          <Target className="mr-2 h-5 w-5" />
+          <span>Goal Planner</span>
+        </Button>
+        <Button
+          variant="ghost"
+          className="flex items-center justify-start w-full p-2"
+          onClick={() => {
+            if (onNavigate) onNavigate();
             window.location.href = "/security";
           }}
         >
@@ -111,7 +123,7 @@ export default function Index() {
   const [showHelpDialog, setShowHelpDialog] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#FEF7CD] to-white dark:from-[#424874] dark:to-gray-900 overflow-x-hidden">
+    <div className={`min-h-screen bg-gradient-to-br from-${currentTheme.backgroundGradient.from} to-${currentTheme.backgroundGradient.to} overflow-x-hidden`}>
       <header className="fixed top-0 left-0 right-0 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
@@ -171,7 +183,6 @@ export default function Index() {
       </header>
 
       <main className="pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        {/* Featured Diary Section */}
         <div className="mb-10">
           <Card className="relative overflow-hidden bg-gradient-to-r from-[#FDE1D3] to-[#FFDEE2] dark:from-[#9b87f5] dark:to-[#D946EF] border-0 shadow-lg transform transition-all hover:scale-[1.01] animate-fade-in">
             <div className="absolute top-0 right-0 w-32 h-32 -mt-8 -mr-8 bg-white/20 dark:bg-white/10 rounded-full blur-2xl"></div>
@@ -204,9 +215,7 @@ export default function Index() {
           </Card>
         </div>
 
-        {/* App Features in Staggered Layout */}
         <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-          {/* Notes Card */}
           <Card className="bg-gradient-to-br from-[#E5DEFF] to-white dark:from-[#3A3B59] dark:to-gray-800 border-0 shadow-md hover:shadow-lg transition-all p-6 space-y-3 transform hover:scale-[1.02]">
             <div className="flex items-center space-x-3">
               <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-full">
@@ -226,7 +235,6 @@ export default function Index() {
             </Button>
           </Card>
 
-          {/* Calendar Card */}
           <Card className="bg-gradient-to-br from-[#D3E4FD] to-white dark:from-[#2E4066] dark:to-gray-800 border-0 shadow-md hover:shadow-lg transition-all p-6 space-y-3 transform hover:scale-[1.02]">
             <div className="flex items-center space-x-3">
               <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full">
@@ -246,7 +254,6 @@ export default function Index() {
             </Button>
           </Card>
 
-          {/* Budget Card */}
           <Card className="bg-gradient-to-br from-[#F2FCE2] to-white dark:from-[#324b33] dark:to-gray-800 border-0 shadow-md hover:shadow-lg transition-all p-6 space-y-3 transform hover:scale-[1.02]">
             <div className="flex items-center space-x-3">
               <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-full">
@@ -266,7 +273,25 @@ export default function Index() {
             </Button>
           </Card>
 
-          {/* Security Card */}
+          <Card className="bg-gradient-to-br from-[#FDE1D3] to-white dark:from-[#664d33] dark:to-gray-800 border-0 shadow-md hover:shadow-lg transition-all p-6 space-y-3 transform hover:scale-[1.02]">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-full">
+                <Target className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+              </div>
+              <h2 className="text-lg font-semibold">Goal Planner</h2>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-300">
+              Set targets, track progress and achieve your personal and professional goals.
+            </p>
+            <Button 
+              variant="secondary" 
+              className="w-full bg-orange-100 hover:bg-orange-200 text-orange-700 dark:bg-orange-900/50 dark:hover:bg-orange-800 dark:text-orange-300"
+              onClick={() => navigate("/goals")}
+            >
+              Plan Goals
+            </Button>
+          </Card>
+
           <Card className="bg-gradient-to-br from-[#F1F0FB] to-white dark:from-[#2d2d3f] dark:to-gray-800 border-0 shadow-md hover:shadow-lg transition-all p-6 space-y-3 transform hover:scale-[1.02]">
             <div className="flex items-center space-x-3">
               <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full">
@@ -286,7 +311,6 @@ export default function Index() {
             </Button>
           </Card>
 
-          {/* Settings Card */}
           <Card className="bg-gradient-to-br from-[#FFDEE2] to-white dark:from-[#40334d] dark:to-gray-800 border-0 shadow-md hover:shadow-lg transition-all p-6 space-y-3 transform hover:scale-[1.02]">
             <div className="flex items-center space-x-3">
               <div className="p-2 bg-pink-100 dark:bg-pink-900/30 rounded-full">

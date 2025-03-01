@@ -38,6 +38,11 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     document.documentElement.style.setProperty('--accent', currentTheme.accentColor);
     document.documentElement.style.setProperty('--accent-foreground', currentTheme.primaryColor);
     
+    // Set page-specific colors
+    Object.entries(currentTheme.pageColors).forEach(([key, value]) => {
+      document.documentElement.style.setProperty(`--page-${key}-color`, value);
+    });
+    
     // Apply theme to body element as well
     document.body.style.backgroundColor = currentTheme.primaryColor;
     document.body.style.color = currentTheme.type === 'masculine' ? '#ffffff' : '#000000';

@@ -13,6 +13,7 @@ import Notes from "./pages/Notes";
 import Calendar from "./pages/Calendar";
 import Security from "./pages/Security";
 import Settings from "./pages/Settings";
+import Goals from "./pages/Goals";
 import { AppPinDialog } from "./components/AppPinDialog";
 import { useState, useEffect } from "react";
 
@@ -73,6 +74,7 @@ const App = () => {
                 <Route path="/calendar" element={<Calendar />} />
                 <Route path="/security" element={<Security />} />
                 <Route path="/settings" element={<Settings />} />
+                <Route path="/goals" element={<Goals />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </ProtectedRoute>
