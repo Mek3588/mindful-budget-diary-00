@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
@@ -236,8 +237,13 @@ const Calendar = () => {
     return getEventsForDate(date).length > 0;
   };
 
+  const hasStickersOnDate = (date: Date) => {
+    return stickers.some(sticker => isSameDay(new Date(sticker.date), date));
+  };
+
   const modifiers = {
-    has_event: (date: Date) => hasEventsOnDate(date)
+    has_event: (date: Date) => hasEventsOnDate(date),
+    has_sticker: (date: Date) => hasStickersOnDate(date)
   };
 
   const handleDayClick = (date: Date) => {
@@ -437,20 +443,6 @@ const Calendar = () => {
                     </Button>
                   </div>
                 </div>
-                
-                <div className="flex items-center gap-2">
-                  <span className="text-sm hidden sm:inline-block">
-                    {dateRange.from ? format(dateRange.from, "MMM d") : ""} 
-                    {dateRange.to ? ` - ${format(dateRange.to, "MMM d")}` : ""}
-                  </span>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={handleResetDateRange}
-                  >
-                    Reset Range
-                  </Button>
-                </div>
               </div>
               
               <div className="w-full overflow-hidden calendar-container">
@@ -529,62 +521,38 @@ const Calendar = () => {
           </div>
 
           <div className="lg:col-span-2 space-y-6">
-            <div className="lg:hidden">
-              <Popover open={showCategoriesPopover} onOpenChange={setShowCategoriesPopover}>
-                <PopoverTrigger asChild>
-                  <Button className="w-full" variant="outline">
-                    <Menu className="h-4 w-4 mr-2" />
-                    Categories
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-full p-0 bg-white dark:bg-gray-800">
-                  <div className="p-4 space-y-2">
-                    <h3 className="text-sm font-medium">Categories</h3>
-                    <div className="space-y-1">
-                      {Object.entries(CategoryColors).map(([category, color]) => (
-                        <div 
-                          key={category} 
-                          className={`flex items-center justify-between p-2 rounded-md cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 ${selectedCategory === category ? 'bg-gray-100 dark:bg-gray-700' : ''}`}
-                          onClick={() => {
-                            setSelectedCategory(selectedCategory === category ? "all" : category as EventCategory);
-                            setShowCategoriesPopover(false);
-                          }}
-                        >
-                          <div className="flex items-center">
-                            <div className={`w-3 h-3 rounded-full mr-2 ${color}`}></div>
-                            <span className="capitalize">{category}</span>
-                          </div>
-                          <Badge variant="outline" className="text-xs">
-                            {events.filter(e => e.category === category).length}
-                          </Badge>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button className="w-full" variant="outline">
+                  <Filter className="h-4 w-4 mr-2" />
+                  Categories
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-full p-0 bg-white dark:bg-gray-800">
+                <div className="p-4 space-y-2">
+                  <h3 className="text-sm font-medium">Categories</h3>
+                  <div className="space-y-1">
+                    {Object.entries(CategoryColors).map(([category, color]) => (
+                      <div 
+                        key={category} 
+                        className={`flex items-center justify-between p-2 rounded-md cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 ${selectedCategory === category ? 'bg-gray-100 dark:bg-gray-700' : ''}`}
+                        onClick={() => {
+                          setSelectedCategory(selectedCategory === category ? "all" : category as EventCategory);
+                        }}
+                      >
+                        <div className="flex items-center">
+                          <div className={`w-3 h-3 rounded-full mr-2 ${color}`}></div>
+                          <span className="capitalize">{category}</span>
                         </div>
-                      ))}
-                    </div>
+                        <Badge variant="outline" className="text-xs">
+                          {events.filter(e => e.category === category).length}
+                        </Badge>
+                      </div>
+                    ))}
                   </div>
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            <Card className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-4 sm:p-6 hidden lg:block">
-              <h2 className="text-lg font-semibold mb-4">Categories</h2>
-              <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
-                {Object.entries(CategoryColors).map(([category, color]) => (
-                  <div 
-                    key={category} 
-                    className={`flex items-center justify-between p-2 rounded-md cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 ${selectedCategory === category ? 'bg-gray-100 dark:bg-gray-700' : ''}`}
-                    onClick={() => setSelectedCategory(selectedCategory === category ? "all" : category as EventCategory)}
-                  >
-                    <div className="flex items-center">
-                      <div className={`w-3 h-3 rounded-full mr-2 ${color}`}></div>
-                      <span className="capitalize">{category}</span>
-                    </div>
-                    <Badge variant="outline" className="text-xs">
-                      {events.filter(e => e.category === category).length}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-            </Card>
+                </div>
+              </PopoverContent>
+            </Popover>
 
             <Card className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-4 sm:p-6">
               <Collapsible>
