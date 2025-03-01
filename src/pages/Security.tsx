@@ -19,6 +19,8 @@ const Security = () => {
     { id: "budget", label: "Budget" },
     { id: "notes", label: "Notes" },
     { id: "calendar", label: "Calendar" },
+    { id: "goals", label: "Goals" },
+    { id: "medical", label: "Medical Records" }
   ];
 
   useEffect(() => {

@@ -16,6 +16,7 @@ import Settings from "./pages/Settings";
 import Goals from "./pages/Goals";
 import Medical from "./pages/Medical";
 import { AppPinDialog } from "./components/AppPinDialog";
+import { AppSidebar } from "./components/AppSidebar";
 import { useState, useEffect } from "react";
 
 const queryClient = new QueryClient();
@@ -66,20 +67,25 @@ const App = () => {
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <ProtectedRoute>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/diary" element={<Diary />} />
-                <Route path="/budget" element={<Budget />} />
-                <Route path="/notes" element={<Notes />} />
-                <Route path="/calendar" element={<Calendar />} />
-                <Route path="/security" element={<Security />} />
-                <Route path="/settings" element={<Settings />} />
-                <Route path="/goals" element={<Goals />} />
-                <Route path="/medical" element={<Medical />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </ProtectedRoute>
+            <div className="flex min-h-screen">
+              <AppSidebar />
+              <div className="flex-1 ml-16 sm:ml-64">
+                <ProtectedRoute>
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/diary" element={<Diary />} />
+                    <Route path="/budget" element={<Budget />} />
+                    <Route path="/notes" element={<Notes />} />
+                    <Route path="/calendar" element={<Calendar />} />
+                    <Route path="/security" element={<Security />} />
+                    <Route path="/settings" element={<Settings />} />
+                    <Route path="/goals" element={<Goals />} />
+                    <Route path="/medical" element={<Medical />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </ProtectedRoute>
+              </div>
+            </div>
           </BrowserRouter>
         </TooltipProvider>
       </ThemeProvider>

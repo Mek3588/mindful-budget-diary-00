@@ -30,11 +30,12 @@ const VoiceToText = ({ onTranscript, placeholder = "Speak now..." }: VoiceToText
       return;
     }
 
-    // Create and configure speech recognition
+    // Create speech recognition instance
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     recognitionRef.current = new SpeechRecognition();
     recognitionRef.current.continuous = true;
     recognitionRef.current.interimResults = true;
+    recognitionRef.current.lang = 'en-US';
     
     recognitionRef.current.onresult = (event: any) => {
       let interimTranscript = '';
@@ -49,7 +50,14 @@ const VoiceToText = ({ onTranscript, placeholder = "Speak now..." }: VoiceToText
         }
       }
       
-      setTranscript(finalTranscript || interimTranscript);
+      // Update the transcript state with the current recognition results
+      const currentTranscript = finalTranscript || interimTranscript;
+      setTranscript(currentTranscript);
+      
+      // If we have a final result, pass it to the parent component
+      if (finalTranscript) {
+        onTranscript(finalTranscript);
+      }
     };
     
     recognitionRef.current.onerror = (event: any) => {
@@ -59,21 +67,27 @@ const VoiceToText = ({ onTranscript, placeholder = "Speak now..." }: VoiceToText
     };
     
     recognitionRef.current.onend = () => {
+      // Only try to restart if we're still supposed to be listening
       if (isListening) {
         try {
           recognitionRef.current.start();
         } catch (e) {
           console.error('Error restarting speech recognition', e);
+          setIsListening(false);
         }
       }
     };
     
     return () => {
       if (recognitionRef.current) {
-        recognitionRef.current.stop();
+        try {
+          recognitionRef.current.stop();
+        } catch (e) {
+          console.error('Error stopping speech recognition', e);
+        }
       }
     };
-  }, [isListening]);
+  }, [isListening, onTranscript]);
 
   const toggleListening = () => {
     if (!isSupported) {
@@ -82,13 +96,19 @@ const VoiceToText = ({ onTranscript, placeholder = "Speak now..." }: VoiceToText
     }
     
     if (isListening) {
-      recognitionRef.current.stop();
-      setIsListening(false);
-      
-      if (transcript) {
-        onTranscript(transcript);
+      // Stop listening
+      try {
+        recognitionRef.current.stop();
+        setIsListening(false);
+        
+        if (transcript) {
+          onTranscript(transcript);
+        }
+      } catch (error) {
+        console.error('Error stopping speech recognition', error);
       }
     } else {
+      // Start listening
       setTranscript("");
       try {
         recognitionRef.current.start();

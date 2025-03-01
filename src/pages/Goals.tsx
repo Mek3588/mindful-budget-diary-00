@@ -92,6 +92,7 @@ const Goals = () => {
   const [activeTab, setActiveTab] = useState("all");
   const [date, setDate] = useState<Date>();
   const [showReward, setShowReward] = useState<{show: boolean, category: string} | null>(null);
+  const [showStepCompletion, setShowStepCompletion] = useState<{goalId: string, stepId: string, completed: boolean} | null>(null);
 
   const saveGoals = (updatedGoals: Goal[]) => {
     setGoals(updatedGoals);
@@ -182,6 +183,22 @@ const Goals = () => {
         const totalSteps = updatedSteps.length;
         const newProgress = totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0;
         
+        const stepCompleted = updatedSteps.find(s => s.id === stepId)?.isCompleted;
+        
+        // Show step completion toast
+        if (stepCompleted) {
+          setShowStepCompletion({
+            goalId,
+            stepId,
+            completed: true
+          });
+          
+          // Hide step completion notification after 3 seconds
+          setTimeout(() => {
+            setShowStepCompletion(null);
+          }, 3000);
+        }
+        
         const isNowCompleted = newProgress === 100 && !goal.isCompleted;
         
         // Show reward if goal is now complete
@@ -235,6 +252,24 @@ const Goals = () => {
             </SelectContent>
           </Select>
         </div>
+
+        {/* Step Completion Popup */}
+        {showStepCompletion && (
+          <Card className="p-4 mb-4 bg-white/80 backdrop-blur-sm dark:bg-gray-800/80 border-2 border-green-400 animate-fadeIn">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <CheckSquare className="h-5 w-5 text-green-500 fill-green-500" />
+                <div className="ml-3">
+                  <h3 className="text-md font-bold">Step completed! 👍</h3>
+                  <p className="text-sm">Keep going! You're making progress toward your goal.</p>
+                </div>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => setShowStepCompletion(null)}>
+                Dismiss
+              </Button>
+            </div>
+          </Card>
+        )}
 
         {/* Reward Popup */}
         {showReward && (
@@ -418,7 +453,7 @@ const Goals = () => {
                 
                 {goal.steps.length > 0 && (
                   <div className="mt-3">
-                    <details>
+                    <details open>
                       <summary className="cursor-pointer text-sm font-medium">
                         Steps ({goal.steps.filter(s => s.isCompleted).length}/{goal.steps.length})
                       </summary>
