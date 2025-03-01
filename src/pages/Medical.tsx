@@ -559,28 +559,28 @@ const Medical = () => {
                     </Button>
                   </div>
                 ) : (
-                  <ScrollArea className="h-[500px] pr-4 md:pr-4 overflow-visible">
-                    <div className="space-y-4 pr-2 md:pr-0">
+                  <ScrollArea className="h-[500px] pr-1 overflow-visible">
+                    <div className="space-y-4 pr-1">
                       {filteredRecords.map((record) => (
                         <Collapsible 
                           key={record.id}
                           open={record.isExpanded} 
                           onOpenChange={() => handleToggleExpansion(record.id)}
-                          className={`p-4 rounded-lg border ${
+                          className={`p-3 sm:p-4 rounded-lg border ${
                             record.completed 
                               ? "bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700" 
                               : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 shadow-sm"
-                          } w-full`}
+                          } w-full overflow-visible`}
                         >
                           <CollapsibleTrigger asChild>
-                            <div className="flex items-start justify-between cursor-pointer">
-                              <div className="flex items-start space-x-3">
-                                <div className="pt-1">
+                            <div className="flex items-start justify-between cursor-pointer w-full overflow-visible">
+                              <div className="flex items-start space-x-3 flex-1 min-w-0">
+                                <div className="pt-1 flex-shrink-0">
                                   {getRecordIcon(record.type)}
                                 </div>
-                                <div>
-                                  <div className="flex items-center gap-2">
-                                    <h3 className={`font-medium ${record.completed ? "line-through text-gray-500 dark:text-gray-400" : ""}`}>
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <h3 className={`font-medium ${record.completed ? "line-through text-gray-500 dark:text-gray-400" : ""} truncate`}>
                                       {record.title}
                                     </h3>
                                     <Badge variant={
@@ -597,14 +597,14 @@ const Medical = () => {
                                       </Badge>
                                     )}
                                   </div>
-                                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 truncate">
                                     {format(new Date(record.date), "MMMM d, yyyy")}
                                     {record.time && ` at ${record.time}`}
                                   </p>
                                 </div>
                               </div>
                               
-                              <div className="flex items-center space-x-1">
+                              <div className="flex items-center space-x-1 flex-shrink-0 ml-2">
                                 <Button
                                   variant="ghost"
                                   size="icon"
@@ -613,6 +613,7 @@ const Medical = () => {
                                     handleToggleCompletion(record.id);
                                   }}
                                   title={record.completed ? "Mark as Incomplete" : "Mark as Complete"}
+                                  className="flex-shrink-0"
                                 >
                                   <CheckCircle2 className={`h-5 w-5 ${record.completed ? 'text-green-500 fill-green-500' : 'text-gray-300'}`} />
                                 </Button>
