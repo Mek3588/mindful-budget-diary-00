@@ -252,7 +252,7 @@ const Calendar = () => {
       <div className="relative w-full h-full p-1">
         <div className="absolute top-1 right-1">
           {dayEvents.length > 0 && (
-            <Badge variant="secondary" className="text-xs">
+            <Badge variant="secondary" className="text-xs bg-gradient-to-r from-purple-500 to-pink-500 text-white">
               {dayEvents.length}
             </Badge>
           )}
@@ -278,10 +278,10 @@ const Calendar = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-950 to-gray-900">
       <PinDialog onSuccess={() => console.log("PIN verified")} />
       
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-gray-900/90 backdrop-blur-lg border-b border-gray-700">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-gray-900/70 backdrop-blur-lg border-b border-purple-500/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
@@ -289,13 +289,13 @@ const Calendar = () => {
                 variant="ghost"
                 size="icon"
                 onClick={() => navigate("/")}
-                className="mr-4"
+                className="mr-4 hover:bg-purple-500/20"
               >
                 <ArrowLeft className="h-5 w-5" />
               </Button>
               <div className="flex items-center">
-                <CalendarIcon className="h-5 w-5 mr-2" />
-                <h1 className="text-xl font-semibold">Calendar</h1>
+                <CalendarIcon className="h-5 w-5 mr-2 text-purple-400" />
+                <h1 className="text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400">My Calendar</h1>
               </div>
             </div>
           </div>
@@ -304,34 +304,48 @@ const Calendar = () => {
 
       <main className="pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-          <Card className="md:col-span-8 bg-gray-800/50 backdrop-blur-sm border-gray-700 p-6">
+          <Card className="md:col-span-8 bg-gray-800/30 backdrop-blur-sm border-purple-500/20 shadow-lg shadow-purple-500/5 rounded-xl p-6 animate-fade-in">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center space-x-4">
                 <Button 
                   variant="outline" 
                   size="icon"
-                  onClick={handlePrevMonth}
+                  onClick={() => setDate(subMonths(date, 1))}
+                  className="rounded-full bg-gray-800/50 border-purple-500/20 hover:bg-purple-500/20"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
                 
                 <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
                   <PopoverTrigger asChild>
-                    <Button variant="outline">
-                      {format(date, 'MMMM yyyy')}
+                    <Button variant="outline" className="bg-gray-800/50 border-purple-500/20 hover:bg-purple-500/20 px-4">
+                      <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400 font-medium">
+                        {format(date, 'MMMM yyyy')}
+                      </span>
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="p-4 bg-gray-800 border-gray-700 text-white">
+                  <PopoverContent className="p-4 bg-gray-800 border-purple-500/30 text-white shadow-xl shadow-purple-500/10 rounded-xl">
                     <div className="space-y-4">
-                      <h3 className="text-sm font-medium">Go to date</h3>
+                      <h3 className="text-sm font-medium text-purple-300">Go to date</h3>
                       <Input
                         type="date"
-                        onChange={handleCustomDateChange}
-                        className="w-full"
+                        onChange={(e) => {
+                          const dateValue = e.target.value;
+                          const parsedDate = parseISO(dateValue);
+                          if (isValid(parsedDate)) {
+                            setCustomDate(parsedDate);
+                          }
+                        }}
+                        className="w-full bg-gray-700 border-purple-500/30"
                       />
                       <Button 
-                        onClick={handleCustomDateSubmit}
-                        className="w-full"
+                        onClick={() => {
+                          if (customDate) {
+                            setDate(customDate);
+                            setDatePickerOpen(false);
+                          }
+                        }}
+                        className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
                       >
                         Apply
                       </Button>
@@ -342,14 +356,18 @@ const Calendar = () => {
                 <Button 
                   variant="outline" 
                   size="icon"
-                  onClick={handleNextMonth}
+                  onClick={() => setDate(addMonths(date, 1))}
+                  className="rounded-full bg-gray-800/50 border-purple-500/20 hover:bg-purple-500/20"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
               
               <div className="flex items-center space-x-2">
-                <Button onClick={() => setDate(new Date())}>
+                <Button 
+                  onClick={() => setDate(new Date())}
+                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-md shadow-purple-500/20"
+                >
                   Today
                 </Button>
               </div>
@@ -360,10 +378,10 @@ const Calendar = () => {
                 value={filterCategory}
                 onValueChange={setFilterCategory}
               >
-                <SelectTrigger className="w-[150px] bg-gray-700 border-gray-600">
+                <SelectTrigger className="w-[150px] bg-gray-800/50 border-purple-500/20">
                   <SelectValue placeholder="Filter events" />
                 </SelectTrigger>
-                <SelectContent className="bg-gray-800 border-gray-700 text-white">
+                <SelectContent className="bg-gray-800 border-purple-500/30 text-white rounded-xl">
                   <SelectItem value="all">All Events</SelectItem>
                   <SelectItem value="todo">Todo</SelectItem>
                   <SelectItem value="diary">Diary</SelectItem>
@@ -373,70 +391,78 @@ const Calendar = () => {
               </Select>
             </div>
             
-            <CalendarComponent
-              mode="single"
-              selected={date}
-              onSelect={handleDateSelect}
-              className="rounded-md border border-gray-700"
-              components={{
-                DayContent: ({ date }) => getDayContent(date),
-              }}
-            />
+            <div className="bg-gray-800/30 backdrop-blur-sm border border-purple-500/20 shadow-lg shadow-purple-500/5 rounded-xl overflow-hidden">
+              <CalendarComponent
+                mode="single"
+                selected={date}
+                onSelect={(selectedDate) => {
+                  if (selectedDate) {
+                    setDate(selectedDate);
+                    setCustomDate(undefined);
+                    setDatePickerOpen(false);
+                  }
+                }}
+                className="rounded-md"
+                components={{
+                  DayContent: ({ date }) => getDayContent(date),
+                }}
+              />
+            </div>
           </Card>
 
-          <Card className="md:col-span-4 bg-gray-800/50 backdrop-blur-sm border-gray-700 p-6">
+          <Card className="md:col-span-4 bg-gray-800/30 backdrop-blur-sm border-purple-500/20 shadow-lg shadow-purple-500/5 rounded-xl p-6 animate-fade-in" style={{animationDelay: "0.1s"}}>
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <h2 className="text-lg font-semibold">
+                <h2 className="text-lg font-semibold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400">
                   {format(date, 'MMMM d, yyyy')}
                   {filterCategory !== "all" && (
-                    <span className="ml-2 text-sm">
+                    <span className="ml-2 text-sm text-gray-400">
                       ({filterCategory} items)
                     </span>
                   )}
                 </h2>
                 <Dialog open={isAddingEvent} onOpenChange={setIsAddingEvent}>
                   <DialogTrigger asChild>
-                    <Button className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600">
+                    <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-md shadow-purple-500/20">
                       <Plus className="h-4 w-4 mr-2" />
                       Add Event
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="bg-gray-800 border-gray-700 text-white">
+                  <DialogContent className="bg-gray-800 border-purple-500/30 text-white shadow-xl shadow-purple-500/10 rounded-xl">
                     <DialogHeader>
-                      <DialogTitle>
+                      <DialogTitle className="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400 text-center text-xl">
                         {editingEvent ? "Edit Event" : "Add New Event"}
                       </DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4 pt-4">
                       <div className="space-y-2">
-                        <Label htmlFor="title">Title</Label>
+                        <Label htmlFor="title" className="text-purple-300">Title</Label>
                         <Input
                           id="title"
                           value={newEvent.title}
                           onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
-                          className="bg-gray-700 border-gray-600"
+                          className="bg-gray-700 border-purple-500/30"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="description">Description</Label>
+                        <Label htmlFor="description" className="text-purple-300">Description</Label>
                         <Input
                           id="description"
                           value={newEvent.description}
                           onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
-                          className="bg-gray-700 border-gray-600"
+                          className="bg-gray-700 border-purple-500/30"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="category">Category</Label>
+                        <Label htmlFor="category" className="text-purple-300">Category</Label>
                         <Select
                           value={newEvent.category}
                           onValueChange={(value) => setNewEvent({ ...newEvent, category: value as any })}
                         >
-                          <SelectTrigger className="bg-gray-700 border-gray-600">
+                          <SelectTrigger className="bg-gray-700 border-purple-500/30">
                             <SelectValue placeholder="Select category" />
                           </SelectTrigger>
-                          <SelectContent className="bg-gray-800 border-gray-700 text-white">
+                          <SelectContent className="bg-gray-800 border-purple-500/30 text-white">
                             <SelectItem value="todo">Todo</SelectItem>
                             <SelectItem value="diary">Diary</SelectItem>
                             <SelectItem value="budget">Budget</SelectItem>
@@ -446,7 +472,7 @@ const Calendar = () => {
                       </div>
                       <Button 
                         onClick={handleAddEvent} 
-                        className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                        className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-md shadow-purple-500/20"
                       >
                         {editingEvent ? "Update Event" : "Add Event"}
                       </Button>
@@ -462,31 +488,32 @@ const Calendar = () => {
                     placeholder="Search events..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-8 bg-gray-700 border-gray-600"
+                    className="pl-8 bg-gray-700/50 border-purple-500/20"
                   />
                 </div>
               </div>
 
-              <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
+              <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 scrollbar-none">
                 {filteredEvents.length > 0 ? (
-                  filteredEvents.map(event => (
+                  filteredEvents.map((event, index) => (
                     <Card 
                       key={event.id} 
-                      className="p-4 bg-gradient-to-r from-gray-700/30 to-gray-700/10 backdrop-blur-sm border border-gray-700/20"
+                      className="p-4 bg-gradient-to-r from-gray-800/50 to-gray-800/30 backdrop-blur-sm border border-purple-500/20 shadow-md shadow-purple-500/5 rounded-xl transition-all hover:shadow-lg hover:shadow-purple-500/10 hover:border-purple-500/30 group animate-fade-in"
+                      style={{animationDelay: `${index * 0.05 + 0.2}s`}}
                     >
                       <div className="flex justify-between items-start">
-                        <div className="space-y-1">
-                          <h3 className="font-medium text-lg">{event.title}</h3>
+                        <div className="space-y-2">
+                          <h3 className="font-medium text-lg text-white group-hover:text-purple-300 transition-colors">{event.title}</h3>
                           {event.description && (
-                            <p className="text-sm text-gray-400">
+                            <p className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors">
                               {event.description}
                             </p>
                           )}
-                          <div className="flex gap-2">
+                          <div className="flex flex-wrap gap-2">
                             <Badge 
                               variant="secondary"
                               className={cn(
-                                "bg-gradient-to-r",
+                                "bg-gradient-to-r text-white",
                                 event.category === 'todo' && "from-blue-500 to-blue-600",
                                 event.category === 'diary' && "from-pink-500 to-purple-500",
                                 event.category === 'budget' && "from-green-500 to-emerald-600",
@@ -496,7 +523,7 @@ const Calendar = () => {
                               {event.category}
                             </Badge>
                             {event.tags?.map(tag => (
-                              <Badge key={`tag-${event.id}-${tag}`} variant="outline">
+                              <Badge key={`tag-${event.id}-${tag}`} variant="outline" className="border-purple-500/20 text-purple-300">
                                 {tag}
                               </Badge>
                             ))}
@@ -504,7 +531,7 @@ const Calendar = () => {
                         </div>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
+                            <Button variant="ghost" size="icon" className="hover:bg-purple-500/20 rounded-full">
                               <svg
                                 width="15"
                                 height="15"
@@ -522,16 +549,19 @@ const Calendar = () => {
                               </svg>
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent className="bg-gray-800 border-gray-700 text-white">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuSeparator className="bg-gray-700" />
-                            <DropdownMenuItem onClick={() => handleEditEvent(event)} className="focus:bg-gray-700">
-                              <Pencil className="h-4 w-4 mr-2" />
+                          <DropdownMenuContent className="bg-gray-800 border-purple-500/30 text-white rounded-xl">
+                            <DropdownMenuLabel className="text-purple-300">Actions</DropdownMenuLabel>
+                            <DropdownMenuSeparator className="bg-purple-500/20" />
+                            <DropdownMenuItem 
+                              onClick={() => handleEditEvent(event)} 
+                              className="focus:bg-purple-500/20 cursor-pointer"
+                            >
+                              <Pencil className="h-4 w-4 mr-2 text-purple-400" />
                               Edit
                             </DropdownMenuItem>
                             <DropdownMenuItem 
                               onClick={() => handleDeleteEvent(event.id)}
-                              className="text-red-400 focus:bg-gray-700"
+                              className="text-pink-400 focus:bg-purple-500/20 cursor-pointer"
                             >
                               <Trash2 className="h-4 w-4 mr-2" />
                               Delete
@@ -542,8 +572,12 @@ const Calendar = () => {
                     </Card>
                   ))
                 ) : (
-                  <div className="text-center py-8 text-gray-400">
-                    <p>No events for this date {filterCategory !== "all" && `in category: ${filterCategory}`}</p>
+                  <div className="text-center py-12 px-6 bg-gray-800/20 backdrop-blur-sm border border-purple-500/10 rounded-xl">
+                    <div className="flex flex-col items-center">
+                      <CalendarIcon className="h-12 w-12 text-purple-500/50 mb-4" />
+                      <p className="text-gray-400 mb-2">No events for this date {filterCategory !== "all" && `in category: ${filterCategory}`}</p>
+                      <p className="text-sm text-gray-500">Click "Add Event" to create one</p>
+                    </div>
                   </div>
                 )}
               </div>
