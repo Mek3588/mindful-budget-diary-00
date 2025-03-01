@@ -18,6 +18,7 @@ export type Theme = {
     security: string;
     settings: string;
     goals: string;
+    medical: string;
   };
   stickerColors: {
     mood: {
