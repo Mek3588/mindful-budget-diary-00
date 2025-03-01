@@ -1,3 +1,4 @@
+
 import { 
   Dialog, DialogContent, DialogHeader, DialogTitle, 
   DialogDescription, DialogFooter 
@@ -5,7 +6,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { 
   CalendarIcon, PieChart, BookText, Pencil, DollarSign, 
-  Settings, Lock, ArrowLeft, ArrowRight, Download, Printer
+  Settings, Lock, ArrowLeft, ArrowRight, Download, Printer,
+  Target, Stethoscope
 } from "lucide-react";
 import { useState } from "react";
 
@@ -24,7 +26,9 @@ type SectionType =
   | "settings"
   | "themes"
   | "export"
-  | "print";
+  | "print"
+  | "goals"
+  | "medical";
 
 const sections: SectionType[] = [
   "dashboard", 
@@ -36,7 +40,9 @@ const sections: SectionType[] = [
   "settings",
   "themes",
   "export",
-  "print"
+  "print",
+  "goals",
+  "medical"
 ];
 
 export function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
@@ -126,6 +132,20 @@ export function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
             <h3 className="text-lg font-medium">Print Options</h3>
           </div>
         );
+      case "goals":
+        return (
+          <div className="flex items-center gap-2">
+            <Target className="h-5 w-5 text-amber-600" />
+            <h3 className="text-lg font-medium">Goal Planner</h3>
+          </div>
+        );
+      case "medical":
+        return (
+          <div className="flex items-center gap-2">
+            <Stethoscope className="h-5 w-5 text-rose-500" />
+            <h3 className="text-lg font-medium">Medical Records & Reminders</h3>
+          </div>
+        );
       default:
         return (
           <div className="flex items-center gap-2">
@@ -164,6 +184,8 @@ export function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
               <li><strong>Timestamps:</strong> Each entry shows when it was created or updated.</li>
               <li><strong>Edit & Delete:</strong> Modify or remove your existing entries.</li>
               <li><strong>Calendar View:</strong> Select different dates to view entries from those days.</li>
+              <li><strong>Photo Capture:</strong> Take photos directly using your device camera.</li>
+              <li><strong>Voice to Text:</strong> Dictate your entries instead of typing them.</li>
             </ul>
             <p>Your diary entries are stored locally on your device and are not shared with anyone.</p>
           </div>
@@ -179,6 +201,7 @@ export function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
               <li><strong>History:</strong> Review past transactions with timestamps.</li>
               <li><strong>Charts:</strong> Visualize your spending patterns.</li>
               <li><strong>Edit & Delete:</strong> Modify or remove transactions as needed.</li>
+              <li><strong>Voice Input:</strong> Add transactions using voice commands.</li>
             </ul>
             <p>All budget data is stored locally for your privacy and can be exported if needed.</p>
           </div>
@@ -193,6 +216,7 @@ export function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
               <li><strong>Edit & Delete:</strong> Modify or remove notes as needed.</li>
               <li><strong>Search:</strong> Find specific notes using the search feature.</li>
               <li><strong>Timestamps:</strong> See when notes were created or last updated.</li>
+              <li><strong>Voice to Text:</strong> Dictate your notes instead of typing them.</li>
             </ul>
             <p>Notes are saved automatically and accessible from any page through the dashboard.</p>
           </div>
@@ -210,6 +234,7 @@ export function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
               <li><strong>Event Filtering:</strong> Filter events by category to focus on specific types.</li>
               <li><strong>Events List:</strong> View and manage all events in a separate section.</li>
               <li><strong>Edit & Delete:</strong> Modify or remove existing events.</li>
+              <li><strong>Integrated Events:</strong> View goals, medical appointments, and other events together.</li>
             </ul>
             <p>Your calendar helps you maintain a balanced schedule and prepare for upcoming events.</p>
           </div>
@@ -267,6 +292,8 @@ export function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
                   <li>Budget and financial records</li>
                   <li>Notes and their categories</li>
                   <li>Calendar events and schedules</li>
+                  <li>Goals and their progress</li>
+                  <li>Medical records and appointments</li>
                 </ul>
               </li>
             </ul>
@@ -287,10 +314,48 @@ export function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
                   <li>Budget reports for financial tracking</li>
                   <li>Notes for important information</li>
                   <li>Calendar for schedule planning</li>
+                  <li>Goals for tracking your progress</li>
+                  <li>Medical records for health management</li>
                 </ul>
               </li>
             </ul>
             <p>Create physical backups or share your information with people who prefer paper documents.</p>
+          </div>
+        );
+      case "goals":
+        return (
+          <div className="space-y-4">
+            <p>The Goal Planner helps you set, track, and achieve your personal and professional objectives:</p>
+            <ul className="list-disc pl-5 space-y-2">
+              <li><strong>Goal Categories:</strong> Organize goals by Personal, Career, Health, Finance, Relationships, and Education.</li>
+              <li><strong>Goal Setting:</strong> Create new goals with titles, target dates, and progress tracking.</li>
+              <li><strong>Progress Tracking:</strong> Update your progress as you work toward each goal.</li>
+              <li><strong>Completion Status:</strong> Mark goals as complete when you achieve them.</li>
+              <li><strong>Rewards System:</strong> Receive category-specific congratulatory messages upon completing goals.</li>
+              <li><strong>Calendar Integration:</strong> View goal deadlines in your main calendar.</li>
+              <li><strong>Voice Input:</strong> Use voice recognition to add and update goals.</li>
+              <li><strong>Priority Levels:</strong> Assign importance to goals to focus on what matters most.</li>
+              <li><strong>Notes & Milestones:</strong> Add additional details and milestone achievements to your goals.</li>
+            </ul>
+            <p>The Goal Planner helps you stay motivated and focused on achieving your aspirations.</p>
+          </div>
+        );
+      case "medical":
+        return (
+          <div className="space-y-4">
+            <p>The Medical Records & Reminders section helps you manage your health information:</p>
+            <ul className="list-disc pl-5 space-y-2">
+              <li><strong>Appointment Tracking:</strong> Log medical appointments with doctors, specialists, and healthcare providers.</li>
+              <li><strong>Prescription Management:</strong> Keep track of medications, dosages, and refill dates.</li>
+              <li><strong>Reminders:</strong> Set alerts for appointments, medication refills, and dosage times.</li>
+              <li><strong>Health Records:</strong> Store information about conditions, treatments, and test results.</li>
+              <li><strong>Provider Directory:</strong> Maintain contact information for your healthcare providers.</li>
+              <li><strong>Calendar Integration:</strong> View medical events in your main calendar.</li>
+              <li><strong>Voice Input:</strong> Add records and appointments using voice commands.</li>
+              <li><strong>Prescription History:</strong> Review past medications and treatments.</li>
+              <li><strong>Privacy Protection:</strong> Keep sensitive health information secure with app PIN protection.</li>
+            </ul>
+            <p>The Medical Records section helps you stay on top of your healthcare needs and maintain a comprehensive health history.</p>
           </div>
         );
       default:

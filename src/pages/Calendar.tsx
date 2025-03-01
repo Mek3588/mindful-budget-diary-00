@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -41,7 +40,7 @@ interface Event {
   id: string;
   title: string;
   date: Date;
-  category: 'diary' | 'budget' | 'todo' | 'note';
+  category: 'diary' | 'budget' | 'todo' | 'note' | 'general' | 'work' | 'personal' | 'health' | 'notes' | 'goals' | 'medical';
   description?: string;
   tags?: string[];
 }
@@ -52,6 +51,18 @@ interface Sticker {
   value: string;
   date: Date;
 }
+
+type EventCategory = 'general' | 'work' | 'personal' | 'health' | 'notes' | 'goals' | 'medical';
+
+const categoryOptions: { value: EventCategory; label: string; color: string }[] = [
+  { value: 'general', label: 'General', color: 'bg-gray-500' },
+  { value: 'work', label: 'Work', color: 'bg-blue-500' },
+  { value: 'personal', label: 'Personal', color: 'bg-purple-500' },
+  { value: 'health', label: 'Health', color: 'bg-green-500' },
+  { value: 'notes', label: 'Notes', color: 'bg-amber-500' },
+  { value: 'goals', label: 'Goals', color: 'bg-amber-600' },
+  { value: 'medical', label: 'Medical', color: 'bg-rose-500' }
+];
 
 const Calendar = () => {
   const navigate = useNavigate();
@@ -167,7 +178,7 @@ const Calendar = () => {
       title: newEvent.title!,
       description: newEvent.description,
       date: date,
-      category: newEvent.category as 'diary' | 'budget' | 'todo' | 'note',
+      category: newEvent.category as 'diary' | 'budget' | 'todo' | 'note' | 'general' | 'work' | 'personal' | 'health' | 'notes' | 'goals' | 'medical',
       tags: newEvent.tags
     };
 
@@ -374,10 +385,11 @@ const Calendar = () => {
                             <SelectValue placeholder="Select category" />
                           </SelectTrigger>
                           <SelectContent className="bg-gray-800 border-purple-500/30 text-white">
-                            <SelectItem value="todo">Todo</SelectItem>
-                            <SelectItem value="diary">Diary</SelectItem>
-                            <SelectItem value="budget">Budget</SelectItem>
-                            <SelectItem value="note">Note</SelectItem>
+                            {categoryOptions.map(option => (
+                              <SelectItem key={option.value} value={option.value} className={option.color}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
@@ -462,6 +474,11 @@ const Calendar = () => {
                       <SelectItem value="diary">Diary</SelectItem>
                       <SelectItem value="budget">Budget</SelectItem>
                       <SelectItem value="note">Note</SelectItem>
+                      {categoryOptions.map(option => (
+                        <SelectItem key={option.value} value={option.value} className={option.color}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>

@@ -3,11 +3,11 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, FileText, Plus, Save, X, Edit, Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import VoiceToTextInput from "@/components/VoiceToTextInput";
 
 interface Note {
   id: string;
@@ -77,6 +77,9 @@ const Notes = () => {
   };
 
   const handleDeleteNote = (id: string) => {
+    const confirmDelete = window.confirm("Are you sure you want to delete this note?");
+    if (!confirmDelete) return;
+    
     setNotes(notes.filter(note => note.id !== id));
     
     // Remove corresponding calendar event
@@ -161,15 +164,16 @@ const Notes = () => {
           <Card className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-6">
             {isWriting ? (
               <div className="space-y-4">
-                <Input
-                  placeholder="Note title"
+                <VoiceToTextInput
                   value={newNote.title}
-                  onChange={(e) => setNewNote({ ...newNote, title: e.target.value })}
+                  onChange={(value) => setNewNote({ ...newNote, title: value })}
+                  placeholder="Note title"
                 />
-                <Textarea
-                  placeholder="Write your note here..."
+                <VoiceToTextInput
                   value={newNote.content}
-                  onChange={(e) => setNewNote({ ...newNote, content: e.target.value })}
+                  onChange={(value) => setNewNote({ ...newNote, content: value })}
+                  placeholder="Write your note here..."
+                  isTextarea={true}
                   className="min-h-[100px]"
                 />
                 <div className="flex justify-end gap-2">
@@ -195,15 +199,16 @@ const Notes = () => {
               <Card key={note.id} className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-6">
                 {editingNote === note.id ? (
                   <div className="space-y-4">
-                    <Input
-                      placeholder="Note title"
+                    <VoiceToTextInput
                       value={editedNote.title}
-                      onChange={(e) => setEditedNote({ ...editedNote, title: e.target.value })}
+                      onChange={(value) => setEditedNote({ ...editedNote, title: value })}
+                      placeholder="Note title"
                     />
-                    <Textarea
-                      placeholder="Write your note here..."
+                    <VoiceToTextInput
                       value={editedNote.content}
-                      onChange={(e) => setEditedNote({ ...editedNote, content: e.target.value })}
+                      onChange={(value) => setEditedNote({ ...editedNote, content: value })}
+                      placeholder="Write your note here..."
+                      isTextarea={true}
                       className="min-h-[100px]"
                     />
                     <div className="flex justify-end gap-2">
