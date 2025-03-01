@@ -189,20 +189,13 @@ export default function Index() {
                 Write about your day, track your mood, and create memories you can look back on.
               </p>
               
-              <div className="mt-6 flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
+              <div className="mt-6">
                 <Button 
-                  className="bg-pink-600 hover:bg-pink-700 text-white shadow-md dark:bg-pink-700 dark:hover:bg-pink-800 transition-all hover:shadow-lg animate-pulse"
+                  className="w-full sm:w-auto bg-pink-600 hover:bg-pink-700 text-white shadow-md dark:bg-pink-700 dark:hover:bg-pink-800 transition-all hover:shadow-lg animate-pulse"
                   onClick={() => navigate("/diary")}
                 >
                   <PenLine className="mr-2 h-5 w-5" />
                   Write Today's Entry
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="border-pink-300 text-pink-700 hover:bg-pink-50 dark:border-pink-500 dark:text-pink-300 dark:hover:bg-pink-900/20"
-                  onClick={() => navigate("/diary")}
-                >
-                  View Past Entries
                 </Button>
               </div>
             </div>

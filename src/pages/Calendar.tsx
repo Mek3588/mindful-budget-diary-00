@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -132,7 +131,6 @@ const Calendar = () => {
   }, []);
 
   useEffect(() => {
-    // Filter events based on the selected date and category
     let filtered = events.filter(event => 
       isSameDay(new Date(event.date), date)
     );
@@ -230,19 +228,19 @@ const Calendar = () => {
     }
   };
 
-  // Get the content to display for each day in the calendar
+  const handleGoToToday = () => {
+    setDate(new Date());
+  };
+
   const getDayContent = (day: Date) => {
-    // Filter events for this day
     let dayEvents = events.filter(event => 
       isSameDay(new Date(event.date), day)
     );
     
-    // Apply category filter to day events if a filter is selected
     if (filterCategory !== "all") {
       dayEvents = dayEvents.filter(event => event.category === filterCategory);
     }
     
-    // Get stickers for this day
     const dayStickers = stickers.filter(sticker =>
       isSameDay(new Date(sticker.date), day)
     );
@@ -278,8 +276,6 @@ const Calendar = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-950 to-gray-900">
-      {/* Removed the PIN dialog from here */}
-      
       <nav className="fixed top-0 left-0 right-0 z-50 bg-gray-900/70 backdrop-blur-lg border-b border-purple-500/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
@@ -364,7 +360,7 @@ const Calendar = () => {
               
               <div className="flex items-center space-x-2">
                 <Button 
-                  onClick={() => setDate(new Date())}
+                  onClick={handleGoToToday}
                   className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-md shadow-purple-500/20"
                 >
                   Today

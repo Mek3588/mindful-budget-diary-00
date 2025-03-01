@@ -22,7 +22,7 @@ function Calendar({
       className={cn("p-3 select-none", className)}
       classNames={{
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
-        month: "space-y-4",
+        month: "space-y-4 w-full max-w-full",
         caption: "flex justify-center pt-1 relative items-center",
         caption_label: "text-base font-semibold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400 py-1",
         nav: "space-x-1 flex items-center",
@@ -35,8 +35,8 @@ function Calendar({
         table: "w-full border-collapse space-y-1",
         head_row: "flex",
         head_cell: cn(
-          "text-purple-200 rounded-md font-normal text-[0.9rem] h-10 flex items-center justify-center",
-          isMobile ? "w-10" : "w-16"
+          "text-purple-200 rounded-md font-normal text-[0.8rem] h-8 flex items-center justify-center",
+          isMobile ? "w-8" : "w-16"
         ),
         row: "flex w-full mt-2",
         cell: cn(
@@ -48,7 +48,7 @@ function Calendar({
         day: cn(
           buttonVariants({ variant: "ghost" }),
           "font-normal text-gray-100 aria-selected:opacity-100 hover:bg-gradient-to-br hover:from-purple-800/30 hover:to-pink-800/30 hover:text-white transition-all duration-200",
-          isMobile ? "h-10 w-10 p-0" : "h-16 w-16 p-0"
+          isMobile ? "h-8 w-8 p-0 text-xs" : "h-16 w-16 p-0"
         ),
         day_selected:
           "bg-gradient-to-br from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 hover:text-white focus:from-purple-700 focus:to-pink-700 focus:text-white shadow-lg shadow-purple-500/20",
