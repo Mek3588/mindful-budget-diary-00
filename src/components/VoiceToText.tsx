@@ -4,6 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Mic, MicOff, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
+// Add TypeScript declarations for the Web Speech API
+declare global {
+  interface Window {
+    SpeechRecognition: typeof SpeechRecognition;
+    webkitSpeechRecognition: typeof SpeechRecognition;
+  }
+}
+
 interface VoiceToTextProps {
   onTranscript: (text: string) => void;
   placeholder?: string;
