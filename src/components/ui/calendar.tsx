@@ -1,6 +1,6 @@
 
 import * as React from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Dot } from "lucide-react";
 import { DayPicker } from "react-day-picker";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
@@ -63,6 +63,18 @@ function Calendar({
       components={{
         IconLeft: () => <ChevronLeft className="h-5 w-5" />,
         IconRight: () => <ChevronRight className="h-5 w-5" />,
+        DayContent: (props) => (
+          <div className="relative w-full h-full flex flex-col items-center justify-center">
+            <span>{props.day.getDate()}</span>
+            {props.displayMonth && props.activeModifiers.outside === true ? null : (
+              <>
+                {props.activeModifiers.has_event && (
+                  <Dot className="h-3 w-3 text-purple-400 absolute bottom-0" />
+                )}
+              </>
+            )}
+          </div>
+        ),
       }}
       {...props}
     />

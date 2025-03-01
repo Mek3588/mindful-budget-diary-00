@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
@@ -18,9 +19,10 @@ import {
   Stethoscope, 
   Edit, 
   Trash,
-  Sticker 
+  Sticker,
+  CalendarDays
 } from "lucide-react";
-import { format, addMonths, subMonths, isSameDay, startOfMonth } from "date-fns";
+import { format, addMonths, subMonths, isSameDay, startOfMonth, isWithinInterval, endOfMonth, parseISO } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
@@ -82,6 +84,15 @@ const Calendar = () => {
   const commonEmojis = ["😊", "😂", "❤️", "👍", "🎉", "🎂", "🏆", "⭐", "🔥", "💯", "🙏", "✅", "💪"];
 
   const [isEditMode, setIsEditMode] = useState(false);
+  
+  // Date range selection
+  const [dateRange, setDateRange] = useState<{
+    from: Date | undefined;
+    to: Date | undefined;
+  }>({
+    from: startOfMonth(currentMonth),
+    to: endOfMonth(currentMonth)
+  });
 
   useEffect(() => {
     const loadEvents = () => {
@@ -173,11 +184,33 @@ const Calendar = () => {
     setCurrentMonth(new Date());
   };
 
+  // Function to determine dates with events
+  const getEventsForDate = (date: Date) => {
+    return events.filter(event => isSameDay(new Date(event.date), date));
+  };
+
+  // Function to check if a date has any events
+  const hasEventsOnDate = (date: Date) => {
+    return getEventsForDate(date).length > 0;
+  };
+
+  // Custom modifiers for the calendar to show dots for dates with events
+  const modifiers = {
+    has_event: (date: Date) => hasEventsOnDate(date)
+  };
+
   const handleDayClick = (date: Date) => {
-    const event = events.find(event => isSameDay(event.date, date));
-    if (event) {
-      setSelectedEvent(event);
+    const eventsOnDate = getEventsForDate(date);
+    if (eventsOnDate.length > 0) {
+      setSelectedEvent(eventsOnDate[0]);
       setShowEventDetailsDialog(true);
+    } else {
+      // Open add event dialog when clicking on a date with no events
+      setNewEvent({
+        ...newEvent,
+        date: date
+      });
+      setShowAddEventDialog(true);
     }
   };
 
@@ -189,7 +222,7 @@ const Calendar = () => {
     setNewEvent({
       title: event.title,
       description: event.description,
-      date: event.date,
+      date: new Date(event.date),
       category: event.category
     });
     setIsEditMode(true);
@@ -294,7 +327,23 @@ const Calendar = () => {
     }
   };
 
-  const filteredEvents = events.filter(event => activeFilters.includes(event.category));
+  // Filter events based on active category filters and date range
+  const filteredEvents = events.filter(event => {
+    // Check if the event's category is in the active filters
+    const categoryMatches = activeFilters.includes(event.category);
+    
+    // Check if the event's date is within the selected date range
+    let dateMatches = true;
+    if (dateRange.from && dateRange.to) {
+      const eventDate = new Date(event.date);
+      dateMatches = isWithinInterval(eventDate, {
+        start: dateRange.from,
+        end: dateRange.to
+      });
+    }
+    
+    return categoryMatches && dateMatches;
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-white dark:from-gray-900 dark:to-gray-800">
@@ -341,11 +390,36 @@ const Calendar = () => {
                   </Button>
                 </div>
               </div>
+              
+              {/* Date Range Selector */}
+              <div className="mb-4 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <CalendarDays className="h-4 w-4" />
+                  <span className="text-sm">
+                    {dateRange.from ? format(dateRange.from, "MMM d, yyyy") : "Select start date"} 
+                    {dateRange.to ? ` - ${format(dateRange.to, "MMM d, yyyy")}` : ""}
+                  </span>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setDateRange({
+                    from: startOfMonth(currentMonth),
+                    to: endOfMonth(currentMonth)
+                  })}
+                >
+                  Reset Range
+                </Button>
+              </div>
+              
               <CalendarComponent
-                mode="single"
+                mode="range"
+                selected={dateRange}
+                onSelect={(range) => range && setDateRange(range)}
                 month={startOfMonth(currentMonth)}
                 onDayClick={handleDayClick}
                 className="rounded-md border"
+                modifiers={modifiers}
               />
             </Card>
 
@@ -364,7 +438,7 @@ const Calendar = () => {
                       <div className="flex items-center gap-2">
                         <div className="w-3 h-3 rounded-full" style={{ backgroundColor: CategoryColors[event.category] }}></div>
                         <span>
-                          {format(event.date, "MMM d")} - {event.title} 
+                          {format(new Date(event.date), "MMM d")} - {event.title} 
                           {event.sticker && <span className="ml-2">{event.sticker}</span>}
                         </span>
                       </div>
@@ -518,7 +592,7 @@ const Calendar = () => {
                 Date
               </label>
               <div className="col-span-3">
-                {selectedEvent ? format(selectedEvent.date, "MMM d, yyyy") : ''}
+                {selectedEvent ? format(new Date(selectedEvent.date), "MMM d, yyyy") : ''}
               </div>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
@@ -531,7 +605,19 @@ const Calendar = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="destructive" onClick={() => selectedEvent && handleDeleteEvent(selectedEvent.id)}>Delete Event</Button>
+            <div className="flex space-x-2 w-full justify-between">
+              <Button onClick={() => {
+                if (selectedEvent) {
+                  handleEditEvent(selectedEvent);
+                  setShowEventDetailsDialog(false);
+                }
+              }}>
+                Edit Event
+              </Button>
+              <Button variant="destructive" onClick={() => selectedEvent && handleDeleteEvent(selectedEvent.id)}>
+                Delete Event
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
