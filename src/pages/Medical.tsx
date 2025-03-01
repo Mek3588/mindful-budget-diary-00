@@ -741,7 +741,24 @@ const Medical = () => {
       />
 
       {/* Add/Edit Record Dialog */}
-      <Dialog open={isAddingRecord} onOpenChange={setIsAddingRecord}>
+      <Dialog open={isAddingRecord} onOpenChange={(open) => {
+        setIsAddingRecord(open);
+        if (!open) {
+          // Reset the form and editing state when dialog is closed
+          setEditingRecord(null);
+          setNewRecord({
+            type: "appointment",
+            title: "",
+            description: "",
+            date: new Date(),
+            time: "",
+            reminder: true,
+            reminderDays: 1,
+            completed: false,
+            photos: []
+          });
+        }
+      }}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>
@@ -818,11 +835,15 @@ const Medical = () => {
                       {newRecord.date ? format(new Date(newRecord.date), "PPP") : <span>Pick a date</span>}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
+                  <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
                       mode="single"
                       selected={newRecord.date}
-                      onSelect={(date) => date && setNewRecord({ ...newRecord, date })}
+                      onSelect={(date) => {
+                        if (date) {
+                          setNewRecord({ ...newRecord, date });
+                        }
+                      }}
                       initialFocus
                     />
                   </PopoverContent>
@@ -887,7 +908,7 @@ const Medical = () => {
                   value={newRecord.reminderDays?.toString() || "1"}
                   onValueChange={(value) => setNewRecord({ ...newRecord, reminderDays: parseInt(value) })}
                 >
-                  <SelectTrigger id="reminderDays">
+                  <SelectTrigger id="reminderDays" className="w-full">
                     <SelectValue placeholder="Select days" />
                   </SelectTrigger>
                   <SelectContent>
