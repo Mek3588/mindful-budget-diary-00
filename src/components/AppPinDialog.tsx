@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { KeyRound, ShieldCheck } from "lucide-react";
 
 interface AppPinDialogProps {
   onClose?: () => void;
@@ -22,12 +23,13 @@ export function AppPinDialog({ onClose, onSuccess }: AppPinDialogProps) {
     const hasEnteredPin = sessionStorage.getItem("has-entered-pin");
     
     // Only show the PIN dialog if they haven't entered it yet this session
-    if (!hasEnteredPin) {
-      setIsOpen(true);
-    } else {
+    if (hasEnteredPin) {
       setIsOpen(false);
+      if (onSuccess) {
+        onSuccess();
+      }
     }
-  }, []);
+  }, [onSuccess]);
 
   const handlePinSubmit = () => {
     const storedPin = localStorage.getItem("security-pin") || DEFAULT_PIN;
@@ -60,47 +62,49 @@ export function AppPinDialog({ onClose, onSuccess }: AppPinDialogProps) {
     }
   };
 
-  // Prevent back navigation if PIN hasn't been entered
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (!sessionStorage.getItem("has-entered-pin")) {
-        e.preventDefault();
-        e.returnValue = "";
-      }
-    };
-
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, []);
-
   return (
     <Dialog open={isOpen} onOpenChange={handleDialogClose}>
-      <DialogContent className="bg-background border-border shadow-lg">
+      <DialogContent className="bg-gray-800/90 backdrop-blur-xl border-purple-500/30 text-white shadow-xl shadow-purple-500/10 rounded-xl">
         <DialogHeader>
-          <DialogTitle>Enter PIN to Access Your App</DialogTitle>
+          <div className="flex flex-col items-center mb-4">
+            <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-3 rounded-full mb-4">
+              <KeyRound className="h-6 w-6 text-white" />
+            </div>
+            <DialogTitle className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400">
+              Security Check
+            </DialogTitle>
+          </div>
         </DialogHeader>
-        <div className="space-y-4">
-          <p className="text-muted-foreground text-sm">
-            Please enter your security PIN to continue. Default PIN is 1234.
+        <div className="space-y-6">
+          <p className="text-gray-300 text-center">
+            Please enter your security PIN to access your app.
           </p>
-          <Input
-            type="password"
-            placeholder="Enter PIN"
-            maxLength={4}
-            value={pin}
-            onChange={(e) => setPin(e.target.value)}
-            className="bg-background border-input"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                handlePinSubmit();
-              }
-            }}
-          />
+          <div className="flex justify-center">
+            <div className="w-full max-w-xs">
+              <Input
+                type="password"
+                placeholder="Enter PIN"
+                maxLength={4}
+                value={pin}
+                onChange={(e) => setPin(e.target.value)}
+                className="text-center text-xl tracking-widest bg-gray-700/70 border-purple-500/30 focus:border-purple-500/60 h-14 placeholder:text-gray-500"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handlePinSubmit();
+                  }
+                }}
+              />
+              <p className="text-center text-xs text-gray-400 mt-2">
+                Default PIN: 1234
+              </p>
+            </div>
+          </div>
           <Button 
             onClick={handlePinSubmit}
-            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+            className="w-full h-12 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg shadow-purple-500/20 transition-all duration-300 transform hover:scale-[1.02]"
           >
-            Submit
+            <ShieldCheck className="h-5 w-5 mr-2" />
+            Unlock App
           </Button>
         </div>
       </DialogContent>

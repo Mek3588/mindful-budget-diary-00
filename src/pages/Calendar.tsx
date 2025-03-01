@@ -26,7 +26,6 @@ import { format, isSameDay, addMonths, subMonths, parseISO, isValid } from "date
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { PinDialog } from "@/components/PinDialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -279,7 +278,7 @@ const Calendar = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-950 to-gray-900">
-      <PinDialog onSuccess={() => console.log("PIN verified")} />
+      {/* Removed the PIN dialog from here */}
       
       <nav className="fixed top-0 left-0 right-0 z-50 bg-gray-900/70 backdrop-blur-lg border-b border-purple-500/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -497,7 +496,7 @@ const Calendar = () => {
                 {filteredEvents.length > 0 ? (
                   filteredEvents.map((event, index) => (
                     <Card 
-                      key={event.id} 
+                      key={`${event.id}-${index}`} 
                       className="p-4 bg-gradient-to-r from-gray-800/50 to-gray-800/30 backdrop-blur-sm border border-purple-500/20 shadow-md shadow-purple-500/5 rounded-xl transition-all hover:shadow-lg hover:shadow-purple-500/10 hover:border-purple-500/30 group animate-fade-in"
                       style={{animationDelay: `${index * 0.05 + 0.2}s`}}
                     >
@@ -522,8 +521,8 @@ const Calendar = () => {
                             >
                               {event.category}
                             </Badge>
-                            {event.tags?.map(tag => (
-                              <Badge key={`tag-${event.id}-${tag}`} variant="outline" className="border-purple-500/20 text-purple-300">
+                            {event.tags?.map((tag, tagIndex) => (
+                              <Badge key={`tag-${event.id}-${tag}-${tagIndex}`} variant="outline" className="border-purple-500/20 text-purple-300">
                                 {tag}
                               </Badge>
                             ))}

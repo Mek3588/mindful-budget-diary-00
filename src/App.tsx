@@ -45,9 +45,9 @@ const App = () => {
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            {/* Only show PIN dialog if not authenticated yet */}
             {showPinDialog && (
               <AppPinDialog 
-                onClose={() => setShowPinDialog(false)}
                 onSuccess={handlePinSuccess}
               />
             )}
