@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
@@ -172,7 +173,11 @@ const Calendar = () => {
       
       if (savedMedical) {
         const medical = JSON.parse(savedMedical);
-        const medicalEvents = processSources(medical, 'medical', 'medical');
+        // Generate unique keys for medical events to avoid duplicates
+        const medicalEvents = processSources(medical, 'medical', 'medical').map((event, index) => ({
+          ...event,
+          id: `medical-${index}-${Date.now()}`
+        }));
         allEvents = [...allEvents, ...medicalEvents];
       }
       
@@ -189,6 +194,14 @@ const Calendar = () => {
       })));
     }
   }, []);
+
+  // Update dateRange when currentMonth changes
+  useEffect(() => {
+    setDateRange({
+      from: startOfMonth(currentMonth),
+      to: endOfMonth(currentMonth)
+    });
+  }, [currentMonth]);
 
   const nextMonth = () => {
     setCurrentMonth(addMonths(currentMonth, 1));
@@ -333,6 +346,19 @@ const Calendar = () => {
     setSelectedEvent(null);
   };
 
+  // Reset date range to current month
+  const handleResetDateRange = () => {
+    const newFrom = startOfMonth(currentMonth);
+    const newTo = endOfMonth(currentMonth);
+    
+    setDateRange({
+      from: newFrom,
+      to: newTo
+    });
+    
+    toast.success(`Date range reset to ${format(newFrom, "MMMM yyyy")}`);
+  };
+
   // Filter events based on selected category and date range
   const filteredEvents = events.filter(event => {
     // Category filter
@@ -413,10 +439,7 @@ const Calendar = () => {
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  onClick={() => setDateRange({
-                    from: startOfMonth(currentMonth),
-                    to: endOfMonth(currentMonth)
-                  })}
+                  onClick={handleResetDateRange}
                 >
                   Reset Range
                 </Button>
@@ -427,7 +450,7 @@ const Calendar = () => {
                   mode="range"
                   selected={dateRange}
                   onSelect={handleDateRangeChange}
-                  month={startOfMonth(currentMonth)}
+                  month={currentMonth}
                   onDayClick={handleDayClick}
                   className="rounded-md border w-full"
                   modifiers={modifiers}
