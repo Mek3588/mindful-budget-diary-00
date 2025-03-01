@@ -63,7 +63,7 @@ function Calendar({
       components={{
         IconLeft: () => <ChevronLeft className="h-4 w-4" />,
         IconRight: () => <ChevronRight className="h-4 w-4" />,
-        DayContent: (props) => {
+        DayContent: (props: DayContentProps) => {
           // Extract date from props to show event indicator
           const date = props.date;
           // Check if this date has the has_event modifier

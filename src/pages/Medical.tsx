@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -526,20 +525,42 @@ const Medical = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                <Tabs 
-                  defaultValue="upcoming" 
-                  value={selectedTab} 
-                  onValueChange={setSelectedTab}
-                  className="mb-6"
-                >
-                  <TabsList className="grid grid-cols-4">
-                    <TabsTrigger value="date">By Date</TabsTrigger>
-                    <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
-                    <TabsTrigger value="completed">Completed</TabsTrigger>
-                    <TabsTrigger value="all">All Records</TabsTrigger>
-                  </TabsList>
-                </Tabs>
+                {/* Mobile view: Dropdown for tabs */}
+                <div className="block md:hidden mb-4">
+                  <Select
+                    value={selectedTab}
+                    onValueChange={setSelectedTab}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select view" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="date">By Date</SelectItem>
+                      <SelectItem value="upcoming">Upcoming</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="all">All Records</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 
+                {/* Desktop view: Tabs */}
+                <div className="hidden md:block">
+                  <Tabs 
+                    defaultValue="upcoming" 
+                    value={selectedTab} 
+                    onValueChange={setSelectedTab}
+                    className="mb-6"
+                  >
+                    <TabsList className="grid grid-cols-4">
+                      <TabsTrigger value="date">By Date</TabsTrigger>
+                      <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
+                      <TabsTrigger value="completed">Completed</TabsTrigger>
+                      <TabsTrigger value="all">All Records</TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                </div>
+                
+                {/* Rest of the content */}
                 {filteredRecords.length === 0 ? (
                   <div className="text-center py-12">
                     <Clipboard className="mx-auto h-12 w-12 text-gray-400 mb-4" />
@@ -835,7 +856,7 @@ const Medical = () => {
                       {newRecord.date ? format(new Date(newRecord.date), "PPP") : <span>Pick a date</span>}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
+                  <PopoverContent className="w-auto p-0 z-50" align="start">
                     <Calendar
                       mode="single"
                       selected={newRecord.date}
