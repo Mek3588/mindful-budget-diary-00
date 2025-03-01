@@ -19,11 +19,11 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  // For backward compatibility with toggleTheme usage
+  // Modified to cycle through all available themes
   const toggleTheme = () => {
-    const currentThemeType = currentTheme.type;
-    const nextTheme = themes.find(theme => theme.type !== currentThemeType) || themes[0];
-    setTheme(nextTheme.id);
+    const currentIndex = themes.findIndex(theme => theme.id === currentTheme.id);
+    const nextIndex = (currentIndex + 1) % themes.length;
+    setTheme(themes[nextIndex].id);
   };
 
   useEffect(() => {

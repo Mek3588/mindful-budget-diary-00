@@ -157,8 +157,10 @@ export default function Index() {
                 onClick={toggleTheme}
                 className="text-gray-600 dark:text-gray-300"
               >
-                {currentTheme.type === "masculine" ? (
+                {currentTheme.id === 'dark' || currentTheme.id === 'm1' ? (
                   <Moon className="h-5 w-5" />
+                ) : currentTheme.id === 'blue' ? (
+                  <Sun className="h-5 w-5 text-blue-500" />
                 ) : (
                   <Sun className="h-5 w-5" />
                 )}
