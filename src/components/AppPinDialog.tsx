@@ -6,9 +6,14 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
-export function AppPinDialog() {
+interface AppPinDialogProps {
+  onClose?: () => void;
+  onSuccess?: () => void;
+}
+
+export function AppPinDialog({ onClose, onSuccess }: AppPinDialogProps) {
   const [pin, setPin] = useState("");
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
   const navigate = useNavigate();
   const DEFAULT_PIN = "1234";
 
@@ -19,6 +24,8 @@ export function AppPinDialog() {
     // Only show the PIN dialog if they haven't entered it yet this session
     if (!hasEnteredPin) {
       setIsOpen(true);
+    } else {
+      setIsOpen(false);
     }
   }, []);
 
@@ -30,9 +37,26 @@ export function AppPinDialog() {
       sessionStorage.setItem("has-entered-pin", "true");
       setIsOpen(false);
       toast.success("Welcome to your personal dashboard!");
+      
+      // Call the onSuccess callback if provided
+      if (onSuccess) {
+        onSuccess();
+      }
     } else {
       toast.error("Incorrect PIN");
       setPin("");
+    }
+  };
+
+  const handleDialogClose = (open: boolean) => {
+    // Don't allow closing the dialog by clicking outside until PIN is entered
+    if (!sessionStorage.getItem("has-entered-pin")) return;
+    
+    setIsOpen(open);
+    
+    // Call the onClose callback if provided and the dialog is closing
+    if (!open && onClose) {
+      onClose();
     }
   };
 
@@ -50,11 +74,7 @@ export function AppPinDialog() {
   }, []);
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => {
-      // Don't allow closing the dialog by clicking outside until PIN is entered
-      if (!sessionStorage.getItem("has-entered-pin")) return;
-      setIsOpen(open);
-    }}>
+    <Dialog open={isOpen} onOpenChange={handleDialogClose}>
       <DialogContent className="bg-background border-border shadow-lg">
         <DialogHeader>
           <DialogTitle>Enter PIN to Access Your App</DialogTitle>
