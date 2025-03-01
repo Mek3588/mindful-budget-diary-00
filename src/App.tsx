@@ -47,7 +47,6 @@ const App = () => {
           <BrowserRouter>
             {showPinDialog && (
               <AppPinDialog 
-                isOpen={showPinDialog}
                 onClose={() => setShowPinDialog(false)}
                 onSuccess={handlePinSuccess}
               />

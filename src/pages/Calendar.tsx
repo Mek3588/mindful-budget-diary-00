@@ -471,7 +471,7 @@ const Calendar = () => {
                 {filteredEvents.length > 0 ? (
                   filteredEvents.map(event => (
                     <Card 
-                      key={`event-card-${event.id}`} 
+                      key={event.id} 
                       className="p-4 bg-gradient-to-r from-gray-700/30 to-gray-700/10 backdrop-blur-sm border border-gray-700/20"
                     >
                       <div className="flex justify-between items-start">
@@ -556,4 +556,3 @@ const Calendar = () => {
 };
 
 export default Calendar;
-
