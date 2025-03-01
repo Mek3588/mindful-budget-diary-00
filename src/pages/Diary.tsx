@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -117,7 +116,6 @@ const Diary = () => {
   const [location, setLocation] = useState("");
   const [isPrivate, setIsPrivate] = useState(false);
 
-  // Load entries from localStorage on component mount
   useEffect(() => {
     const savedEntries = localStorage.getItem('diary-entries');
     if (savedEntries) {
@@ -130,23 +128,19 @@ const Diary = () => {
       }));
       setEntries(loadedEntries);
       
-      // Calculate mood and energy stats
       updateStats(loadedEntries);
     }
   }, []);
   
-  // Filter entries by selected date or show past entries
   useEffect(() => {
     let filtered;
     
     if (isSearching && searchQuery.trim() !== "") {
-      // Search in all entries
       filtered = entries.filter(entry => 
         entry.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (entry.tags && entry.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())))
       );
     } else if (viewingPastEntries) {
-      // When viewing past entries, show all entries before today
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       
@@ -154,13 +148,11 @@ const Diary = () => {
         isBefore(new Date(entry.date), today)
       );
     } else {
-      // When viewing by date, filter entries for the selected date
       filtered = entries.filter(entry => 
         isSameDay(new Date(entry.date), selectedDate)
       );
     }
     
-    // Apply additional filters if set
     if (moodFilter) {
       filtered = filtered.filter(entry => entry.mood === moodFilter);
     }
@@ -169,7 +161,6 @@ const Diary = () => {
       filtered = filtered.filter(entry => entry.energy === energyFilter);
     }
     
-    // Apply date range filter
     if (dateRangeFilter !== "all") {
       const today = new Date();
       let startDate;
@@ -189,21 +180,18 @@ const Diary = () => {
       filtered = filtered.filter(entry => isAfter(new Date(entry.date), startDate));
     }
     
-    // Sort by date (newest first)
-    filtered.sort((a, b) => b.date.getTime() - a.date.getTime());
+    filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     
     setFilteredEntries(filtered);
   }, [entries, selectedDate, viewingPastEntries, searchQuery, isSearching, moodFilter, energyFilter, dateRangeFilter]);
 
   const updateStats = (entriesData: DiaryEntry[]) => {
-    // Initialize all possible values to 0
     const moodCounts: Record<string, number> = {};
     moodOptions.forEach(mood => { moodCounts[mood.value] = 0 });
     
     const energyCounts: Record<string, number> = {};
     energyOptions.forEach(energy => { energyCounts[energy.value] = 0 });
     
-    // Count occurrences
     entriesData.forEach(entry => {
       if (entry.mood) moodCounts[entry.mood] = (moodCounts[entry.mood] || 0) + 1;
       if (entry.energy) energyCounts[entry.energy] = (energyCounts[entry.energy] || 0) + 1;
@@ -213,7 +201,6 @@ const Diary = () => {
     setEnergyStats(energyCounts);
   };
 
-  // Save entries to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem('diary-entries', JSON.stringify(entries));
   }, [entries]);
@@ -228,7 +215,6 @@ const Diary = () => {
     const now = new Date();
     
     if (isEditing && editingEntry) {
-      // Update existing entry
       updatedEntries = entries.map(entry => {
         if (entry.id === editingEntry.id) {
           return {
@@ -249,7 +235,6 @@ const Diary = () => {
       
       toast.success("Entry updated successfully!");
     } else {
-      // Create new entry
       const entry: DiaryEntry = {
         id: Date.now().toString(),
         content: newEntry,
@@ -264,7 +249,6 @@ const Diary = () => {
         isPrivate: isPrivate
       };
 
-      // Create stickers for the calendar
       const moodSticker: Sticker = {
         id: `mood-${entry.id}`,
         type: 'mood',
@@ -279,13 +263,10 @@ const Diary = () => {
         date: entry.date
       };
 
-      // Get existing stickers from localStorage
       const existingStickers = JSON.parse(localStorage.getItem('calendar-stickers') || '[]');
       
-      // Add new stickers
       const updatedStickers = [...existingStickers, moodSticker, energySticker];
       
-      // Save stickers to localStorage
       localStorage.setItem('calendar-stickers', JSON.stringify(updatedStickers));
 
       updatedEntries = [entry, ...entries];
@@ -325,7 +306,6 @@ const Diary = () => {
     setIsPrivate(entry.isPrivate || false);
     setIsWriting(true);
     
-    // Exit past entries viewing mode when editing
     if (viewingPastEntries) {
       setViewingPastEntries(false);
       setSelectedDate(new Date(entry.date));
@@ -342,12 +322,10 @@ const Diary = () => {
     
     const entryId = entryToDelete;
     
-    // Remove entry
     const updatedEntries = entries.filter(entry => entry.id !== entryId);
     setEntries(updatedEntries);
     updateStats(updatedEntries);
     
-    // Remove associated stickers
     const existingStickers = JSON.parse(localStorage.getItem('calendar-stickers') || '[]');
     const updatedStickers = existingStickers.filter((sticker: Sticker) => 
       !sticker.id.includes(entryId)
@@ -364,7 +342,6 @@ const Diary = () => {
       setSelectedDate(date);
       setDatePickerOpen(false);
       
-      // Exit past entries viewing mode when selecting a specific date
       if (viewingPastEntries) {
         setViewingPastEntries(false);
       }
@@ -417,7 +394,6 @@ const Diary = () => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
     
-    // Convert image files to base64
     Array.from(files).forEach(file => {
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -427,7 +403,6 @@ const Diary = () => {
       reader.readAsDataURL(file);
     });
     
-    // Clear input value
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -443,12 +418,10 @@ const Diary = () => {
   };
   
   const exportAsPDF = () => {
-    // This would require a PDF library, but for now let's just simulate it
     toast.success("PDF export feature coming soon!");
   };
   
   const exportAsJSON = () => {
-    // Create a JSON file of all entries
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(entries));
     const downloadAnchorNode = document.createElement('a');
     downloadAnchorNode.setAttribute("href", dataStr);
@@ -465,6 +438,7 @@ const Diary = () => {
     setEnergyFilter(null);
     setDateRangeFilter("all");
     setIsFilterMenuOpen(false);
+    toast.success("Filters cleared");
   };
 
   const getMoodIcon = (moodValue: string) => {
@@ -487,7 +461,6 @@ const Diary = () => {
   const EnergyIcon = energyOptions.find(energy => energy.value === selectedEnergy)?.icon || Stars;
   const WeatherIcon = selectedWeather ? (weatherOptions.find(weather => weather.value === selectedWeather)?.icon || null) : null;
 
-  // Calculate mood percentages for visualization
   const calculatePercentage = (value: string, stats: Record<string, number>, options: { value: string }[]) => {
     const total = Object.values(stats).reduce((sum, count) => sum + count, 0);
     if (total === 0) return 0;
@@ -560,7 +533,7 @@ const Diary = () => {
                 <DropdownMenuContent className="w-56">
                   <div className="p-2">
                     <h3 className="font-medium mb-2">Mood</h3>
-                    <Select value={moodFilter || ""} onValueChange={val => setMoodFilter(val || null)}>
+                    <Select value={moodFilter || ""} onValueChange={(val) => setMoodFilter(val || null)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select mood" />
                       </SelectTrigger>
@@ -576,7 +549,7 @@ const Diary = () => {
                   </div>
                   <div className="p-2">
                     <h3 className="font-medium mb-2">Energy</h3>
-                    <Select value={energyFilter || ""} onValueChange={val => setEnergyFilter(val || null)}>
+                    <Select value={energyFilter || ""} onValueChange={(val) => setEnergyFilter(val || null)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select energy" />
                       </SelectTrigger>
@@ -592,7 +565,7 @@ const Diary = () => {
                   </div>
                   <div className="p-2">
                     <h3 className="font-medium mb-2">Date range</h3>
-                    <Select value={dateRangeFilter} onValueChange={val => setDateRangeFilter(val as any)}>
+                    <Select value={dateRangeFilter} onValueChange={(val) => setDateRangeFilter(val as any)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select date range" />
                       </SelectTrigger>
@@ -671,7 +644,6 @@ const Diary = () => {
       </nav>
 
       <main className="pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        {/* Don't show mood stats when viewing past entries */}
         {!viewingPastEntries && !isSearching && showStatistics && (
           <Card className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-6 mb-6">
             <h2 className="text-lg font-semibold mb-4">Mood & Energy Tracker</h2>
@@ -1135,7 +1107,6 @@ const Diary = () => {
         </div>
       </main>
       
-      {/* Delete Confirmation Dialog */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent className="bg-gray-800 border-purple-500/30 text-white">
           <AlertDialogHeader>
@@ -1153,7 +1124,6 @@ const Diary = () => {
         </AlertDialogContent>
       </AlertDialog>
       
-      {/* Image Viewer Dialog */}
       <Dialog open={showImageDialog} onOpenChange={setShowImageDialog}>
         <DialogContent className="bg-gray-800 border-purple-500/30 text-white max-w-3xl">
           <DialogHeader>

@@ -83,7 +83,7 @@ export const themes: Theme[] = [
       }
     }
   },
-  // Blue Mode - Updated with proper blue colors
+  // Blue Mode - Completely revised with proper blue colors
   {
     id: 'blue',
     name: 'Blue Mode',
@@ -94,7 +94,7 @@ export const themes: Theme[] = [
     stickerColors: {
       mood: {
         happy: '#1EAEDB',
-        neutral: '#D3E4FD',
+        neutral: '#C8C8C9',
         sad: '#0FA0CE',
         angry: '#F56565',
         love: '#ED64A6',
@@ -102,8 +102,8 @@ export const themes: Theme[] = [
       },
       energy: {
         energetic: '#33C3F0',
-        calm: '#4FD1C5',
-        productive: '#0FA0CE',
+        calm: '#0FA0CE',
+        productive: '#1EAEDB',
         tired: '#8A898C',
         stressed: '#F56565',
         down: '#403E43'

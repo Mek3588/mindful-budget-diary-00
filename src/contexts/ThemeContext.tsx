@@ -37,6 +37,10 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     document.documentElement.style.setProperty('--accent', currentTheme.accentColor);
     document.documentElement.style.setProperty('--accent-foreground', currentTheme.primaryColor);
     
+    // Apply theme to body element as well
+    document.body.style.backgroundColor = currentTheme.primaryColor;
+    document.body.style.color = currentTheme.type === 'masculine' ? '#ffffff' : '#000000';
+    
     // Set sticker colors
     Object.entries(currentTheme.stickerColors.mood).forEach(([key, value]) => {
       document.documentElement.style.setProperty(`--mood-${key}-color`, value);
