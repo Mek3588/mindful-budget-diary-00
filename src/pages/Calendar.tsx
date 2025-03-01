@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
@@ -100,7 +99,6 @@ const Calendar = () => {
 
   const [isEditMode, setIsEditMode] = useState(false);
   
-  // Fix the DateRange type issue by making 'to' optional in our state
   const [dateRange, setDateRange] = useState<{
     from: Date;
     to?: Date;
@@ -109,16 +107,13 @@ const Calendar = () => {
     to: endOfMonth(currentMonth)
   });
 
-  // Function to handle DateRange changes safely
   const handleDateRangeChange = (range: DateRange | undefined) => {
     if (!range) {
-      // If range is undefined, reset to current month
       setDateRange({
         from: startOfMonth(currentMonth),
         to: endOfMonth(currentMonth)
       });
     } else if (range.from) {
-      // If range.from exists, update the state
       setDateRange({
         from: range.from,
         to: range.to
@@ -137,58 +132,60 @@ const Calendar = () => {
       let allEvents: Event[] = [];
       
       if (savedEvents) {
-        allEvents = JSON.parse(savedEvents).map((event: any) => ({
-          ...event,
-          date: new Date(event.date)
-        }));
+        try {
+          allEvents = JSON.parse(savedEvents).map((event: any) => ({
+            ...event,
+            date: new Date(event.date)
+          }));
+        } catch (error) {
+          console.error('Error parsing calendar events:', error);
+        }
       }
       
-      // Add events from other sources, ensuring no duplicate IDs
-      const processSources = (source: any[], category: EventCategory, prefix: string) => {
-        if (!source || !Array.isArray(source)) return [];
-        return source.map((item: any, index: number) => {
-          const id = `${prefix}-${item.id || index}-${Date.now()}`;
-          // Check if this event already exists in allEvents
-          if (allEvents.some(e => e.id === id)) return null;
+      const processSources = (source: string | null, category: EventCategory, prefix: string) => {
+        if (!source) return [];
+        
+        try {
+          const parsed = JSON.parse(source);
+          if (!Array.isArray(parsed)) return [];
           
-          return {
-            id,
-            title: category === 'diary' ? "Diary Entry" : (item.title || (category === 'medical' ? "Medical Appointment" : "")),
-            description: item.content || item.description || item.notes || item.prescription || "",
-            date: new Date(item.date || item.appointmentDate || item.dueDate || item.createdAt),
-            category,
-            tags: category === 'diary' ? [`mood-${item.mood}`, `energy-${item.energy}`] :
-                 category === 'goal' ? [`priority-${item.priority}`, `status-${item.status}`] :
-                 category === 'medical' ? [item.type || "appointment", item.status || "scheduled"] : []
-          };
-        }).filter(Boolean); // Remove null items
+          return parsed.map((item: any, index: number) => {
+            const itemDate = new Date(item.date || item.appointmentDate || item.dueDate || item.createdAt || new Date());
+            const id = `${prefix}-${item.id || index}-${itemDate.getTime()}`;
+            
+            if (allEvents.some(e => e.id === id)) return null;
+            
+            return {
+              id,
+              title: category === 'diary' ? "Diary Entry" : 
+                     category === 'goal' ? item.title || "Goal" : 
+                     category === 'medical' ? item.type || "Medical Appointment" : 
+                     item.title || `${category} item`,
+              description: item.content || item.description || item.notes || item.prescription || "",
+              date: itemDate,
+              category,
+              tags: category === 'diary' ? [`mood-${item.mood || 'neutral'}`, `energy-${item.energy || 'medium'}`] :
+                   category === 'goal' ? [`priority-${item.priority || 'medium'}`, `status-${item.status || 'pending'}`] :
+                   category === 'medical' ? [item.type || "appointment", item.status || "scheduled"] : []
+            };
+          }).filter(Boolean);
+        } catch (error) {
+          console.error(`Error processing ${category} items:`, error);
+          return [];
+        }
       };
       
-      if (savedDiaryEntries) {
-        const diaryEntries = JSON.parse(savedDiaryEntries);
-        const diaryEvents = processSources(diaryEntries, 'diary', 'diary');
-        allEvents = [...allEvents, ...diaryEvents];
-      }
+      const diaryEvents = processSources(savedDiaryEntries, 'diary', 'diary');
       
-      if (savedNotes) {
-        const notes = JSON.parse(savedNotes);
-        const noteEvents = processSources(notes, 'note', 'note');
-        allEvents = [...allEvents, ...noteEvents];
-      }
+      const noteEvents = processSources(savedNotes, 'note', 'note');
       
-      if (savedGoals) {
-        const goals = JSON.parse(savedGoals);
-        const goalEvents = processSources(goals, 'goal', 'goal');
-        allEvents = [...allEvents, ...goalEvents];
-      }
+      const goalEvents = processSources(savedGoals, 'goal', 'goal');
       
-      if (savedMedical) {
-        const medical = JSON.parse(savedMedical);
-        // Generate unique keys for medical events to avoid duplicates
-        const medicalEvents = processSources(medical, 'medical', 'medical');
-        allEvents = [...allEvents, ...medicalEvents];
-      }
+      const medicalEvents = processSources(savedMedical, 'medical', 'medical');
       
+      allEvents = [...allEvents, ...diaryEvents, ...noteEvents, ...goalEvents, ...medicalEvents];
+      
+      console.log('Calendar loaded events:', allEvents.length, 'Goals:', goalEvents.length);
       setEvents(allEvents);
     };
 
@@ -196,14 +193,17 @@ const Calendar = () => {
     
     const savedStickers = localStorage.getItem('calendar-stickers');
     if (savedStickers) {
-      setStickers(JSON.parse(savedStickers).map((sticker: any) => ({
-        ...sticker,
-        date: new Date(sticker.date)
-      })));
+      try {
+        setStickers(JSON.parse(savedStickers).map((sticker: any) => ({
+          ...sticker,
+          date: new Date(sticker.date)
+        })));
+      } catch (error) {
+        console.error('Error parsing stickers:', error);
+      }
     }
   }, []);
 
-  // Update dateRange when currentMonth changes
   useEffect(() => {
     setDateRange({
       from: startOfMonth(currentMonth),
@@ -222,7 +222,6 @@ const Calendar = () => {
   const goToToday = () => {
     const today = new Date();
     setCurrentMonth(today);
-    // Also update dateRange to show current month
     setDateRange({
       from: startOfMonth(today),
       to: endOfMonth(today)
@@ -335,7 +334,6 @@ const Calendar = () => {
 
   const handleSaveSticker = () => {
     if (selectedEvent) {
-      // Add sticker to event
       const updatedEvents = events.map(event => 
         event.id === selectedEvent.id ? {
           ...event,
@@ -348,7 +346,6 @@ const Calendar = () => {
       toast.success(`Sticker added to "${selectedEvent.title}"`);
       setSelectedEvent(null);
     } else {
-      // Add standalone sticker
       const sticker: Sticker = {
         id: Date.now().toString(),
         emoji: stickerEmoji,
@@ -365,7 +362,6 @@ const Calendar = () => {
     setStickerEmoji("😊");
   };
 
-  // Reset date range to current month
   const handleResetDateRange = () => {
     const newFrom = startOfMonth(currentMonth);
     const newTo = endOfMonth(currentMonth);
@@ -378,12 +374,9 @@ const Calendar = () => {
     toast.success(`Date range reset to ${format(newFrom, "MMMM yyyy")}`);
   };
 
-  // Filter events based on selected category and date range
   const filteredEvents = events.filter(event => {
-    // Category filter
     const categoryMatches = selectedCategory === "all" || event.category === selectedCategory;
     
-    // Date range filter
     let dateMatches = true;
     if (dateRange.from) {
       const eventDate = new Date(event.date);
@@ -393,7 +386,6 @@ const Calendar = () => {
           end: dateRange.to
         });
       } else {
-        // If only 'from' is set, just check if date is after 'from'
         dateMatches = eventDate >= dateRange.from;
       }
     }
@@ -426,7 +418,6 @@ const Calendar = () => {
 
       <main className="pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-7">
-          {/* Main Calendar Section - Takes 5/7 of the grid on large screens */}
           <div className="lg:col-span-5 space-y-6">
             <Card className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-4 sm:p-6">
               <div className="flex flex-wrap items-center justify-between mb-4 gap-2">
@@ -537,9 +528,7 @@ const Calendar = () => {
             </Card>
           </div>
 
-          {/* Sidebar - Takes 2/7 of the grid on large screens */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Categories dropdown for mobile */}
             <div className="lg:hidden">
               <Popover open={showCategoriesPopover} onOpenChange={setShowCategoriesPopover}>
                 <PopoverTrigger asChild>
@@ -576,7 +565,6 @@ const Calendar = () => {
               </Popover>
             </div>
 
-            {/* Categories card for desktop */}
             <Card className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-4 sm:p-6 hidden lg:block">
               <h2 className="text-lg font-semibold mb-4">Categories</h2>
               <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
@@ -598,7 +586,6 @@ const Calendar = () => {
               </div>
             </Card>
 
-            {/* Stickers section */}
             <Card className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-4 sm:p-6">
               <Collapsible>
                 <CollapsibleTrigger className="flex items-center justify-between w-full">
@@ -623,7 +610,6 @@ const Calendar = () => {
         </div>
       </main>
 
-      {/* Add/Edit Event Dialog */}
       <Dialog open={showAddEventDialog} onOpenChange={(open) => {
         setShowAddEventDialog(open);
         if (!open) {
@@ -704,7 +690,6 @@ const Calendar = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Event Details Dialog */}
       <Dialog open={showEventDetailsDialog} onOpenChange={setShowEventDetailsDialog}>
         <DialogContent className="sm:max-w-[425px] bg-gray-900 text-white border border-gray-700 overflow-y-auto max-h-[90vh]">
           <DialogHeader>
@@ -768,7 +753,6 @@ const Calendar = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Sticker Dialog */}
       <Dialog open={showStickerDialog} onOpenChange={setShowStickerDialog}>
         <DialogContent className="sm:max-w-[425px] bg-gray-900 text-white border border-gray-700 overflow-y-auto max-h-[90vh]">
           <DialogHeader>

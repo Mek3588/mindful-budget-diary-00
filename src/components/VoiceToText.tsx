@@ -27,6 +27,7 @@ const VoiceToText = ({ onTranscript, placeholder = "Speak now..." }: VoiceToText
     // Check if browser supports the Web Speech API
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
       setIsSupported(false);
+      toast.error("Speech recognition is not supported in your browser");
       return;
     }
 
@@ -62,7 +63,15 @@ const VoiceToText = ({ onTranscript, placeholder = "Speak now..." }: VoiceToText
     
     recognitionRef.current.onerror = (event: any) => {
       console.error('Speech recognition error', event.error);
-      toast.error(`Speech recognition error: ${event.error}`);
+      
+      if (event.error === 'not-allowed' || event.error === 'permission-denied') {
+        toast.error("Microphone permission denied. Please enable microphone access.");
+      } else if (event.error === 'no-speech') {
+        toast.warning("No speech detected. Please try speaking again.");
+      } else {
+        toast.error(`Speech recognition error: ${event.error}`);
+      }
+      
       setIsListening(false);
     };
     
@@ -71,6 +80,7 @@ const VoiceToText = ({ onTranscript, placeholder = "Speak now..." }: VoiceToText
       if (isListening) {
         try {
           recognitionRef.current.start();
+          console.log("Speech recognition restarted");
         } catch (e) {
           console.error('Error restarting speech recognition', e);
           setIsListening(false);
@@ -111,8 +121,17 @@ const VoiceToText = ({ onTranscript, placeholder = "Speak now..." }: VoiceToText
       // Start listening
       setTranscript("");
       try {
-        recognitionRef.current.start();
-        setIsListening(true);
+        // Request microphone permission before starting
+        navigator.mediaDevices.getUserMedia({ audio: true })
+          .then(() => {
+            recognitionRef.current.start();
+            setIsListening(true);
+            toast.success("Listening... speak now");
+          })
+          .catch((err) => {
+            console.error('Error accessing microphone', err);
+            toast.error("Could not access microphone. Please check permissions.");
+          });
       } catch (error) {
         console.error('Error starting speech recognition', error);
         toast.error("Could not start speech recognition");
