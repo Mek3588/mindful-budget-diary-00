@@ -1,4 +1,4 @@
-
+<lov-code>
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -893,44 +893,4 @@ const Medical = () => {
                   <SelectContent>
                     <SelectItem value="0">Same day</SelectItem>
                     <SelectItem value="1">1 day before</SelectItem>
-                    <SelectItem value="2">2 days before</SelectItem>
-                    <SelectItem value="3">3 days before</SelectItem>
-                    <SelectItem value="7">1 week before</SelectItem>
-                    <SelectItem value="14">2 weeks before</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              setIsAddingRecord(false);
-              if (editingRecord) {
-                setEditingRecord(null);
-              }
-              setNewRecord({
-                type: "appointment",
-                title: "",
-                description: "",
-                date: new Date(),
-                time: "",
-                reminder: true,
-                reminderDays: 1,
-                completed: false,
-                photos: []
-              });
-            }}>
-              Cancel
-            </Button>
-            <Button onClick={handleAddRecord}>
-              {editingRecord ? "Update Record" : "Add Record"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </PageLayout>
-  );
-};
-
-export default Medical;
+                    <SelectItem value="2
