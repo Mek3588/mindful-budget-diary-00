@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -35,6 +36,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import useMobile from "@/hooks/use-mobile";
 
 interface DiaryEntry {
   id: string;
@@ -84,6 +86,7 @@ const weatherOptions = [
 
 const Diary = () => {
   const navigate = useNavigate();
+  const isMobile = useMobile();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [entries, setEntries] = useState<DiaryEntry[]>([]);
   const [filteredEntries, setFilteredEntries] = useState<DiaryEntry[]>([]);
@@ -530,7 +533,7 @@ const Diary = () => {
                     Filter
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56">
+                <DropdownMenuContent className="w-56 bg-white dark:bg-gray-800">
                   <div className="p-2">
                     <h3 className="font-medium mb-2">Mood</h3>
                     <Select value={moodFilter || ""} onValueChange={(val) => setMoodFilter(val || null)}>
@@ -538,7 +541,7 @@ const Diary = () => {
                         <SelectValue placeholder="Select mood" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Any mood</SelectItem>
+                        <SelectItem value="all">Any mood</SelectItem>
                         {moodOptions.map(mood => (
                           <SelectItem key={mood.value} value={mood.value}>
                             {mood.label}
@@ -554,7 +557,7 @@ const Diary = () => {
                         <SelectValue placeholder="Select energy" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Any energy</SelectItem>
+                        <SelectItem value="all">Any energy</SelectItem>
                         {energyOptions.map(energy => (
                           <SelectItem key={energy.value} value={energy.value}>
                             {energy.label}
@@ -748,15 +751,16 @@ const Diary = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-4">
                     <h2 className="text-lg font-semibold">How are you feeling?</h2>
+                    {/* Changed from grid-cols-2 sm:grid-cols-3 to grid-cols-3 for 3 icons per row */}
                     <RadioGroup
                       value={selectedMood}
                       onValueChange={setSelectedMood}
-                      className="grid grid-cols-2 sm:grid-cols-3 gap-4"
+                      className="grid grid-cols-3 gap-2"
                     >
                       {moodOptions.map((mood) => {
                         const Icon = mood.icon;
                         return (
-                          <div key={mood.value} className="text-center space-y-2">
+                          <div key={mood.value} className="text-center space-y-1">
                             <RadioGroupItem
                               value={mood.value}
                               id={`mood-${mood.value}`}
@@ -764,18 +768,18 @@ const Diary = () => {
                             />
                             <Label
                               htmlFor={`mood-${mood.value}`}
-                              className="flex flex-col items-center space-y-2 cursor-pointer peer-aria-checked:text-primary"
+                              className="flex flex-col items-center space-y-1 cursor-pointer peer-aria-checked:text-primary"
                             >
-                              <div className={`p-2 rounded-full transition-colors ${
+                              <div className={`p-1.5 rounded-full transition-colors ${
                                 selectedMood === mood.value 
                                   ? 'bg-primary/10 ' + mood.color
                                   : 'hover:bg-gray-100 dark:hover:bg-gray-800'
                               }`}>
-                                <Icon className={`h-6 w-6 ${
+                                <Icon className={`h-5 w-5 ${
                                   selectedMood === mood.value ? mood.color : ''
                                 }`} />
                               </div>
-                              <span className="text-sm">{mood.label}</span>
+                              <span className="text-xs">{mood.label}</span>
                             </Label>
                           </div>
                         );
@@ -785,15 +789,16 @@ const Diary = () => {
 
                   <div className="space-y-4">
                     <h2 className="text-lg font-semibold">Energy Level</h2>
+                    {/* Changed from grid-cols-2 sm:grid-cols-3 to grid-cols-3 for 3 icons per row */}
                     <RadioGroup
                       value={selectedEnergy}
                       onValueChange={setSelectedEnergy}
-                      className="grid grid-cols-2 sm:grid-cols-3 gap-4"
+                      className="grid grid-cols-3 gap-2"
                     >
                       {energyOptions.map((energy) => {
                         const Icon = energy.icon;
                         return (
-                          <div key={energy.value} className="text-center space-y-2">
+                          <div key={energy.value} className="text-center space-y-1">
                             <RadioGroupItem
                               value={energy.value}
                               id={`energy-${energy.value}`}
@@ -801,18 +806,18 @@ const Diary = () => {
                             />
                             <Label
                               htmlFor={`energy-${energy.value}`}
-                              className="flex flex-col items-center space-y-2 cursor-pointer peer-aria-checked:text-primary"
+                              className="flex flex-col items-center space-y-1 cursor-pointer peer-aria-checked:text-primary"
                             >
-                              <div className={`p-2 rounded-full transition-colors ${
+                              <div className={`p-1.5 rounded-full transition-colors ${
                                 selectedEnergy === energy.value 
                                   ? 'bg-primary/10 ' + energy.color
                                   : 'hover:bg-gray-100 dark:hover:bg-gray-800'
                               }`}>
-                                <Icon className={`h-6 w-6 ${
+                                <Icon className={`h-5 w-5 ${
                                   selectedEnergy === energy.value ? energy.color : ''
                                 }`} />
                               </div>
-                              <span className="text-sm">{energy.label}</span>
+                              <span className="text-xs">{energy.label}</span>
                             </Label>
                           </div>
                         );
