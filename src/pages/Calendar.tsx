@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -134,14 +133,12 @@ const Calendar = () => {
   useEffect(() => {
     let filtered = events;
 
-    // Filter by date
     if (date) {
       filtered = filtered.filter(event => 
         isSameDay(new Date(event.date), date)
       );
     }
 
-    // Filter by search term
     if (searchTerm) {
       filtered = filtered.filter(event => 
         event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -149,7 +146,6 @@ const Calendar = () => {
       );
     }
 
-    // Filter by category
     if (filterCategory !== "all") {
       filtered = filtered.filter(event => 
         event.category === filterCategory
@@ -308,7 +304,19 @@ const Calendar = () => {
       <main className="pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
           <Card className="md:col-span-8 bg-gray-800/30 backdrop-blur-sm border-purple-500/20 shadow-lg shadow-purple-500/5 rounded-xl p-6 animate-fade-in overflow-hidden">
-            <div className="flex items-center justify-between mb-6">
+            <div className="bg-gray-800/30 backdrop-blur-sm border border-purple-500/20 shadow-lg shadow-purple-500/5 rounded-xl overflow-hidden mb-6">
+              <CalendarComponent
+                mode="single"
+                selected={date}
+                onSelect={handleDateSelect}
+                className="rounded-md w-full"
+                components={{
+                  DayContent: ({ date }) => getDayContent(date),
+                }}
+              />
+            </div>
+            
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
               <div className="flex items-center space-x-4">
                 <Button 
                   variant="outline" 
@@ -381,18 +389,6 @@ const Calendar = () => {
                   <SelectItem value="note">Note</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-            
-            <div className="bg-gray-800/30 backdrop-blur-sm border border-purple-500/20 shadow-lg shadow-purple-500/5 rounded-xl overflow-hidden">
-              <CalendarComponent
-                mode="single"
-                selected={date}
-                onSelect={handleDateSelect}
-                className="rounded-md w-full"
-                components={{
-                  DayContent: ({ date }) => getDayContent(date),
-                }}
-              />
             </div>
           </Card>
 
