@@ -57,6 +57,8 @@ export function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
                 <li><strong>Mood Statistics:</strong> View your mood patterns over time with percentages.</li>
                 <li><strong>Entry History:</strong> Browse through all your previous diary entries.</li>
                 <li><strong>Timestamps:</strong> Each entry shows when it was created or updated.</li>
+                <li><strong>Edit & Delete:</strong> Modify or remove your existing entries.</li>
+                <li><strong>Calendar View:</strong> Select different dates to view entries from those days.</li>
               </ul>
               <p>Your diary entries are stored locally on your device and are not shared with anyone.</p>
             </TabsContent>
@@ -105,6 +107,8 @@ export function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
                 <li><strong>Quick Access:</strong> Access the calendar from the dashboard via a popup or the full page.</li>
                 <li><strong>Navigation:</strong> Easily move between months and years.</li>
                 <li><strong>Event Management:</strong> Edit or delete existing events.</li>
+                <li><strong>Filtering:</strong> Filter events by category to focus on specific types.</li>
+                <li><strong>Integration:</strong> View diary entries and other items in your calendar.</li>
               </ul>
               <p>Your calendar helps you maintain a balanced schedule and prepare for upcoming events.</p>
             </TabsContent>

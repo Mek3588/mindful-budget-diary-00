@@ -2,13 +2,27 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, BookOpen, Plus, Save, Smile, Meh, Frown, HeartCrack, Heart, Angry, Stars, Sun, Cloud, CloudRain, CloudLightning, Zap } from "lucide-react";
+import { ArrowLeft, BookOpen, Plus, Save, Smile, Meh, Frown, HeartCrack, Heart, Angry, Stars, Sun, Cloud, CloudRain, CloudLightning, Zap, Edit, Trash2, Calendar as CalendarIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { format } from "date-fns";
+import { format, isSameDay } from "date-fns";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface DiaryEntry {
   id: string;
@@ -47,12 +61,19 @@ const energyOptions = [
 const Diary = () => {
   const navigate = useNavigate();
   const [entries, setEntries] = useState<DiaryEntry[]>([]);
+  const [filteredEntries, setFilteredEntries] = useState<DiaryEntry[]>([]);
   const [newEntry, setNewEntry] = useState("");
   const [isWriting, setIsWriting] = useState(false);
   const [selectedMood, setSelectedMood] = useState("neutral");
   const [selectedEnergy, setSelectedEnergy] = useState("calm");
   const [moodStats, setMoodStats] = useState<Record<string, number>>({});
   const [energyStats, setEnergyStats] = useState<Record<string, number>>({});
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [entryToDelete, setEntryToDelete] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<DiaryEntry | null>(null);
 
   // Load entries from localStorage on component mount
   useEffect(() => {
@@ -69,6 +90,14 @@ const Diary = () => {
       updateStats(loadedEntries);
     }
   }, []);
+  
+  // Filter entries by selected date
+  useEffect(() => {
+    const filtered = entries.filter(entry => 
+      isSameDay(new Date(entry.date), selectedDate)
+    );
+    setFilteredEntries(filtered);
+  }, [entries, selectedDate]);
 
   const updateStats = (entriesData: DiaryEntry[]) => {
     // Initialize all possible values to 0
@@ -99,41 +128,64 @@ const Diary = () => {
       return;
     }
 
+    let updatedEntries;
     const now = new Date();
-    const entry: DiaryEntry = {
-      id: Date.now().toString(),
-      content: newEntry,
-      date: now,
-      updatedAt: now,
-      mood: selectedMood,
-      energy: selectedEnergy,
-    };
-
-    // Create stickers for the calendar
-    const moodSticker: Sticker = {
-      id: `mood-${entry.id}`,
-      type: 'mood',
-      value: selectedMood,
-      date: entry.date
-    };
-
-    const energySticker: Sticker = {
-      id: `energy-${entry.id}`,
-      type: 'energy',
-      value: selectedEnergy,
-      date: entry.date
-    };
-
-    // Get existing stickers from localStorage
-    const existingStickers = JSON.parse(localStorage.getItem('calendar-stickers') || '[]');
     
-    // Add new stickers
-    const updatedStickers = [...existingStickers, moodSticker, energySticker];
-    
-    // Save stickers to localStorage
-    localStorage.setItem('calendar-stickers', JSON.stringify(updatedStickers));
+    if (isEditing && editingEntry) {
+      // Update existing entry
+      updatedEntries = entries.map(entry => {
+        if (entry.id === editingEntry.id) {
+          return {
+            ...entry,
+            content: newEntry,
+            mood: selectedMood,
+            energy: selectedEnergy,
+            updatedAt: now
+          };
+        }
+        return entry;
+      });
+      
+      toast.success("Entry updated successfully!");
+    } else {
+      // Create new entry
+      const entry: DiaryEntry = {
+        id: Date.now().toString(),
+        content: newEntry,
+        date: selectedDate,
+        updatedAt: now,
+        mood: selectedMood,
+        energy: selectedEnergy,
+      };
 
-    const updatedEntries = [entry, ...entries];
+      // Create stickers for the calendar
+      const moodSticker: Sticker = {
+        id: `mood-${entry.id}`,
+        type: 'mood',
+        value: selectedMood,
+        date: entry.date
+      };
+
+      const energySticker: Sticker = {
+        id: `energy-${entry.id}`,
+        type: 'energy',
+        value: selectedEnergy,
+        date: entry.date
+      };
+
+      // Get existing stickers from localStorage
+      const existingStickers = JSON.parse(localStorage.getItem('calendar-stickers') || '[]');
+      
+      // Add new stickers
+      const updatedStickers = [...existingStickers, moodSticker, energySticker];
+      
+      // Save stickers to localStorage
+      localStorage.setItem('calendar-stickers', JSON.stringify(updatedStickers));
+
+      updatedEntries = [entry, ...entries];
+      toast.success("Entry saved successfully!");
+    }
+    
     setEntries(updatedEntries);
     updateStats(updatedEntries);
     
@@ -141,8 +193,51 @@ const Diary = () => {
     setSelectedMood("neutral");
     setSelectedEnergy("calm");
     setIsWriting(false);
+    setIsEditing(false);
+    setEditingEntry(null);
+  };
+  
+  const handleEditEntry = (entry: DiaryEntry) => {
+    setIsEditing(true);
+    setEditingEntry(entry);
+    setNewEntry(entry.content);
+    setSelectedMood(entry.mood);
+    setSelectedEnergy(entry.energy);
+    setIsWriting(true);
+  };
+  
+  const handleDeleteEntry = (entryId: string) => {
+    setEntryToDelete(entryId);
+    setIsDeleteDialogOpen(true);
+  };
+  
+  const confirmDeleteEntry = () => {
+    if (!entryToDelete) return;
     
-    toast.success("Entry saved successfully!");
+    const entryId = entryToDelete;
+    
+    // Remove entry
+    const updatedEntries = entries.filter(entry => entry.id !== entryId);
+    setEntries(updatedEntries);
+    updateStats(updatedEntries);
+    
+    // Remove associated stickers
+    const existingStickers = JSON.parse(localStorage.getItem('calendar-stickers') || '[]');
+    const updatedStickers = existingStickers.filter((sticker: Sticker) => 
+      !sticker.id.includes(entryId)
+    );
+    localStorage.setItem('calendar-stickers', JSON.stringify(updatedStickers));
+    
+    setIsDeleteDialogOpen(false);
+    setEntryToDelete(null);
+    toast.success("Entry deleted successfully!");
+  };
+
+  const handleDateSelect = (date: Date | undefined) => {
+    if (date) {
+      setSelectedDate(date);
+      setDatePickerOpen(false);
+    }
   };
 
   const MoodIcon = moodOptions.find(mood => mood.value === selectedMood)?.icon || Meh;
@@ -175,6 +270,25 @@ const Diary = () => {
                 <BookOpen className="h-5 w-5 mr-2" />
                 <h1 className="text-xl font-semibold">Diary</h1>
               </div>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="flex items-center gap-2">
+                    <CalendarIcon className="h-4 w-4" />
+                    {format(selectedDate, 'MMM d, yyyy')}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="end">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={handleDateSelect}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
         </div>
@@ -242,7 +356,12 @@ const Diary = () => {
         {!isWriting ? (
           <Card className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-6 mb-6">
             <div className="text-center">
-              <h2 className="text-lg font-semibold mb-4">Start Your Daily Entry</h2>
+              <h2 className="text-lg font-semibold mb-4">
+                {filteredEntries.length > 0 
+                  ? `Entries for ${format(selectedDate, 'MMMM d, yyyy')} (${filteredEntries.length})`
+                  : `Start Your Daily Entry for ${format(selectedDate, 'MMMM d, yyyy')}`
+                }
+              </h2>
               <Button onClick={() => setIsWriting(true)}>
                 <Plus className="mr-2 h-4 w-4" /> New Entry
               </Button>
@@ -330,7 +449,9 @@ const Diary = () => {
               </div>
               
               <div className="space-y-4">
-                <h2 className="text-lg font-semibold">Write Your Entry</h2>
+                <h2 className="text-lg font-semibold">
+                  {isEditing ? "Edit Your Entry" : "Write Your Entry"}
+                </h2>
                 <Textarea
                   value={newEntry}
                   onChange={(e) => setNewEntry(e.target.value)}
@@ -338,11 +459,17 @@ const Diary = () => {
                   className="min-h-[200px]"
                 />
                 <div className="flex justify-end space-x-2">
-                  <Button variant="outline" onClick={() => setIsWriting(false)}>
+                  <Button variant="outline" onClick={() => {
+                    setIsWriting(false);
+                    setIsEditing(false);
+                    setEditingEntry(null);
+                    setNewEntry("");
+                  }}>
                     Cancel
                   </Button>
                   <Button onClick={handleSaveEntry}>
-                    <Save className="mr-2 h-4 w-4" /> Save Entry
+                    <Save className="mr-2 h-4 w-4" /> 
+                    {isEditing ? "Update Entry" : "Save Entry"}
                   </Button>
                 </div>
               </div>
@@ -351,47 +478,90 @@ const Diary = () => {
         )}
 
         <div className="space-y-4">
-          {entries.map((entry) => {
-            const mood = moodOptions.find(m => m.value === entry.mood);
-            const energy = energyOptions.find(e => e.value === entry.energy);
-            const EntryMoodIcon = mood?.icon || Meh;
-            const EntryEnergyIcon = energy?.icon || Stars;
-            
-            return (
-              <Card
-                key={entry.id}
-                className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-6"
-              >
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-500">
-                      {format(entry.date, "MMM d, yyyy 'at' h:mm a")}
-                    </span>
-                    <div className="flex items-center space-x-4">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm text-gray-500">Mood:</span>
-                        <EntryMoodIcon className={`h-5 w-5 ${mood?.color || ''}`} />
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm text-gray-500">Energy:</span>
-                        <EntryEnergyIcon className={`h-5 w-5 ${energy?.color || ''}`} />
+          {filteredEntries.length === 0 && !isWriting ? (
+            <Card className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-6 text-center">
+              <p className="text-gray-500 dark:text-gray-400">
+                No entries for {format(selectedDate, 'MMMM d, yyyy')}
+              </p>
+            </Card>
+          ) : (
+            filteredEntries.map((entry) => {
+              const mood = moodOptions.find(m => m.value === entry.mood);
+              const energy = energyOptions.find(e => e.value === entry.energy);
+              const EntryMoodIcon = mood?.icon || Meh;
+              const EntryEnergyIcon = energy?.icon || Stars;
+              
+              return (
+                <Card
+                  key={entry.id}
+                  className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-6"
+                >
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-500">
+                        {format(entry.date, "MMM d, yyyy 'at' h:mm a")}
+                      </span>
+                      <div className="flex items-center space-x-4">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm text-gray-500">Mood:</span>
+                          <EntryMoodIcon className={`h-5 w-5 ${mood?.color || ''}`} />
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm text-gray-500">Energy:</span>
+                          <EntryEnergyIcon className={`h-5 w-5 ${energy?.color || ''}`} />
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => handleEditEntry(entry)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => handleDeleteEntry(entry.id)}
+                            className="text-red-500 hover:text-red-600"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
+                    <p className="whitespace-pre-wrap">{entry.content}</p>
+                    {entry.updatedAt && entry.updatedAt.getTime() !== entry.date.getTime() && (
+                      <div className="mt-4 pt-2 border-t border-gray-200 dark:border-gray-700">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          Updated: {format(entry.updatedAt, "MMM d, yyyy 'at' h:mm a")}
+                        </p>
+                      </div>
+                    )}
                   </div>
-                  <p className="whitespace-pre-wrap">{entry.content}</p>
-                  {entry.updatedAt && entry.updatedAt.getTime() !== entry.date.getTime() && (
-                    <div className="mt-4 pt-2 border-t border-gray-200 dark:border-gray-700">
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        Updated: {format(entry.updatedAt, "MMM d, yyyy 'at' h:mm a")}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </Card>
-            );
-          })}
+                </Card>
+              );
+            })
+          )}
         </div>
       </main>
+      
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the diary entry.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteEntry} className="bg-red-500 hover:bg-red-600">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

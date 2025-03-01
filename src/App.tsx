@@ -20,14 +20,23 @@ const queryClient = new QueryClient();
 
 const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [showPinDialog, setShowPinDialog] = useState(true);
   
   useEffect(() => {
     // Check if user has entered the PIN for this session
     const hasEnteredPin = sessionStorage.getItem("has-entered-pin");
     if (hasEnteredPin) {
       setIsAuthenticated(true);
+      setShowPinDialog(false);
     }
   }, []);
+
+  // Handler for when PIN is successfully entered
+  const handlePinSuccess = () => {
+    sessionStorage.setItem("has-entered-pin", "true");
+    setIsAuthenticated(true);
+    setShowPinDialog(false);
+  };
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -36,7 +45,13 @@ const App = () => {
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <AppPinDialog />
+            {showPinDialog && (
+              <AppPinDialog 
+                open={showPinDialog}
+                onOpenChange={setShowPinDialog}
+                onSuccess={handlePinSuccess}
+              />
+            )}
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/diary" element={<Diary />} />
