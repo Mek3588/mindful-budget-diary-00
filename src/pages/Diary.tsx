@@ -2,13 +2,13 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, BookOpen, Plus, Save, Smile, Meh, Frown, HeartCrack, Heart, Angry, Stars, Sun, Cloud, CloudRain, CloudLightning, Zap, Edit, Trash2, Calendar as CalendarIcon, Eye, ArrowUp } from "lucide-react";
+import { ArrowLeft, BookOpen, Plus, Save, Smile, Meh, Frown, HeartCrack, Heart, Angry, Stars, Sun, Cloud, CloudRain, CloudLightning, Zap, Edit, Trash2, Calendar as CalendarIcon, Eye, ArrowUp, Search, Download, FileText, Filter, Upload, Camera, BarChart, Image } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { format, isSameDay, isBefore } from "date-fns";
+import { format, isSameDay, isBefore, isAfter, subDays } from "date-fns";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,6 +23,19 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface DiaryEntry {
   id: string;
@@ -31,6 +44,11 @@ interface DiaryEntry {
   updatedAt?: Date;
   mood: string;
   energy: string;
+  tags?: string[];
+  images?: string[];
+  location?: string;
+  weather?: string;
+  isPrivate?: boolean;
 }
 
 interface Sticker {
@@ -58,8 +76,16 @@ const energyOptions = [
   { value: "down", icon: CloudRain, label: "Down", color: "text-blue-400" },
 ];
 
+const weatherOptions = [
+  { value: "sunny", label: "Sunny", icon: Sun },
+  { value: "cloudy", label: "Cloudy", icon: Cloud },
+  { value: "rainy", label: "Rainy", icon: CloudRain },
+  { value: "stormy", label: "Stormy", icon: CloudLightning },
+];
+
 const Diary = () => {
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [entries, setEntries] = useState<DiaryEntry[]>([]);
   const [filteredEntries, setFilteredEntries] = useState<DiaryEntry[]>([]);
   const [newEntry, setNewEntry] = useState("");
@@ -75,6 +101,21 @@ const Diary = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editingEntry, setEditingEntry] = useState<DiaryEntry | null>(null);
   const [viewingPastEntries, setViewingPastEntries] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [newTag, setNewTag] = useState("");
+  const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
+  const [moodFilter, setMoodFilter] = useState<string | null>(null);
+  const [energyFilter, setEnergyFilter] = useState<string | null>(null);
+  const [dateRangeFilter, setDateRangeFilter] = useState<"all" | "week" | "month" | "year">("all");
+  const [showStatistics, setShowStatistics] = useState(false);
+  const [entryImages, setEntryImages] = useState<string[]>([]);
+  const [showImageDialog, setShowImageDialog] = useState(false);
+  const [viewingImage, setViewingImage] = useState<string | null>(null);
+  const [selectedWeather, setSelectedWeather] = useState<string | null>(null);
+  const [location, setLocation] = useState("");
+  const [isPrivate, setIsPrivate] = useState(false);
 
   // Load entries from localStorage on component mount
   useEffect(() => {
@@ -83,7 +124,9 @@ const Diary = () => {
       const loadedEntries = JSON.parse(savedEntries).map((entry: any) => ({
         ...entry,
         date: new Date(entry.date),
-        updatedAt: entry.updatedAt ? new Date(entry.updatedAt) : undefined
+        updatedAt: entry.updatedAt ? new Date(entry.updatedAt) : undefined,
+        tags: entry.tags || [],
+        images: entry.images || [],
       }));
       setEntries(loadedEntries);
       
@@ -96,7 +139,13 @@ const Diary = () => {
   useEffect(() => {
     let filtered;
     
-    if (viewingPastEntries) {
+    if (isSearching && searchQuery.trim() !== "") {
+      // Search in all entries
+      filtered = entries.filter(entry => 
+        entry.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (entry.tags && entry.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())))
+      );
+    } else if (viewingPastEntries) {
       // When viewing past entries, show all entries before today
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -104,9 +153,6 @@ const Diary = () => {
       filtered = entries.filter(entry => 
         isBefore(new Date(entry.date), today)
       );
-      
-      // Sort by date (newest first)
-      filtered.sort((a, b) => b.date.getTime() - a.date.getTime());
     } else {
       // When viewing by date, filter entries for the selected date
       filtered = entries.filter(entry => 
@@ -114,8 +160,40 @@ const Diary = () => {
       );
     }
     
+    // Apply additional filters if set
+    if (moodFilter) {
+      filtered = filtered.filter(entry => entry.mood === moodFilter);
+    }
+    
+    if (energyFilter) {
+      filtered = filtered.filter(entry => entry.energy === energyFilter);
+    }
+    
+    // Apply date range filter
+    if (dateRangeFilter !== "all") {
+      const today = new Date();
+      let startDate;
+      
+      switch(dateRangeFilter) {
+        case "week":
+          startDate = subDays(today, 7);
+          break;
+        case "month":
+          startDate = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
+          break;
+        case "year":
+          startDate = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate());
+          break;
+      }
+      
+      filtered = filtered.filter(entry => isAfter(new Date(entry.date), startDate));
+    }
+    
+    // Sort by date (newest first)
+    filtered.sort((a, b) => b.date.getTime() - a.date.getTime());
+    
     setFilteredEntries(filtered);
-  }, [entries, selectedDate, viewingPastEntries]);
+  }, [entries, selectedDate, viewingPastEntries, searchQuery, isSearching, moodFilter, energyFilter, dateRangeFilter]);
 
   const updateStats = (entriesData: DiaryEntry[]) => {
     // Initialize all possible values to 0
@@ -158,7 +236,12 @@ const Diary = () => {
             content: newEntry,
             mood: selectedMood,
             energy: selectedEnergy,
-            updatedAt: now
+            updatedAt: now,
+            tags: selectedTags,
+            images: entryImages,
+            location: location,
+            weather: selectedWeather,
+            isPrivate: isPrivate
           };
         }
         return entry;
@@ -174,6 +257,11 @@ const Diary = () => {
         updatedAt: now,
         mood: selectedMood,
         energy: selectedEnergy,
+        tags: selectedTags,
+        images: entryImages,
+        location: location,
+        weather: selectedWeather,
+        isPrivate: isPrivate
       };
 
       // Create stickers for the calendar
@@ -207,12 +295,21 @@ const Diary = () => {
     setEntries(updatedEntries);
     updateStats(updatedEntries);
     
+    resetForm();
+  };
+  
+  const resetForm = () => {
     setNewEntry("");
     setSelectedMood("neutral");
     setSelectedEnergy("calm");
     setIsWriting(false);
     setIsEditing(false);
     setEditingEntry(null);
+    setSelectedTags([]);
+    setEntryImages([]);
+    setLocation("");
+    setSelectedWeather(null);
+    setIsPrivate(false);
   };
   
   const handleEditEntry = (entry: DiaryEntry) => {
@@ -221,6 +318,11 @@ const Diary = () => {
     setNewEntry(entry.content);
     setSelectedMood(entry.mood);
     setSelectedEnergy(entry.energy);
+    setSelectedTags(entry.tags || []);
+    setEntryImages(entry.images || []);
+    setLocation(entry.location || "");
+    setSelectedWeather(entry.weather || null);
+    setIsPrivate(entry.isPrivate || false);
     setIsWriting(true);
     
     // Exit past entries viewing mode when editing
@@ -271,10 +373,119 @@ const Diary = () => {
 
   const toggleViewPastEntries = () => {
     setViewingPastEntries(!viewingPastEntries);
+    
+    if (isSearching) {
+      setIsSearching(false);
+      setSearchQuery("");
+    }
+  };
+  
+  const handleSearch = () => {
+    if (searchQuery.trim() === "") {
+      setIsSearching(false);
+      return;
+    }
+    
+    setIsSearching(true);
+    if (viewingPastEntries) {
+      setViewingPastEntries(false);
+    }
+    
+    toast.success(`Searching for: ${searchQuery}`);
+  };
+  
+  const clearSearch = () => {
+    setSearchQuery("");
+    setIsSearching(false);
+  };
+  
+  const handleAddTag = () => {
+    if (newTag.trim() === "") return;
+    
+    if (!selectedTags.includes(newTag.trim())) {
+      setSelectedTags([...selectedTags, newTag.trim()]);
+    }
+    
+    setNewTag("");
+  };
+  
+  const handleRemoveTag = (tagToRemove: string) => {
+    setSelectedTags(selectedTags.filter(tag => tag !== tagToRemove));
+  };
+  
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    
+    // Convert image files to base64
+    Array.from(files).forEach(file => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        setEntryImages(prev => [...prev, base64String]);
+      };
+      reader.readAsDataURL(file);
+    });
+    
+    // Clear input value
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+  
+  const removeImage = (indexToRemove: number) => {
+    setEntryImages(entryImages.filter((_, index) => index !== indexToRemove));
+  };
+  
+  const viewImage = (image: string) => {
+    setViewingImage(image);
+    setShowImageDialog(true);
+  };
+  
+  const exportAsPDF = () => {
+    // This would require a PDF library, but for now let's just simulate it
+    toast.success("PDF export feature coming soon!");
+  };
+  
+  const exportAsJSON = () => {
+    // Create a JSON file of all entries
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(entries));
+    const downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute("download", "diary-entries.json");
+    document.body.appendChild(downloadAnchorNode);
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+    
+    toast.success("Entries exported as JSON");
+  };
+  
+  const clearFilters = () => {
+    setMoodFilter(null);
+    setEnergyFilter(null);
+    setDateRangeFilter("all");
+    setIsFilterMenuOpen(false);
+  };
+
+  const getMoodIcon = (moodValue: string) => {
+    const mood = moodOptions.find(m => m.value === moodValue);
+    return mood ? mood.icon : Meh;
+  };
+  
+  const getEnergyIcon = (energyValue: string) => {
+    const energy = energyOptions.find(e => e.value === energyValue);
+    return energy ? energy.icon : Stars;
+  };
+  
+  const getWeatherIcon = (weatherValue: string | null) => {
+    if (!weatherValue) return null;
+    const weather = weatherOptions.find(w => w.value === weatherValue);
+    return weather ? weather.icon : null;
   };
 
   const MoodIcon = moodOptions.find(mood => mood.value === selectedMood)?.icon || Meh;
   const EnergyIcon = energyOptions.find(energy => energy.value === selectedEnergy)?.icon || Stars;
+  const WeatherIcon = selectedWeather ? (weatherOptions.find(weather => weather.value === selectedWeather)?.icon || null) : null;
 
   // Calculate mood percentages for visualization
   const calculatePercentage = (value: string, stats: Record<string, number>, options: { value: string }[]) => {
@@ -306,16 +517,118 @@ const Diary = () => {
             </div>
             
             <div className="flex items-center gap-2">
+              <div className="relative max-w-xs hidden md:block">
+                <Input
+                  placeholder="Search entries..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  className="pr-10"
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      handleSearch();
+                    }
+                  }}
+                />
+                {searchQuery && (
+                  <button 
+                    className="absolute right-10 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    onClick={clearSearch}
+                  >
+                    &times;
+                  </button>
+                )}
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="absolute right-0 top-0 h-full"
+                  onClick={handleSearch}
+                >
+                  <Search className="h-4 w-4" />
+                </Button>
+              </div>
+              
+              <DropdownMenu open={isFilterMenuOpen} onOpenChange={setIsFilterMenuOpen}>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    className={`${(moodFilter || energyFilter || dateRangeFilter !== "all") ? "bg-purple-100 dark:bg-purple-900/30" : ""}`}
+                  >
+                    <Filter className="h-4 w-4 mr-2" />
+                    Filter
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56">
+                  <div className="p-2">
+                    <h3 className="font-medium mb-2">Mood</h3>
+                    <Select value={moodFilter || ""} onValueChange={val => setMoodFilter(val || null)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select mood" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">Any mood</SelectItem>
+                        {moodOptions.map(mood => (
+                          <SelectItem key={mood.value} value={mood.value}>
+                            {mood.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="p-2">
+                    <h3 className="font-medium mb-2">Energy</h3>
+                    <Select value={energyFilter || ""} onValueChange={val => setEnergyFilter(val || null)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select energy" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">Any energy</SelectItem>
+                        {energyOptions.map(energy => (
+                          <SelectItem key={energy.value} value={energy.value}>
+                            {energy.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="p-2">
+                    <h3 className="font-medium mb-2">Date range</h3>
+                    <Select value={dateRangeFilter} onValueChange={val => setDateRangeFilter(val as any)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select date range" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All dates</SelectItem>
+                        <SelectItem value="week">Last 7 days</SelectItem>
+                        <SelectItem value="month">Last 30 days</SelectItem>
+                        <SelectItem value="year">Last year</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="p-2 flex justify-end">
+                    <Button variant="outline" size="sm" onClick={clearFilters}>Clear filters</Button>
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              
               <Button 
                 variant={viewingPastEntries ? "default" : "outline"} 
                 onClick={toggleViewPastEntries}
                 className={`flex items-center gap-2 ${viewingPastEntries ? "bg-purple-600 hover:bg-purple-700" : ""}`}
               >
                 <Eye className="h-4 w-4" />
-                {viewingPastEntries ? "Current Day" : "View Past Entries"}
+                {viewingPastEntries ? "Current Day" : "View Past"}
               </Button>
               
-              {!viewingPastEntries && (
+              <Button 
+                variant={showStatistics ? "default" : "outline"}
+                onClick={() => setShowStatistics(!showStatistics)}
+                className={`hidden md:flex items-center gap-2 ${showStatistics ? "bg-purple-600 hover:bg-purple-700" : ""}`}
+              >
+                <BarChart className="h-4 w-4" />
+                Stats
+              </Button>
+              
+              {!viewingPastEntries && !isSearching && (
                 <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
                   <PopoverTrigger asChild>
                     <Button variant="outline" className="flex items-center gap-2">
@@ -333,6 +646,25 @@ const Diary = () => {
                   </PopoverContent>
                 </Popover>
               )}
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="md:flex items-center gap-2 hidden">
+                    <Download className="h-4 w-4" />
+                    Export
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={exportAsPDF}>
+                    <FileText className="h-4 w-4 mr-2" />
+                    Export as PDF
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={exportAsJSON}>
+                    <FileText className="h-4 w-4 mr-2" />
+                    Export as JSON
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>
@@ -340,9 +672,9 @@ const Diary = () => {
 
       <main className="pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         {/* Don't show mood stats when viewing past entries */}
-        {!viewingPastEntries && (
+        {!viewingPastEntries && !isSearching && showStatistics && (
           <Card className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-6 mb-6">
-            <h2 className="text-lg font-semibold mb-4">Mood Tracker</h2>
+            <h2 className="text-lg font-semibold mb-4">Mood & Energy Tracker</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <h3 className="text-md font-medium">Mood Distribution</h3>
@@ -399,6 +731,19 @@ const Diary = () => {
           </Card>
         )}
 
+        {isSearching && (
+          <Card className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-6 mb-6">
+            <div className="text-center">
+              <h2 className="text-lg font-semibold mb-4">
+                Search Results: "{searchQuery}" ({filteredEntries.length} {filteredEntries.length === 1 ? 'entry' : 'entries'})
+              </h2>
+              <Button variant="outline" onClick={clearSearch}>
+                Clear Search
+              </Button>
+            </div>
+          </Card>
+        )}
+
         {viewingPastEntries && (
           <Card className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-6 mb-6">
             <div className="text-center">
@@ -412,7 +757,7 @@ const Diary = () => {
           </Card>
         )}
 
-        {!isWriting && !viewingPastEntries ? (
+        {!isWriting && !viewingPastEntries && !isSearching ? (
           <Card className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-6 mb-6">
             <div className="text-center">
               <h2 className="text-lg font-semibold mb-4">
@@ -421,7 +766,7 @@ const Diary = () => {
                   : `Start Your Daily Entry for ${format(selectedDate, 'MMMM d, yyyy')}`
                 }
               </h2>
-              <Button onClick={() => setIsWriting(true)}>
+              <Button onClick={() => setIsWriting(true)} className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
                 <Plus className="mr-2 h-4 w-4" /> New Entry
               </Button>
             </div>
@@ -509,6 +854,142 @@ const Diary = () => {
                 </div>
               </div>
               
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <h2 className="text-lg font-semibold">Weather & Location</h2>
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="text-sm font-medium mb-2">Weather</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {weatherOptions.map(weather => {
+                          const WeatherIcon = weather.icon;
+                          return (
+                            <Button
+                              key={weather.value}
+                              type="button"
+                              variant={selectedWeather === weather.value ? "default" : "outline"}
+                              className={selectedWeather === weather.value ? "bg-purple-600 hover:bg-purple-700" : ""}
+                              onClick={() => setSelectedWeather(weather.value)}
+                            >
+                              <WeatherIcon className="h-4 w-4 mr-2" />
+                              {weather.label}
+                            </Button>
+                          );
+                        })}
+                        {selectedWeather && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="border-red-500/30 hover:bg-red-500/10 text-red-500"
+                            onClick={() => setSelectedWeather(null)}
+                          >
+                            Clear
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium mb-2">Location</h3>
+                      <Input 
+                        placeholder="Add location (optional)"
+                        value={location}
+                        onChange={e => setLocation(e.target.value)}
+                      />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="private-entry"
+                        checked={isPrivate}
+                        onChange={e => setIsPrivate(e.target.checked)}
+                        className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                      />
+                      <label htmlFor="private-entry" className="text-sm font-medium">
+                        Private Entry
+                      </label>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  <h2 className="text-lg font-semibold">Tags & Images</h2>
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="text-sm font-medium mb-2">Tags</h3>
+                      <div className="flex">
+                        <Input
+                          placeholder="Add a tag"
+                          value={newTag}
+                          onChange={e => setNewTag(e.target.value)}
+                          className="rounded-r-none"
+                          onKeyDown={e => {
+                            if (e.key === 'Enter' && newTag.trim() !== "") {
+                              handleAddTag();
+                            }
+                          }}
+                        />
+                        <Button 
+                          onClick={handleAddTag}
+                          className="rounded-l-none"
+                        >
+                          Add
+                        </Button>
+                      </div>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {selectedTags.map(tag => (
+                          <div key={tag} className="bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 px-2 py-1 rounded-full text-sm flex items-center">
+                            {tag}
+                            <button 
+                              onClick={() => handleRemoveTag(tag)}
+                              className="ml-1 text-purple-500 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-200"
+                            >
+                              &times;
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium mb-2">Images</h3>
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        {entryImages.map((image, index) => (
+                          <div key={index} className="relative group">
+                            <img 
+                              src={image} 
+                              alt={`Entry image ${index + 1}`} 
+                              className="w-16 h-16 object-cover rounded cursor-pointer"
+                              onClick={() => viewImage(image)}
+                            />
+                            <button
+                              className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => removeImage(index)}
+                            >
+                              &times;
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                      <Button 
+                        variant="outline"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="w-full"
+                      >
+                        <Camera className="h-4 w-4 mr-2" />
+                        Add Image
+                      </Button>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        ref={fileInputRef}
+                        onChange={handleFileUpload}
+                        className="hidden"
+                        multiple
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
               <div className="space-y-4">
                 <h2 className="text-lg font-semibold">
                   {isEditing ? "Edit Your Entry" : "Write Your Entry"}
@@ -520,15 +1001,13 @@ const Diary = () => {
                   className="min-h-[200px]"
                 />
                 <div className="flex justify-end space-x-2">
-                  <Button variant="outline" onClick={() => {
-                    setIsWriting(false);
-                    setIsEditing(false);
-                    setEditingEntry(null);
-                    setNewEntry("");
-                  }}>
+                  <Button variant="outline" onClick={() => resetForm()}>
                     Cancel
                   </Button>
-                  <Button onClick={handleSaveEntry}>
+                  <Button 
+                    onClick={handleSaveEntry}
+                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                  >
                     <Save className="mr-2 h-4 w-4" /> 
                     {isEditing ? "Update Entry" : "Save Entry"}
                   </Button>
@@ -538,7 +1017,7 @@ const Diary = () => {
           </Card>
         )}
 
-        {viewingPastEntries && filteredEntries.length > 0 && (
+        {(viewingPastEntries || isSearching) && filteredEntries.length > 0 && (
           <div className="flex justify-center mb-4">
             <Button 
               variant="outline" 
@@ -555,9 +1034,11 @@ const Diary = () => {
           {filteredEntries.length === 0 && !isWriting ? (
             <Card className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-6 text-center">
               <p className="text-gray-500 dark:text-gray-400">
-                {viewingPastEntries 
-                  ? "No past entries found" 
-                  : `No entries for ${format(selectedDate, 'MMMM d, yyyy')}`
+                {isSearching 
+                  ? `No entries found for "${searchQuery}"` 
+                  : viewingPastEntries 
+                    ? "No past entries found" 
+                    : `No entries for ${format(selectedDate, 'MMMM d, yyyy')}`
                 }
               </p>
             </Card>
@@ -565,27 +1046,32 @@ const Diary = () => {
             filteredEntries.map((entry) => {
               const mood = moodOptions.find(m => m.value === entry.mood);
               const energy = energyOptions.find(e => e.value === entry.energy);
-              const EntryMoodIcon = mood?.icon || Meh;
-              const EntryEnergyIcon = energy?.icon || Stars;
+              const MoodIconComponent = getMoodIcon(entry.mood);
+              const EnergyIconComponent = getEnergyIcon(entry.energy);
+              const WeatherIconComponent = entry.weather ? getWeatherIcon(entry.weather) : null;
               
               return (
                 <Card
                   key={entry.id}
-                  className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-6"
+                  className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-6 hover:shadow-lg transition-shadow"
                 >
-                  <div className="space-y-2">
+                  <div className="space-y-4">
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-500">
-                        {format(entry.date, "MMM d, yyyy 'at' h:mm a")}
-                      </span>
+                      <div className="flex items-center">
+                        <span className="text-sm text-gray-500 mr-2">
+                          {format(new Date(entry.date), "MMM d, yyyy 'at' h:mm a")}
+                        </span>
+                        {entry.isPrivate && (
+                          <span className="bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 px-2 py-0.5 rounded-full text-xs">
+                            Private
+                          </span>
+                        )}
+                      </div>
                       <div className="flex items-center space-x-4">
                         <div className="flex items-center space-x-2">
-                          <span className="text-sm text-gray-500">Mood:</span>
-                          <EntryMoodIcon className={`h-5 w-5 ${mood?.color || ''}`} />
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <span className="text-sm text-gray-500">Energy:</span>
-                          <EntryEnergyIcon className={`h-5 w-5 ${energy?.color || ''}`} />
+                          <MoodIconComponent className={`h-5 w-5 ${mood?.color || ''}`} />
+                          <EnergyIconComponent className={`h-5 w-5 ${energy?.color || ''}`} />
+                          {WeatherIconComponent && <WeatherIconComponent className="h-5 w-5 text-blue-500" />}
                         </div>
                         <div className="flex items-center space-x-2">
                           <Button 
@@ -606,7 +1092,34 @@ const Diary = () => {
                         </div>
                       </div>
                     </div>
+                    {entry.location && (
+                      <div className="text-sm text-gray-500">
+                        <span className="font-medium">Location:</span> {entry.location}
+                      </div>
+                    )}
+                    {entry.images && entry.images.length > 0 && (
+                      <div className="flex flex-wrap gap-2 my-4">
+                        {entry.images.map((image, index) => (
+                          <img 
+                            key={index}
+                            src={image}
+                            alt={`Entry image ${index + 1}`}
+                            className="w-20 h-20 object-cover rounded cursor-pointer hover:opacity-90 transition-opacity"
+                            onClick={() => viewImage(image)}
+                          />
+                        ))}
+                      </div>
+                    )}
                     <p className="whitespace-pre-wrap">{entry.content}</p>
+                    {entry.tags && entry.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {entry.tags.map(tag => (
+                          <div key={tag} className="bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 px-2 py-0.5 rounded-full text-xs">
+                            #{tag}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                     {entry.updatedAt && entry.updatedAt.getTime() !== entry.date.getTime() && (
                       <div className="mt-4 pt-2 border-t border-gray-200 dark:border-gray-700">
                         <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -624,21 +1137,44 @@ const Diary = () => {
       
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-gray-800 border-purple-500/30 text-white">
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogDescription className="text-gray-300">
               This action cannot be undone. This will permanently delete the diary entry.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="bg-gray-700 hover:bg-gray-600 text-white border-none">Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={confirmDeleteEntry} className="bg-red-500 hover:bg-red-600">
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      
+      {/* Image Viewer Dialog */}
+      <Dialog open={showImageDialog} onOpenChange={setShowImageDialog}>
+        <DialogContent className="bg-gray-800 border-purple-500/30 text-white max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Image View</DialogTitle>
+          </DialogHeader>
+          {viewingImage && (
+            <div className="flex justify-center">
+              <img 
+                src={viewingImage} 
+                alt="Enlarged" 
+                className="max-h-[70vh] max-w-full object-contain rounded"
+              />
+            </div>
+          )}
+          <DialogFooter>
+            <Button onClick={() => setShowImageDialog(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

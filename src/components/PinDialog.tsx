@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { KeyRound, ShieldCheck } from "lucide-react";
 
 interface PinDialogProps {
   onSuccess: () => void;
@@ -60,11 +61,16 @@ export function PinDialog({ onSuccess }: PinDialogProps) {
       if (!open) return;
       setIsOpen(open);
     }}>
-      <DialogContent className="bg-background border-border shadow-lg">
+      <DialogContent className="bg-gray-800 border-purple-500/30 text-white shadow-xl shadow-purple-500/10 rounded-xl">
         <DialogHeader>
-          <DialogTitle>
-            {isChangingPin ? "Change PIN" : "Enter Security PIN"}
-          </DialogTitle>
+          <div className="flex flex-col items-center mb-4">
+            <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-3 rounded-full mb-4">
+              <KeyRound className="h-6 w-6 text-white" />
+            </div>
+            <DialogTitle className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400">
+              {isChangingPin ? "Change PIN" : "Enter Security PIN"}
+            </DialogTitle>
+          </div>
         </DialogHeader>
         {!isChangingPin ? (
           <div className="space-y-4">
@@ -74,7 +80,7 @@ export function PinDialog({ onSuccess }: PinDialogProps) {
               maxLength={4}
               value={pin}
               onChange={(e) => setPin(e.target.value)}
-              className="bg-background border-input"
+              className="text-center text-xl tracking-widest bg-gray-700 border-purple-500/30 focus:border-purple-500/60 h-14 placeholder:text-gray-500"
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   handlePinSubmit();
@@ -84,14 +90,15 @@ export function PinDialog({ onSuccess }: PinDialogProps) {
             <div className="flex gap-2">
               <Button 
                 onClick={handlePinSubmit}
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                className="w-full h-12 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg shadow-purple-500/20 transition-all duration-300"
               >
+                <ShieldCheck className="h-5 w-5 mr-2" />
                 Submit
               </Button>
               <Button 
                 onClick={() => setIsOpen(false)}
                 variant="outline"
-                className="w-full"
+                className="w-full border-purple-500/30 hover:bg-purple-500/10 text-white"
               >
                 Cancel
               </Button>
@@ -105,7 +112,7 @@ export function PinDialog({ onSuccess }: PinDialogProps) {
               maxLength={4}
               value={newPin}
               onChange={(e) => setNewPin(e.target.value)}
-              className="bg-background border-input"
+              className="text-center text-xl tracking-widest bg-gray-700 border-purple-500/30 focus:border-purple-500/60 h-14 placeholder:text-gray-500"
             />
             <Input
               type="password"
@@ -113,7 +120,7 @@ export function PinDialog({ onSuccess }: PinDialogProps) {
               maxLength={4}
               value={confirmPin}
               onChange={(e) => setConfirmPin(e.target.value)}
-              className="bg-background border-input"
+              className="text-center text-xl tracking-widest bg-gray-700 border-purple-500/30 focus:border-purple-500/60 h-14 placeholder:text-gray-500"
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && newPin && confirmPin) {
                   handlePinChange();
@@ -123,14 +130,15 @@ export function PinDialog({ onSuccess }: PinDialogProps) {
             <div className="flex gap-2">
               <Button 
                 onClick={handlePinChange}
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                className="w-full h-12 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg shadow-purple-500/20 transition-all duration-300"
               >
+                <ShieldCheck className="h-5 w-5 mr-2" />
                 Change PIN
               </Button>
               <Button 
                 onClick={() => setIsChangingPin(false)}
                 variant="outline"
-                className="w-full"
+                className="w-full border-purple-500/30 hover:bg-purple-500/10 text-white"
               >
                 Back
               </Button>

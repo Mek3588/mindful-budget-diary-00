@@ -56,7 +56,7 @@ export function AppPinDialog({ onClose, onSuccess }: AppPinDialogProps) {
     
     setIsOpen(open);
     
-    // Call the onClose callback if provided and the dialog is closing
+    // Call the onClose callback if provided
     if (!open && onClose) {
       onClose();
     }
