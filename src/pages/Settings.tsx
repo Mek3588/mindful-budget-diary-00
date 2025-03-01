@@ -16,7 +16,7 @@ const Settings = () => {
   const { currentTheme, setTheme, themes } = useTheme();
   const { toast } = useToast();
   const [exportSection, setExportSection] = useState<string>("all");
-  const [printSection, setPrintSection] = useState<string>("all");
+  const [printSectionValue, setPrintSectionValue] = useState<string>("all");
 
   const masculineThemes = themes.filter(theme => theme.type === 'masculine');
   const feminineThemes = themes.filter(theme => theme.type === 'feminine');
@@ -74,11 +74,11 @@ const Settings = () => {
     }
   };
 
-  const printSection = () => {
+  const handlePrintSection = () => {
     try {
       let contentToPrint = "";
       
-      if (printSection === "all") {
+      if (printSectionValue === "all") {
         contentToPrint = "Whole Journal App";
         window.print();
       } else {
@@ -87,10 +87,10 @@ const Settings = () => {
         const originalLocation = window.location.href;
         
         // Navigate to the selected section
-        navigate(`/${printSection === "diary" ? "diary" : 
-                    printSection === "budget" ? "budget" : 
-                    printSection === "notes" ? "notes" : 
-                    printSection === "calendar" ? "calendar" : "/"}`);
+        navigate(`/${printSectionValue === "diary" ? "diary" : 
+                    printSectionValue === "budget" ? "budget" : 
+                    printSectionValue === "notes" ? "notes" : 
+                    printSectionValue === "calendar" ? "calendar" : "/"}`);
         
         // Give the page time to load before printing
         setTimeout(() => {
@@ -104,7 +104,7 @@ const Settings = () => {
       
       toast({
         title: "Print Initiated",
-        description: `Printing ${printSection === "all" ? "all sections" : printSection}...`,
+        description: `Printing ${printSectionValue === "all" ? "all sections" : printSectionValue}...`,
       });
     } catch (error) {
       console.error("Print error:", error);
@@ -251,7 +251,7 @@ const Settings = () => {
                 <h3 className="text-md font-medium">Print Section</h3>
                 <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
                   <div className="w-full sm:w-64">
-                    <Select value={printSection} onValueChange={setPrintSection}>
+                    <Select value={printSectionValue} onValueChange={setPrintSectionValue}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select section to print" />
                       </SelectTrigger>
@@ -264,7 +264,7 @@ const Settings = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                  <Button onClick={printSection} className="whitespace-nowrap">
+                  <Button onClick={handlePrintSection} className="whitespace-nowrap">
                     <Printer className="mr-2 h-4 w-4" />
                     Print
                   </Button>
