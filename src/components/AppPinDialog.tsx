@@ -10,35 +10,49 @@ import { KeyRound, ShieldCheck } from "lucide-react";
 interface AppPinDialogProps {
   onClose?: () => void;
   onSuccess?: () => void;
+  route?: string;
 }
 
-export function AppPinDialog({ onClose, onSuccess }: AppPinDialogProps) {
+export function AppPinDialog({ onClose, onSuccess, route }: AppPinDialogProps) {
   const [pin, setPin] = useState("");
   const [isOpen, setIsOpen] = useState(true);
   const navigate = useNavigate();
   const DEFAULT_PIN = "1234";
 
   useEffect(() => {
-    // Check if user has already entered PIN this session
-    const hasEnteredPin = sessionStorage.getItem("has-entered-pin");
+    // Check if we need to show PIN dialog for this route
+    const shouldCheckPin = () => {
+      // Always show PIN on app start
+      if (!sessionStorage.getItem("has-entered-pin")) {
+        return true;
+      }
+      
+      // Check if this specific route requires PIN
+      if (route) {
+        const protectedRoutes = JSON.parse(localStorage.getItem("protected-routes") || "[]");
+        return protectedRoutes.includes(route);
+      }
+      
+      return false;
+    };
     
-    // Only show the PIN dialog if they haven't entered it yet this session
-    if (hasEnteredPin) {
+    // Only show the PIN dialog if they need to enter it for this route
+    if (!shouldCheckPin()) {
       setIsOpen(false);
       if (onSuccess) {
         onSuccess();
       }
     }
-  }, [onSuccess]);
+  }, [onSuccess, route]);
 
   const handlePinSubmit = () => {
     const storedPin = localStorage.getItem("security-pin") || DEFAULT_PIN;
     
     if (pin === storedPin) {
-      // Store in sessionStorage instead of localStorage to make it last only for this session
+      // Store in sessionStorage to make it last only for this session
       sessionStorage.setItem("has-entered-pin", "true");
       setIsOpen(false);
-      toast.success("Welcome to your personal dashboard!");
+      toast.success("PIN verified successfully!");
       
       // Call the onSuccess callback if provided
       if (onSuccess) {
@@ -52,7 +66,7 @@ export function AppPinDialog({ onClose, onSuccess }: AppPinDialogProps) {
 
   const handleDialogClose = (open: boolean) => {
     // Don't allow closing the dialog by clicking outside until PIN is entered
-    if (!sessionStorage.getItem("has-entered-pin")) return;
+    if (!sessionStorage.getItem("has-entered-pin") && isOpen) return;
     
     setIsOpen(open);
     

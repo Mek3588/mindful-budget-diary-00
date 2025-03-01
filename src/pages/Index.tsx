@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -190,7 +189,7 @@ export default function Index() {
                 Write about your day, track your mood, and create memories you can look back on.
               </p>
               
-              <div className="mt-6 flex space-x-4">
+              <div className="mt-6 flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
                 <Button 
                   className="bg-pink-600 hover:bg-pink-700 text-white shadow-md dark:bg-pink-700 dark:hover:bg-pink-800 transition-all hover:shadow-lg animate-pulse"
                   onClick={() => navigate("/diary")}
