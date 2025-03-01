@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -128,85 +129,85 @@ const Medical = () => {
   };
 
   const handlePrintRecord = (record: MedicalRecord) => {
-  // Create a printable version of the record
-  const printableContent = document.createElement('div');
-  printableContent.className = 'print-content';
-  
-  // Create a styled container for print
-  printableContent.innerHTML = `
-    <style>
-      @media print {
-        body { font-family: Arial, sans-serif; color: #333; background: white; }
-        .print-header { text-align: center; margin-bottom: 20px; border-bottom: 1px solid #ddd; padding-bottom: 10px; }
-        .print-section { margin-bottom: 15px; }
-        .print-label { font-weight: bold; margin-right: 8px; }
-        .print-value { display: inline-block; }
-        .print-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        .print-table th, .print-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        .print-table th { background-color: #f8f8f8; }
-        .print-footer { margin-top: 30px; text-align: center; font-size: 0.8em; color: #666; border-top: 1px solid #ddd; padding-top: 10px; }
-        .print-page { page-break-after: always; padding: 20px; }
-        .print-date { font-style: italic; color: #666; font-size: 0.9em; }
-      }
-    </style>
-    <div class="print-page">
-      <div class="print-header">
-        <h1>Medical Record</h1>
-        <p class="print-date">Date: ${format(new Date(), 'MMMM d, yyyy')}</p>
-      </div>
-      
-      <div class="print-section">
-        <span class="print-label">Type:</span>
-        <span class="print-value">${record.type || 'Not specified'}</span>
-      </div>
-      
-      <div class="print-section">
-        <span class="print-label">Date:</span>
-        <span class="print-value">${format(new Date(record.appointmentDate), 'MMMM d, yyyy')}</span>
-      </div>
-      
-      <div class="print-section">
-        <span class="print-label">Provider:</span>
-        <span class="print-value">${record.provider || 'Not specified'}</span>
-      </div>
-      
-      <div class="print-section">
-        <span class="print-label">Status:</span>
-        <span class="print-value">${record.status || 'Not specified'}</span>
-      </div>
-      
-      <div class="print-section">
-        <span class="print-label">Notes:</span>
-        <div class="print-value">${record.notes?.replace(/\n/g, '<br>') || 'No notes'}</div>
-      </div>
-      
-      ${record.prescription ? `
-        <div class="print-section">
-          <span class="print-label">Prescription:</span>
-          <div class="print-value">${record.prescription.replace(/\n/g, '<br>')}</div>
+    // Create a printable version of the record
+    const printableContent = document.createElement('div');
+    printableContent.className = 'print-content';
+    
+    // Create a styled container for print
+    printableContent.innerHTML = `
+      <style>
+        @media print {
+          body { font-family: Arial, sans-serif; color: #333; background: white; }
+          .print-header { text-align: center; margin-bottom: 20px; border-bottom: 1px solid #ddd; padding-bottom: 10px; }
+          .print-section { margin-bottom: 15px; }
+          .print-label { font-weight: bold; margin-right: 8px; }
+          .print-value { display: inline-block; }
+          .print-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+          .print-table th, .print-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+          .print-table th { background-color: #f8f8f8; }
+          .print-footer { margin-top: 30px; text-align: center; font-size: 0.8em; color: #666; border-top: 1px solid #ddd; padding-top: 10px; }
+          .print-page { page-break-after: always; padding: 20px; }
+          .print-date { font-style: italic; color: #666; font-size: 0.9em; }
+        }
+      </style>
+      <div class="print-page">
+        <div class="print-header">
+          <h1>Medical Record</h1>
+          <p class="print-date">Date: ${format(new Date(), 'MMMM d, yyyy')}</p>
         </div>
-      ` : ''}
-      
-      ${record.attachments && record.attachments.length > 0 ? `
+        
         <div class="print-section">
-          <span class="print-label">Attachments:</span>
-          <div class="print-value">${record.attachments.length} attachment(s)</div>
+          <span class="print-label">Type:</span>
+          <span class="print-value">${record.type || 'Not specified'}</span>
         </div>
-      ` : ''}
-      
-      <div class="print-footer">
-        <p>This is a confidential medical record. Please handle with care.</p>
+        
+        <div class="print-section">
+          <span class="print-label">Date:</span>
+          <span class="print-value">${format(new Date(record.appointmentDate), 'MMMM d, yyyy')}</span>
+        </div>
+        
+        <div class="print-section">
+          <span class="print-label">Provider:</span>
+          <span class="print-value">${record.provider || 'Not specified'}</span>
+        </div>
+        
+        <div class="print-section">
+          <span class="print-label">Status:</span>
+          <span class="print-value">${record.status || 'Not specified'}</span>
+        </div>
+        
+        <div class="print-section">
+          <span class="print-label">Notes:</span>
+          <div class="print-value">${record.notes?.replace(/\n/g, '<br>') || 'No notes'}</div>
+        </div>
+        
+        ${record.prescription ? `
+          <div class="print-section">
+            <span class="print-label">Prescription:</span>
+            <div class="print-value">${record.prescription.replace(/\n/g, '<br>')}</div>
+          </div>
+        ` : ''}
+        
+        ${record.attachments && record.attachments.length > 0 ? `
+          <div class="print-section">
+            <span class="print-label">Attachments:</span>
+            <div class="print-value">${record.attachments.length} attachment(s)</div>
+          </div>
+        ` : ''}
+        
+        <div class="print-footer">
+          <p>This is a confidential medical record. Please handle with care.</p>
+        </div>
       </div>
-    </div>
-  `;
-  
-  // Append to body, print, then remove
-  document.body.appendChild(printableContent);
-  window.print();
-  document.body.removeChild(printableContent);
-  
-  toast.success("Record sent to printer");
-};
+    `;
+    
+    // Append to body, print, then remove
+    document.body.appendChild(printableContent);
+    window.print();
+    document.body.removeChild(printableContent);
+    
+    toast.success("Record sent to printer");
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-white dark:from-gray-900 dark:to-gray-800">

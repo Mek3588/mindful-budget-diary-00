@@ -1,5 +1,4 @@
-
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -105,6 +104,74 @@ const Goals = () => {
   const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    const savedGoals = localStorage.getItem("goals");
+    if (!savedGoals || JSON.parse(savedGoals).length === 0) {
+      const exampleGoals: Goal[] = [
+        {
+          id: "example-1",
+          title: "Complete a 5K Run",
+          description: "Train and complete a 5K run to improve fitness",
+          deadline: new Date(new Date().setMonth(new Date().getMonth() + 2)),
+          progress: 30,
+          category: "health",
+          steps: [
+            { id: "step-1-1", description: "Research training programs", isCompleted: true },
+            { id: "step-1-2", description: "Buy proper running shoes", isCompleted: true },
+            { id: "step-1-3", description: "Run 1K without stopping", isCompleted: false },
+            { id: "step-1-4", description: "Run 3K without stopping", isCompleted: false },
+            { id: "step-1-5", description: "Register for a 5K event", isCompleted: false }
+          ],
+          isPinned: true,
+          isCompleted: false,
+          photos: [],
+          isExpanded: false
+        },
+        {
+          id: "example-2",
+          title: "Read 12 Books This Year",
+          description: "Expand knowledge and build reading habit by completing one book per month",
+          deadline: new Date(new Date().setFullYear(new Date().getFullYear(), 11, 31)),
+          progress: 25,
+          category: "education",
+          steps: [
+            { id: "step-2-1", description: "Create reading list", isCompleted: true },
+            { id: "step-2-2", description: "Read 3 books", isCompleted: true },
+            { id: "step-2-3", description: "Read 6 books", isCompleted: false },
+            { id: "step-2-4", description: "Read 9 books", isCompleted: false },
+            { id: "step-2-5", description: "Read 12 books", isCompleted: false }
+          ],
+          isPinned: false,
+          isCompleted: false,
+          photos: [],
+          isExpanded: false
+        },
+        {
+          id: "example-3",
+          title: "Save for Vacation",
+          description: "Save $2,000 for a dream vacation",
+          deadline: new Date(new Date().setMonth(new Date().getMonth() + 6)),
+          progress: 40,
+          category: "finance",
+          steps: [
+            { id: "step-3-1", description: "Create budget plan", isCompleted: true },
+            { id: "step-3-2", description: "Save $500", isCompleted: true },
+            { id: "step-3-3", description: "Save $1,000", isCompleted: false },
+            { id: "step-3-4", description: "Save $1,500", isCompleted: false },
+            { id: "step-3-5", description: "Save $2,000", isCompleted: false }
+          ],
+          isPinned: false,
+          isCompleted: false,
+          photos: [],
+          isExpanded: false
+        }
+      ];
+      
+      setGoals(exampleGoals);
+      localStorage.setItem("goals", JSON.stringify(exampleGoals));
+    }
+  }, []);
+
   const saveGoals = (updatedGoals: Goal[]) => {
     setGoals(updatedGoals);
     localStorage.setItem("goals", JSON.stringify(updatedGoals));
@@ -127,7 +194,6 @@ const Goals = () => {
     const updatedGoals = [...goals, goalToAdd];
     saveGoals(updatedGoals);
     
-    // Reset form
     setNewGoal({
       id: "",
       title: "",
@@ -200,14 +266,12 @@ const Goals = () => {
           step.id === stepId ? { ...step, isCompleted: !step.isCompleted } : step
         );
         
-        // Calculate new progress
         const completedSteps = updatedSteps.filter(step => step.isCompleted).length;
         const totalSteps = updatedSteps.length;
         const newProgress = totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0;
         
         const stepCompleted = updatedSteps.find(s => s.id === stepId)?.isCompleted;
         
-        // Show step completion toast
         if (stepCompleted) {
           setShowStepCompletion({
             goalId,
@@ -215,7 +279,6 @@ const Goals = () => {
             completed: true
           });
           
-          // Hide step completion notification after 3 seconds
           setTimeout(() => {
             setShowStepCompletion(null);
           }, 3000);
@@ -223,11 +286,9 @@ const Goals = () => {
         
         const isNowCompleted = newProgress === 100 && !goal.isCompleted;
         
-        // Show reward if goal is now complete
         if (isNowCompleted) {
           setShowReward({show: true, category: goal.category});
           
-          // Hide reward after 5 seconds
           setTimeout(() => {
             setShowReward(null);
           }, 5000);
@@ -256,7 +317,6 @@ const Goals = () => {
     reader.onload = (e) => {
       const photoUrl = e.target?.result as string;
       if (editingGoalId) {
-        // Add photo to existing goal
         const updatedGoals = goals.map(goal => 
           goal.id === editingGoalId 
             ? { ...goal, photos: [...(goal.photos || []), photoUrl] } 
@@ -266,7 +326,6 @@ const Goals = () => {
         setEditingGoalId(null);
         toast.success("Photo added to goal");
       } else {
-        // Add photo to new goal form
         setNewGoal({
           ...newGoal,
           photos: [...(newGoal.photos || []), photoUrl]
@@ -276,7 +335,6 @@ const Goals = () => {
     
     reader.readAsDataURL(file);
     
-    // Reset the file input
     if (event.target) {
       event.target.value = '';
     }
@@ -284,7 +342,6 @@ const Goals = () => {
 
   const handleCameraCapture = (imageDataUrl: string) => {
     if (editingGoalId) {
-      // Add photo to existing goal
       const updatedGoals = goals.map(goal => 
         goal.id === editingGoalId 
           ? { ...goal, photos: [...(goal.photos || []), imageDataUrl] } 
@@ -294,7 +351,6 @@ const Goals = () => {
       setEditingGoalId(null);
       toast.success("Photo captured and added to goal");
     } else {
-      // Add photo to new goal form
       setNewGoal({
         ...newGoal,
         photos: [...(newGoal.photos || []), imageDataUrl]
@@ -318,7 +374,6 @@ const Goals = () => {
 
   const removePhoto = (photoIndex: number, goalId?: string) => {
     if (goalId) {
-      // Remove photo from existing goal
       const updatedGoals = goals.map(goal => {
         if (goal.id === goalId) {
           const updatedPhotos = [...(goal.photos || [])];
@@ -330,7 +385,6 @@ const Goals = () => {
       saveGoals(updatedGoals);
       toast.success("Photo removed");
     } else {
-      // Remove photo from new goal form
       const updatedPhotos = [...(newGoal.photos || [])];
       updatedPhotos.splice(photoIndex, 1);
       setNewGoal({
@@ -352,7 +406,6 @@ const Goals = () => {
     setActiveTab(value);
   };
 
-  // Render photos section
   const renderPhotos = (photos: string[], goalId?: string) => {
     if (!photos || photos.length === 0) return null;
     
@@ -394,7 +447,6 @@ const Goals = () => {
           </Select>
         </div>
 
-        {/* Step Completion Popup */}
         {showStepCompletion && (
           <Card className="p-4 mb-4 bg-white/80 backdrop-blur-sm dark:bg-gray-800/80 border-2 border-green-400 animate-fadeIn">
             <div className="flex items-center justify-between">
@@ -412,7 +464,6 @@ const Goals = () => {
           </Card>
         )}
 
-        {/* Reward Popup */}
         {showReward && (
           <Card className="p-4 sm:p-6 mb-4 bg-white/80 backdrop-blur-sm dark:bg-gray-800/80 border-2 border-yellow-400 animate-fadeIn">
             <div className="flex items-center justify-between">
@@ -430,7 +481,6 @@ const Goals = () => {
           </Card>
         )}
 
-        {/* Hidden file input for photo upload */}
         <input 
           type="file" 
           ref={fileInputRef} 
@@ -439,14 +489,12 @@ const Goals = () => {
           onChange={handleFileChange} 
         />
 
-        {/* Camera component for taking photos */}
         <CameraCapture 
           open={cameraOpen} 
           onOpenChange={setCameraOpen} 
           onCapture={handleCameraCapture} 
         />
 
-        {/* New Goal Form */}
         <Card className="p-4 sm:p-6 bg-white/50 backdrop-blur-sm dark:bg-gray-800/50">
           <div className="mb-4 flex items-center">
             <Trophy className="h-5 w-5 mr-2 text-orange-500" />
@@ -547,7 +595,6 @@ const Goals = () => {
               </div>
             </div>
             
-            {/* Photo section for new goal */}
             <div>
               <div className="flex items-center justify-between mb-2">
                 <Label>Photos</Label>
@@ -572,7 +619,6 @@ const Goals = () => {
           </div>
         </Card>
         
-        {/* Goals List */}
         {sortedGoals.length > 0 ? (
           <div className="space-y-4">
             {sortedGoals.map(goal => (
@@ -620,7 +666,6 @@ const Goals = () => {
                       <Progress value={goal.progress} className="h-2" />
                     </div>
                     
-                    {/* Photos section for existing goal */}
                     {goal.photos && goal.photos.length > 0 && (
                       <div className="mb-3">
                         <h4 className="text-sm font-medium mb-2">Photos</h4>
