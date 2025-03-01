@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, Settings as SettingsIcon, Printer } from "lucide-react";
@@ -8,17 +7,82 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { format } from "date-fns";
 
 const Settings = () => {
   const navigate = useNavigate();
   const { currentTheme, setTheme, themes } = useTheme();
   const { toast } = useToast();
   const [printSectionValue, setPrintSectionValue] = useState<string>("diary");
+  const [printData, setPrintData] = useState<any>(null);
 
   const masculineThemes = themes.filter(theme => theme.type === 'masculine');
   const feminineThemes = themes.filter(theme => theme.type === 'feminine');
+
+  const fetchPrintData = () => {
+    let data = null;
+    
+    switch (printSectionValue) {
+      case "diary":
+        const diaryEntries = JSON.parse(localStorage.getItem("diary-entries") || "[]");
+        data = diaryEntries.map((entry: any) => ({
+          date: format(new Date(entry.date), "PPP"),
+          mood: entry.mood,
+          content: entry.content
+        }));
+        break;
+      
+      case "budget":
+        const transactions = JSON.parse(localStorage.getItem("transactions") || "[]");
+        data = transactions.map((transaction: any) => ({
+          date: format(new Date(transaction.date), "PPP"),
+          description: transaction.description,
+          category: transaction.category,
+          amount: `$${transaction.amount.toFixed(2)}`,
+          type: transaction.type
+        }));
+        break;
+      
+      case "notes":
+        const notes = JSON.parse(localStorage.getItem("quick-notes") || "[]");
+        data = notes.map((note: any) => ({
+          title: note.title,
+          content: note.content,
+          date: format(new Date(note.date), "PPP"),
+          updatedAt: note.updatedAt ? format(new Date(note.updatedAt), "PPP") : "-"
+        }));
+        break;
+      
+      case "goals":
+        const goals = JSON.parse(localStorage.getItem("goals") || "[]");
+        data = goals.map((goal: any) => ({
+          title: goal.title,
+          description: goal.description,
+          dueDate: goal.dueDate ? format(new Date(goal.dueDate), "PPP") : "-",
+          category: goal.category,
+          progress: `${goal.progress}%`,
+          status: goal.status
+        }));
+        break;
+      
+      case "medical":
+        const medicalRecords = JSON.parse(localStorage.getItem("medical-records") || "[]");
+        data = medicalRecords.map((record: any) => ({
+          title: record.title,
+          type: record.type,
+          provider: record.provider,
+          date: record.date ? format(new Date(record.date), "PPP") : "-",
+          notes: record.notes,
+          reminder: record.reminder ? format(new Date(record.reminder), "PPP") : "No reminder",
+          completed: record.completed ? "Yes" : "No"
+        }));
+        break;
+    }
+    
+    return data;
+  };
 
   const handlePrintSection = () => {
     try {
@@ -37,21 +101,157 @@ const Settings = () => {
         contentToPrint = "Medical Records & Reminders";
       }
       
-      // In a real application, you would build a targeted print view
-      // For this demo, we'll just navigate to the section and print
-      const originalLocation = window.location.href;
+      const data = fetchPrintData();
       
-      // Navigate to the selected section
-      navigate(`/${printSectionValue}`);
+      // Create a temporary hidden iframe for printing
+      const printFrame = document.createElement('iframe');
+      printFrame.style.position = 'fixed';
+      printFrame.style.right = '0';
+      printFrame.style.bottom = '0';
+      printFrame.style.width = '0';
+      printFrame.style.height = '0';
+      printFrame.style.border = '0';
+      document.body.appendChild(printFrame);
       
-      // Give the page time to load before printing
-      setTimeout(() => {
-        window.print();
-        // Navigate back after printing
+      const frameDoc = printFrame.contentWindow?.document;
+      if (frameDoc) {
+        frameDoc.open();
+        
+        // Define a flexible print stylesheet
+        const printStyles = `
+          <style>
+            body {
+              font-family: system-ui, -apple-system, sans-serif;
+              margin: 2rem;
+              color: #000;
+              background: #fff;
+            }
+            h1 {
+              font-size: 24px;
+              margin-bottom: 1rem;
+              color: #333;
+              border-bottom: 1px solid #ddd;
+              padding-bottom: 0.5rem;
+            }
+            .item {
+              margin-bottom: 1.5rem;
+              padding-bottom: 1rem;
+              border-bottom: 1px solid #eee;
+            }
+            .item:last-child {
+              border-bottom: none;
+            }
+            .field {
+              margin-bottom: 0.5rem;
+            }
+            .label {
+              font-weight: bold;
+              display: inline-block;
+              width: 120px;
+              color: #555;
+            }
+            .value {
+              display: inline-block;
+            }
+            .date {
+              color: #666;
+              font-style: italic;
+              margin-top: 0.25rem;
+              font-size: 0.9rem;
+            }
+            p {
+              white-space: pre-wrap;
+              margin: 0.5rem 0;
+            }
+            @media print {
+              body {
+                margin: 1.5cm;
+              }
+            }
+          </style>
+        `;
+        
+        let content = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>${contentToPrint}</title>
+            ${printStyles}
+          </head>
+          <body>
+            <h1>${contentToPrint}</h1>
+        `;
+        
+        if (data && data.length > 0) {
+          data.forEach((item: any, index: number) => {
+            content += `<div class="item">`;
+            
+            // Handle different formats based on section type
+            if (printSectionValue === "diary") {
+              content += `
+                <div class="field"><span class="label">Date:</span> <span class="value">${item.date}</span></div>
+                <div class="field"><span class="label">Mood:</span> <span class="value">${item.mood}</span></div>
+                <p>${item.content}</p>
+              `;
+            } else if (printSectionValue === "budget") {
+              content += `
+                <div class="field"><span class="label">Date:</span> <span class="value">${item.date}</span></div>
+                <div class="field"><span class="label">Description:</span> <span class="value">${item.description}</span></div>
+                <div class="field"><span class="label">Category:</span> <span class="value">${item.category}</span></div>
+                <div class="field"><span class="label">Amount:</span> <span class="value">${item.amount}</span></div>
+                <div class="field"><span class="label">Type:</span> <span class="value">${item.type}</span></div>
+              `;
+            } else if (printSectionValue === "notes") {
+              content += `
+                <div class="field"><span class="label">Title:</span> <span class="value">${item.title}</span></div>
+                <p>${item.content}</p>
+                <div class="date">Created: ${item.date}</div>
+                ${item.updatedAt !== "-" ? `<div class="date">Updated: ${item.updatedAt}</div>` : ""}
+              `;
+            } else if (printSectionValue === "goals") {
+              content += `
+                <div class="field"><span class="label">Title:</span> <span class="value">${item.title}</span></div>
+                <div class="field"><span class="label">Category:</span> <span class="value">${item.category}</span></div>
+                <div class="field"><span class="label">Due Date:</span> <span class="value">${item.dueDate}</span></div>
+                <div class="field"><span class="label">Progress:</span> <span class="value">${item.progress}</span></div>
+                <div class="field"><span class="label">Status:</span> <span class="value">${item.status}</span></div>
+                <p>${item.description}</p>
+              `;
+            } else if (printSectionValue === "medical") {
+              content += `
+                <div class="field"><span class="label">Title:</span> <span class="value">${item.title}</span></div>
+                <div class="field"><span class="label">Type:</span> <span class="value">${item.type}</span></div>
+                <div class="field"><span class="label">Provider:</span> <span class="value">${item.provider}</span></div>
+                <div class="field"><span class="label">Date:</span> <span class="value">${item.date}</span></div>
+                <div class="field"><span class="label">Reminder:</span> <span class="value">${item.reminder}</span></div>
+                <div class="field"><span class="label">Completed:</span> <span class="value">${item.completed}</span></div>
+                <p>${item.notes}</p>
+              `;
+            }
+            
+            content += `</div>`;
+          });
+        } else {
+          content += `<p>No data available for ${contentToPrint}.</p>`;
+        }
+        
+        content += `
+          </body>
+          </html>
+        `;
+        
+        frameDoc.write(content);
+        frameDoc.close();
+        
+        // Wait for content to load before printing
         setTimeout(() => {
-          navigate("/settings");
+          printFrame.contentWindow?.print();
+          // Remove the frame after printing
+          setTimeout(() => {
+            document.body.removeChild(printFrame);
+          }, 500);
         }, 500);
-      }, 800);
+      }
       
       toast({
         title: "Print Initiated",
