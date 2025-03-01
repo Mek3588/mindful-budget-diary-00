@@ -1,8 +1,9 @@
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Camera, Image as ImageIcon, RotateCcw, Upload } from "lucide-react";
+import { Camera, Image as ImageIcon, RotateCcw, Upload, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
 
 interface CameraCaptureProps {
   onCapture: (image: string) => void;
@@ -13,22 +14,49 @@ interface CameraCaptureProps {
 const CameraCapture = ({ onCapture, open, onOpenChange }: CameraCaptureProps) => {
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [cameraError, setCameraError] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    // Clean up function to stop camera when component unmounts
+    return () => {
+      stopCamera();
+    };
+  }, []);
+
   const startCamera = async () => {
     try {
+      setCameraError(null);
+      // Try to get access to the camera with environment facing mode first (rear camera on mobile)
       const mediaStream = await navigator.mediaDevices.getUserMedia({ 
         video: { facingMode: "environment" } 
+      }).catch(async () => {
+        // If environment mode fails, try with user facing camera (front camera)
+        return await navigator.mediaDevices.getUserMedia({ 
+          video: true 
+        });
       });
+      
       setStream(mediaStream);
       
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
+        // Make sure we wait for the video to be loaded before allowing capture
+        videoRef.current.onloadedmetadata = () => {
+          if (videoRef.current) {
+            videoRef.current.play().catch(err => {
+              console.error("Error playing video:", err);
+              setCameraError("Failed to start video stream. Please try again or use file upload.");
+            });
+          }
+        };
       }
     } catch (err) {
       console.error("Error accessing camera:", err);
+      setCameraError("Could not access camera. Please check permissions or use file upload.");
+      toast.error("Camera access error. Try uploading an image instead.");
     }
   };
 
@@ -37,12 +65,16 @@ const CameraCapture = ({ onCapture, open, onOpenChange }: CameraCaptureProps) =>
       stream.getTracks().forEach(track => track.stop());
       setStream(null);
     }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
   };
 
   const handleOpenChange = (newOpen: boolean) => {
     if (newOpen) {
       startCamera();
       setCapturedImage(null);
+      setCameraError(null);
     } else {
       stopCamera();
     }
@@ -51,18 +83,35 @@ const CameraCapture = ({ onCapture, open, onOpenChange }: CameraCaptureProps) =>
 
   const captureImage = () => {
     if (videoRef.current && canvasRef.current) {
-      const canvas = canvasRef.current;
-      const video = videoRef.current;
-      
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const imageDataUrl = canvas.toDataURL('image/jpeg');
-        setCapturedImage(imageDataUrl);
-        stopCamera();
+      try {
+        const canvas = canvasRef.current;
+        const video = videoRef.current;
+        
+        // Make sure video is actually playing and has dimensions
+        if (video.readyState !== 4 || video.videoWidth === 0 || video.videoHeight === 0) {
+          toast.error("Video stream not ready. Please wait or try again.");
+          return;
+        }
+        
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          
+          try {
+            const imageDataUrl = canvas.toDataURL('image/jpeg');
+            setCapturedImage(imageDataUrl);
+            stopCamera();
+          } catch (err) {
+            console.error("Error creating image data URL:", err);
+            toast.error("Failed to capture image. Please try again.");
+          }
+        }
+      } catch (err) {
+        console.error("Error capturing image:", err);
+        toast.error("Failed to capture image. Please try again.");
       }
     }
   };
@@ -111,17 +160,26 @@ const CameraCapture = ({ onCapture, open, onOpenChange }: CameraCaptureProps) =>
           {!capturedImage ? (
             <>
               <div className="relative w-full h-64 bg-black rounded-md overflow-hidden">
-                <video 
-                  ref={videoRef} 
-                  autoPlay 
-                  playsInline 
-                  className="w-full h-full object-cover"
-                />
+                {cameraError ? (
+                  <div className="flex flex-col items-center justify-center h-full p-4 text-center">
+                    <AlertCircle className="h-8 w-8 text-red-400 mb-2" />
+                    <p className="text-sm text-red-300">{cameraError}</p>
+                  </div>
+                ) : (
+                  <video 
+                    ref={videoRef} 
+                    autoPlay 
+                    playsInline 
+                    muted
+                    className="w-full h-full object-cover"
+                  />
+                )}
               </div>
               
               <div className="flex flex-wrap gap-2 w-full justify-center">
                 <Button 
                   onClick={captureImage}
+                  disabled={!!cameraError}
                   className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
                 >
                   <Camera className="h-4 w-4 mr-2" />
