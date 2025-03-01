@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -18,7 +19,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { format, isSameDay, addMonths, subMonths, parseISO, isValid } from "date-fns";
@@ -131,10 +132,16 @@ const Calendar = () => {
   }, []);
 
   useEffect(() => {
-    let filtered = events.filter(event => 
-      isSameDay(new Date(event.date), date)
-    );
+    let filtered = events;
 
+    // Filter by date
+    if (date) {
+      filtered = filtered.filter(event => 
+        isSameDay(new Date(event.date), date)
+      );
+    }
+
+    // Filter by search term
     if (searchTerm) {
       filtered = filtered.filter(event => 
         event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -142,6 +149,7 @@ const Calendar = () => {
       );
     }
 
+    // Filter by category
     if (filterCategory !== "all") {
       filtered = filtered.filter(event => 
         event.category === filterCategory
@@ -299,13 +307,13 @@ const Calendar = () => {
 
       <main className="pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-          <Card className="md:col-span-8 bg-gray-800/30 backdrop-blur-sm border-purple-500/20 shadow-lg shadow-purple-500/5 rounded-xl p-6 animate-fade-in">
+          <Card className="md:col-span-8 bg-gray-800/30 backdrop-blur-sm border-purple-500/20 shadow-lg shadow-purple-500/5 rounded-xl p-6 animate-fade-in overflow-hidden">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center space-x-4">
                 <Button 
                   variant="outline" 
                   size="icon"
-                  onClick={() => setDate(subMonths(date, 1))}
+                  onClick={handlePrevMonth}
                   className="rounded-full bg-gray-800/50 border-purple-500/20 hover:bg-purple-500/20"
                 >
                   <ChevronLeft className="h-4 w-4" />
@@ -324,22 +332,11 @@ const Calendar = () => {
                       <h3 className="text-sm font-medium text-purple-300">Go to date</h3>
                       <Input
                         type="date"
-                        onChange={(e) => {
-                          const dateValue = e.target.value;
-                          const parsedDate = parseISO(dateValue);
-                          if (isValid(parsedDate)) {
-                            setCustomDate(parsedDate);
-                          }
-                        }}
+                        onChange={handleCustomDateChange}
                         className="w-full bg-gray-700 border-purple-500/30"
                       />
                       <Button 
-                        onClick={() => {
-                          if (customDate) {
-                            setDate(customDate);
-                            setDatePickerOpen(false);
-                          }
-                        }}
+                        onClick={handleCustomDateSubmit}
                         className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
                       >
                         Apply
@@ -351,7 +348,7 @@ const Calendar = () => {
                 <Button 
                   variant="outline" 
                   size="icon"
-                  onClick={() => setDate(addMonths(date, 1))}
+                  onClick={handleNextMonth}
                   className="rounded-full bg-gray-800/50 border-purple-500/20 hover:bg-purple-500/20"
                 >
                   <ChevronRight className="h-4 w-4" />
@@ -390,14 +387,8 @@ const Calendar = () => {
               <CalendarComponent
                 mode="single"
                 selected={date}
-                onSelect={(selectedDate) => {
-                  if (selectedDate) {
-                    setDate(selectedDate);
-                    setCustomDate(undefined);
-                    setDatePickerOpen(false);
-                  }
-                }}
-                className="rounded-md"
+                onSelect={handleDateSelect}
+                className="rounded-md w-full"
                 components={{
                   DayContent: ({ date }) => getDayContent(date),
                 }}
@@ -428,6 +419,9 @@ const Calendar = () => {
                       <DialogTitle className="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400 text-center text-xl">
                         {editingEvent ? "Edit Event" : "Add New Event"}
                       </DialogTitle>
+                      <DialogDescription className="text-gray-400 text-center">
+                        {editingEvent ? "Update the details of your event" : "Add details for your new event"}
+                      </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 pt-4">
                       <div className="space-y-2">
