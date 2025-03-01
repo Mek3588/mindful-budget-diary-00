@@ -183,6 +183,8 @@ export function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
               <li><strong>Timestamps:</strong> Each entry shows when it was created or updated.</li>
               <li><strong>Edit & Delete:</strong> Modify or remove your existing entries.</li>
               <li><strong>Calendar View:</strong> Select different dates to view entries from those days.</li>
+              <li><strong>Collapsible Sections:</strong> Dropdown menus for mood options and previous entries.</li>
+              <li><strong>Mood Trends:</strong> Access detailed mood analytics through a dedicated popup.</li>
             </ul>
             <p>Your diary entries are stored locally on your device and are not shared with anyone.</p>
           </div>
@@ -221,6 +223,7 @@ export function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
           <div className="space-y-4">
             <p>The Calendar helps you stay organized and never miss important dates:</p>
             <ul className="list-disc pl-5 space-y-2">
+              <li><strong>Mobile Responsive:</strong> Calendar adapts to different screen sizes for easy viewing.</li>
               <li><strong>Monthly View:</strong> See your entire month at a glance with clear day separations.</li>
               <li><strong>Add Events:</strong> Create new events with titles, descriptions, and times.</li>
               <li><strong>Navigation:</strong> Easily move between months with the ← and → buttons.</li>
@@ -229,6 +232,9 @@ export function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
               <li><strong>Event Filtering:</strong> Filter events by category to focus on specific types.</li>
               <li><strong>Events List:</strong> View and manage all events in a separate section.</li>
               <li><strong>Edit & Delete:</strong> Modify or remove existing events.</li>
+              <li><strong>Event Indicators:</strong> Small dots appear on days with scheduled events.</li>
+              <li><strong>Date Range Selection:</strong> Filter events by selecting a date range.</li>
+              <li><strong>Dark Mode Support:</strong> Attractive calendar display in both light and dark themes.</li>
             </ul>
             <p>Your calendar helps you maintain a balanced schedule and prepare for upcoming events.</p>
           </div>
@@ -352,6 +358,7 @@ export function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
               <li><strong>Voice Input:</strong> Use speech-to-text to record medical information hands-free.</li>
               <li><strong>Photo Upload:</strong> Attach images of prescriptions or medical documents for reference.</li>
               <li><strong>Camera Integration:</strong> Take photos of medication labels or insurance cards directly.</li>
+              <li><strong>Improved Dialogs:</strong> Easy-to-read dialog boxes with clear text and contrast.</li>
             </ul>
             <p>This section helps you stay on top of your health management by organizing all medical information in one secure place.</p>
           </div>
@@ -367,13 +374,13 @@ export function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[80vh] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
+      <DialogContent className="sm:max-w-[600px] max-h-[80vh] bg-gray-900 text-white border border-gray-700 overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl flex items-center gap-2">
+          <DialogTitle className="text-xl flex items-center gap-2 text-white">
             <BookText className="h-5 w-5" />
             Help & Documentation
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-gray-300">
             Navigate through sections using the arrows below
           </DialogDescription>
         </DialogHeader>
@@ -382,19 +389,19 @@ export function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
           {getSectionTitle(currentSection)}
         </div>
         
-        <div className="max-h-[50vh] overflow-y-auto pr-4">
+        <div className="max-h-[50vh] overflow-y-auto pr-4 text-gray-100">
           {getSectionContent(currentSection)}
         </div>
         
-        <DialogFooter className="flex items-center justify-between border-t pt-4 mt-4">
-          <span className="text-sm text-muted-foreground">
+        <DialogFooter className="flex items-center justify-between border-t border-gray-700 pt-4 mt-4">
+          <span className="text-sm text-gray-400">
             {sections.indexOf(currentSection) + 1} of {sections.length}
           </span>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={prevSection}>
+            <Button variant="outline" size="icon" onClick={prevSection} className="border-gray-600 text-white hover:bg-gray-800">
               <ArrowLeft className="h-4 w-4" />
             </Button>
-            <Button variant="outline" size="icon" onClick={nextSection}>
+            <Button variant="outline" size="icon" onClick={nextSection} className="border-gray-600 text-white hover:bg-gray-800">
               <ArrowRight className="h-4 w-4" />
             </Button>
           </div>

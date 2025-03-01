@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
@@ -7,7 +6,6 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Toggle } from "@/components/ui/toggle";
 import {
   Select,
   SelectContent,
@@ -22,8 +20,6 @@ import {
   Plus, 
   X, 
   Calendar as CalendarIcon, 
-  Target, 
-  Stethoscope, 
   Edit, 
   Trash,
   Sticker,
@@ -386,8 +382,8 @@ const Calendar = () => {
       <main className="pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-3">
           <div className="lg:col-span-2 space-y-6">
-            <Card className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-6">
-              <div className="flex items-center justify-between mb-4">
+            <Card className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-4 sm:p-6">
+              <div className="flex flex-wrap items-center justify-between mb-4 gap-2">
                 <div>
                   <h2 className="text-lg font-semibold">
                     {format(currentMonth, "MMMM yyyy")}
@@ -406,7 +402,7 @@ const Calendar = () => {
                 </div>
               </div>
               
-              <div className="mb-4 flex items-center justify-between">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <CalendarDays className="h-4 w-4" />
                   <span className="text-sm">
@@ -426,26 +422,28 @@ const Calendar = () => {
                 </Button>
               </div>
               
-              <CalendarComponent
-                mode="range"
-                selected={dateRange}
-                onSelect={handleDateRangeChange}
-                month={startOfMonth(currentMonth)}
-                onDayClick={handleDayClick}
-                className="rounded-md border"
-                modifiers={modifiers}
-              />
+              <div className="overflow-x-auto calendar-container">
+                <CalendarComponent
+                  mode="range"
+                  selected={dateRange}
+                  onSelect={handleDateRangeChange}
+                  month={startOfMonth(currentMonth)}
+                  onDayClick={handleDayClick}
+                  className="rounded-md border w-full"
+                  modifiers={modifiers}
+                />
+              </div>
             </Card>
 
-            <Card className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-6">
-              <div className="flex items-center justify-between mb-4">
+            <Card className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-4 sm:p-6">
+              <div className="flex flex-wrap items-center justify-between mb-4 gap-3">
                 <h2 className="text-lg font-semibold">Events</h2>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <Select
                     value={selectedCategory}
                     onValueChange={(value) => setSelectedCategory(value as EventCategory | "all")}
                   >
-                    <SelectTrigger className="w-[180px]">
+                    <SelectTrigger className="w-[140px] sm:w-[180px]">
                       <SelectValue placeholder="Filter by category" />
                     </SelectTrigger>
                     <SelectContent>
@@ -468,18 +466,18 @@ const Calendar = () => {
                   </Button>
                 </div>
               </div>
-              <div className="space-y-3">
+              <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
                 {filteredEvents.length > 0 ? (
                   filteredEvents.map((event) => (
                     <div key={event.id} className="flex items-center justify-between p-2 border rounded-md">
-                      <div className="flex items-center gap-2">
-                        <div className={`w-3 h-3 rounded-full ${CategoryColors[event.category]}`}></div>
-                        <span>
+                      <div className="flex items-center gap-2 truncate">
+                        <div className={`w-3 h-3 rounded-full flex-shrink-0 ${CategoryColors[event.category]}`}></div>
+                        <span className="truncate">
                           {format(new Date(event.date), "MMM d")} - {event.title} 
                           {event.sticker && <span className="ml-2">{event.sticker}</span>}
                         </span>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-1 flex-shrink-0">
                         <Button variant="ghost" size="icon" onClick={() => handleEditEvent(event)}>
                           <Edit className="h-4 w-4" />
                         </Button>
@@ -500,9 +498,9 @@ const Calendar = () => {
           </div>
 
           <div className="space-y-6">
-            <Card className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-6">
+            <Card className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-4 sm:p-6">
               <h2 className="text-lg font-semibold mb-4">Categories</h2>
-              <div className="space-y-2">
+              <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
                 {Object.entries(CategoryColors).map(([category, color]) => (
                   <div 
                     key={category} 
@@ -521,7 +519,7 @@ const Calendar = () => {
               </div>
             </Card>
 
-            <Card className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-6">
+            <Card className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-4 sm:p-6">
               <h2 className="text-lg font-semibold mb-4">Stickers</h2>
               <div className="grid grid-cols-4 gap-2">
                 {commonEmojis.map((emoji) => (
@@ -545,16 +543,16 @@ const Calendar = () => {
           setNewEvent({ title: "", description: "", date: new Date(), category: "personal" });
         }
       }}>
-        <DialogContent className="sm:max-w-[425px] bg-white dark:bg-gray-900">
+        <DialogContent className="sm:max-w-[425px] bg-gray-900 text-white border border-gray-700 overflow-y-auto max-h-[90vh]">
           <DialogHeader>
-            <DialogTitle>{isEditMode ? "Edit Event" : "Add Event"}</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-white">{isEditMode ? "Edit Event" : "Add Event"}</DialogTitle>
+            <DialogDescription className="text-gray-300">
               {isEditMode ? "Update your calendar event details." : "Fill in the details for your new event."}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <label htmlFor="title" className="text-right">
+              <label htmlFor="title" className="text-right text-white">
                 Title
               </label>
               <Input
@@ -562,22 +560,22 @@ const Calendar = () => {
                 id="title"
                 value={newEvent.title}
                 onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
-                className="col-span-3"
+                className="col-span-3 bg-gray-800 border-gray-700 text-white"
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <label htmlFor="description" className="text-right">
+              <label htmlFor="description" className="text-right text-white">
                 Description
               </label>
               <Textarea
                 id="description"
                 value={newEvent.description}
                 onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
-                className="col-span-3"
+                className="col-span-3 bg-gray-800 border-gray-700 text-white"
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <label htmlFor="date" className="text-right">
+              <label htmlFor="date" className="text-right text-white">
                 Date
               </label>
               <Input
@@ -585,23 +583,23 @@ const Calendar = () => {
                 id="date"
                 value={format(newEvent.date, "yyyy-MM-dd")}
                 onChange={(e) => setNewEvent({ ...newEvent, date: new Date(e.target.value) })}
-                className="col-span-3"
+                className="col-span-3 bg-gray-800 border-gray-700 text-white"
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <label htmlFor="category" className="text-right">
+              <label htmlFor="category" className="text-right text-white">
                 Category
               </label>
               <Select
                 value={newEvent.category}
                 onValueChange={(value) => setNewEvent({ ...newEvent, category: value as EventCategory })}
               >
-                <SelectTrigger className="col-span-3">
+                <SelectTrigger className="col-span-3 bg-gray-800 border-gray-700 text-white">
                   <SelectValue placeholder="Select a category" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-gray-900 border-gray-700 text-white">
                   {Object.keys(CategoryColors).map((category) => (
-                    <SelectItem key={category} value={category}>
+                    <SelectItem key={category} value={category} className="text-white">
                       <div className="flex items-center">
                         <div className={`w-3 h-3 rounded-full mr-2 ${CategoryColors[category as EventCategory]}`}></div>
                         <span className="capitalize">{category}</span>
@@ -619,42 +617,42 @@ const Calendar = () => {
       </Dialog>
 
       <Dialog open={showEventDetailsDialog} onOpenChange={setShowEventDetailsDialog}>
-        <DialogContent className="sm:max-w-[425px] bg-white dark:bg-gray-900">
+        <DialogContent className="sm:max-w-[425px] bg-gray-900 text-white border border-gray-700 overflow-y-auto max-h-[90vh]">
           <DialogHeader>
-            <DialogTitle>{selectedEvent?.title}</DialogTitle>
-            <DialogDescription>Event details</DialogDescription>
+            <DialogTitle className="text-white">{selectedEvent?.title}</DialogTitle>
+            <DialogDescription className="text-gray-300">Event details</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-start gap-4">
-              <label htmlFor="description" className="text-right">
+              <label htmlFor="description" className="text-right text-white">
                 Description
               </label>
-              <div className="col-span-3 whitespace-pre-line">
+              <div className="col-span-3 whitespace-pre-line text-white">
                 {selectedEvent?.description}
               </div>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <label htmlFor="date" className="text-right">
+              <label htmlFor="date" className="text-right text-white">
                 Date
               </label>
-              <div className="col-span-3">
+              <div className="col-span-3 text-white">
                 {selectedEvent ? format(new Date(selectedEvent.date), "MMM d, yyyy") : ''}
               </div>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <label htmlFor="category" className="text-right">
+              <label htmlFor="category" className="text-right text-white">
                 Category
               </label>
               <div className="flex items-center col-span-3">
                 <div className={`w-3 h-3 rounded-full mr-2 ${selectedEvent ? CategoryColors[selectedEvent.category] : ''}`}></div>
-                <span className="capitalize">
+                <span className="capitalize text-white">
                   {selectedEvent?.category}
                 </span>
               </div>
             </div>
             {selectedEvent?.sticker && (
               <div className="grid grid-cols-4 items-center gap-4">
-                <label className="text-right">
+                <label className="text-right text-white">
                   Sticker
                 </label>
                 <div className="col-span-3 text-2xl">
@@ -664,7 +662,7 @@ const Calendar = () => {
             )}
           </div>
           <DialogFooter>
-            <div className="flex space-x-2 w-full justify-between">
+            <div className="flex flex-wrap space-x-2 w-full justify-between">
               <Button onClick={() => {
                 if (selectedEvent) {
                   handleEditEvent(selectedEvent);
@@ -682,14 +680,14 @@ const Calendar = () => {
       </Dialog>
 
       <Dialog open={showStickerDialog} onOpenChange={setShowStickerDialog}>
-        <DialogContent className="sm:max-w-[425px] bg-white dark:bg-gray-900">
+        <DialogContent className="sm:max-w-[425px] bg-gray-900 text-white border border-gray-700 overflow-y-auto max-h-[90vh]">
           <DialogHeader>
-            <DialogTitle>Add Sticker</DialogTitle>
-            <DialogDescription>Choose an emoji to use as a sticker</DialogDescription>
+            <DialogTitle className="text-white">Add Sticker</DialogTitle>
+            <DialogDescription className="text-gray-300">Choose an emoji to use as a sticker</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <label htmlFor="emoji" className="text-right">
+              <label htmlFor="emoji" className="text-right text-white">
                 Emoji
               </label>
               <Input
@@ -697,11 +695,11 @@ const Calendar = () => {
                 id="emoji"
                 value={stickerEmoji}
                 onChange={(e) => setStickerEmoji(e.target.value)}
-                className="col-span-3"
+                className="col-span-3 bg-gray-800 border-gray-700 text-white"
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <label htmlFor="date" className="text-right">
+              <label htmlFor="date" className="text-right text-white">
                 Date
               </label>
               <Input
@@ -709,7 +707,7 @@ const Calendar = () => {
                 id="date"
                 value={format(stickerDate, "yyyy-MM-dd")}
                 onChange={(e) => setStickerDate(new Date(e.target.value))}
-                className="col-span-3"
+                className="col-span-3 bg-gray-800 border-gray-700 text-white"
               />
             </div>
             <div className="grid grid-cols-1">

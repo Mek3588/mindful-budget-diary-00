@@ -187,14 +187,19 @@
   background-color: var(--menu-settings-dark-color) !important;
 }
 
-/* Fixed popup and dialog styles for better visibility */
+/* Dialog styling with better visibility */
 .radix-dropdown-content,
 .radix-popover-content,
 .radix-dialog-content {
-  @apply bg-white dark:bg-gray-900 !important;
-  color: hsl(var(--foreground)) !important;
-  border: 1px solid hsl(var(--border)) !important;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+  @apply bg-gray-900 text-white !important;
+  border: 1px solid rgb(55, 65, 81) !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Override for light mode (only if explicitly wanted) */
+.light-dialog .radix-dialog-content {
+  @apply bg-white text-gray-900 !important;
+  border: 1px solid rgb(229, 231, 235) !important;
 }
 
 /* Ensuring dropdown menus are fully opaque */
@@ -205,7 +210,7 @@
 /* Ensure all dropdown menus have proper background */
 [data-state="open"].radix-dropdown-content,
 [data-state="open"].radix-popover-content {
-  background-color: hsl(var(--background)) !important;
+  background-color: #1f2937 !important;
   backdrop-filter: none !important;
 }
 
@@ -220,6 +225,24 @@
   overflow-y: auto !important;
 }
 
+/* Dialog content text color */
+[data-radix-dialog-content] label,
+[data-radix-dialog-content] p,
+[data-radix-dialog-content] h2,
+[data-radix-dialog-content] h3,
+[data-radix-dialog-content] span {
+  color: white !important;
+}
+
+/* Dialog header styling */
+[data-radix-dialog-title] {
+  color: white !important;
+}
+
+[data-radix-dialog-description] {
+  color: rgb(209, 213, 219) !important;
+}
+
 /* Ensure Medical dialog fits and scrolls properly */
 .sm\:max-w-\[600px\] {
   max-height: 85vh !important;
@@ -228,8 +251,28 @@
 
 /* Sheet content needs to be opaque */
 .SheetContent {
-  background-color: hsl(var(--background)) !important;
-  color: hsl(var(--foreground)) !important;
+  background-color: #1f2937 !important;
+  color: white !important;
+}
+
+/* Input fields in dialogs */
+[data-radix-dialog-content] input,
+[data-radix-dialog-content] textarea,
+[data-radix-dialog-content] select {
+  background-color: #374151 !important;
+  border-color: #4b5563 !important;
+  color: white !important;
+}
+
+/* Select content styling */
+.select-content,
+[role="listbox"] {
+  background-color: #1f2937 !important;
+  border-color: #4b5563 !important;
+}
+
+[role="option"] {
+  color: white !important;
 }
 
 /* Mobile responsive improvements */
@@ -290,15 +333,27 @@
 /* Custom styles for dropdown menus in our app */
 .dropdown-menu-content,
 .select-content {
-  @apply bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 rounded-md shadow-lg !important;
+  @apply bg-gray-900 border border-gray-600 text-white rounded-md shadow-lg !important;
 }
 
 .dropdown-menu-item {
-  @apply cursor-pointer px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 !important;
+  @apply cursor-pointer px-3 py-2 text-sm hover:bg-gray-800 text-white !important;
 }
 
-/* Improved dialog content - ensure proper scrolling */
-.DialogContent {
-  max-height: 85vh !important;
-  overflow-y: auto !important;
+/* Calendar responsive improvements */
+.rdp-months {
+  justify-content: center !important;
+}
+
+@media (max-width: 768px) {
+  .rdp-cell, .rdp-head_cell {
+    width: 40px !important;
+    height: 40px !important;
+  }
+  
+  .rdp-button {
+    width: 38px !important;
+    height: 38px !important;
+    font-size: 0.875rem !important;
+  }
 }
