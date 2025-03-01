@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -132,9 +133,8 @@ const Calendar = () => {
   }, []);
 
   useEffect(() => {
-    let filtered = events;
-
-    filtered = filtered.filter(event => 
+    // Filter events based on the selected date and category
+    let filtered = events.filter(event => 
       isSameDay(new Date(event.date), date)
     );
 
@@ -175,8 +175,9 @@ const Calendar = () => {
       localStorage.setItem('calendar-events', JSON.stringify(updatedEvents));
       toast.success("Event updated successfully!");
     } else {
-      setEvents(prev => [...prev, event]);
-      localStorage.setItem('calendar-events', JSON.stringify([...events, event]));
+      const updatedEvents = [...events, event];
+      setEvents(updatedEvents);
+      localStorage.setItem('calendar-events', JSON.stringify(updatedEvents));
       toast.success("Event added successfully!");
     }
     
@@ -186,8 +187,9 @@ const Calendar = () => {
   };
 
   const handleDeleteEvent = (eventId: string) => {
-    setEvents(prev => prev.filter(e => e.id !== eventId));
-    localStorage.setItem('calendar-events', JSON.stringify(events.filter(e => e.id !== eventId)));
+    const updatedEvents = events.filter(e => e.id !== eventId);
+    setEvents(updatedEvents);
+    localStorage.setItem('calendar-events', JSON.stringify(updatedEvents));
     toast.success("Event deleted successfully");
   };
 
@@ -229,17 +231,21 @@ const Calendar = () => {
     }
   };
 
+  // Get the content to display for each day in the calendar
   const getDayContent = (day: Date) => {
+    // Filter events for this day
     let dayEvents = events.filter(event => 
-      format(new Date(event.date), 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd')
+      isSameDay(new Date(event.date), day)
     );
     
+    // Apply category filter to day events if a filter is selected
     if (filterCategory !== "all") {
       dayEvents = dayEvents.filter(event => event.category === filterCategory);
     }
     
+    // Get stickers for this day
     const dayStickers = stickers.filter(sticker =>
-      format(new Date(sticker.date), 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd')
+      isSameDay(new Date(sticker.date), day)
     );
 
     return (
@@ -254,7 +260,7 @@ const Calendar = () => {
         
         <div className="absolute bottom-1 right-1 flex flex-col gap-1">
           {dayStickers.map((sticker) => (
-            <div key={sticker.id} className="text-xs">
+            <div key={`sticker-${sticker.id}`} className="text-xs">
               {sticker.type === 'mood' && (
                 <Smile className="h-4 w-4 text-pink-500" />
               )}
@@ -349,10 +355,28 @@ const Calendar = () => {
               </div>
             </div>
             
+            <div className="mb-6">
+              <Select
+                value={filterCategory}
+                onValueChange={setFilterCategory}
+              >
+                <SelectTrigger className="w-[150px] bg-gray-700 border-gray-600">
+                  <SelectValue placeholder="Filter events" />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-800 border-gray-700 text-white">
+                  <SelectItem value="all">All Events</SelectItem>
+                  <SelectItem value="todo">Todo</SelectItem>
+                  <SelectItem value="diary">Diary</SelectItem>
+                  <SelectItem value="budget">Budget</SelectItem>
+                  <SelectItem value="note">Note</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
             <CalendarComponent
               mode="single"
               selected={date}
-              onSelect={(newDate) => newDate && setDate(newDate)}
+              onSelect={handleDateSelect}
               className="rounded-md border border-gray-700"
               components={{
                 DayContent: ({ date }) => getDayContent(date),
@@ -441,28 +465,13 @@ const Calendar = () => {
                     className="pl-8 bg-gray-700 border-gray-600"
                   />
                 </div>
-                <Select
-                  value={filterCategory}
-                  onValueChange={setFilterCategory}
-                >
-                  <SelectTrigger className="w-[120px] bg-gray-700 border-gray-600">
-                    <SelectValue placeholder="Filter" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-gray-800 border-gray-700 text-white">
-                    <SelectItem value="all">All</SelectItem>
-                    <SelectItem value="todo">Todo</SelectItem>
-                    <SelectItem value="diary">Diary</SelectItem>
-                    <SelectItem value="budget">Budget</SelectItem>
-                    <SelectItem value="note">Note</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
 
               <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
                 {filteredEvents.length > 0 ? (
                   filteredEvents.map(event => (
                     <Card 
-                      key={event.id} 
+                      key={`event-card-${event.id}`} 
                       className="p-4 bg-gradient-to-r from-gray-700/30 to-gray-700/10 backdrop-blur-sm border border-gray-700/20"
                     >
                       <div className="flex justify-between items-start">
@@ -487,7 +496,7 @@ const Calendar = () => {
                               {event.category}
                             </Badge>
                             {event.tags?.map(tag => (
-                              <Badge key={tag} variant="outline">
+                              <Badge key={`tag-${event.id}-${tag}`} variant="outline">
                                 {tag}
                               </Badge>
                             ))}
@@ -534,7 +543,7 @@ const Calendar = () => {
                   ))
                 ) : (
                   <div className="text-center py-8 text-gray-400">
-                    <p>No events for this date</p>
+                    <p>No events for this date {filterCategory !== "all" && `in category: ${filterCategory}`}</p>
                   </div>
                 )}
               </div>
@@ -547,3 +556,4 @@ const Calendar = () => {
 };
 
 export default Calendar;
+
