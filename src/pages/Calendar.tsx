@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
@@ -7,6 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Toggle } from "@/components/ui/toggle";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { 
   ArrowLeft, 
   ChevronLeft, 
@@ -19,11 +27,13 @@ import {
   Edit, 
   Trash,
   Sticker,
-  CalendarDays
+  CalendarDays,
+  Filter
 } from "lucide-react";
 import { format, addMonths, subMonths, isSameDay, startOfMonth, isWithinInterval, endOfMonth, parseISO } from "date-fns";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { DateRange } from "react-day-picker";
 
 type EventCategory = 'personal' | 'work' | 'health' | 'birthday' | 'note' | 'diary' | 'goal' | 'medical';
 
@@ -76,21 +86,37 @@ const Calendar = () => {
   const [stickerEmoji, setStickerEmoji] = useState("😊");
   const [stickerDate, setStickerDate] = useState<Date>(new Date());
   
-  const [activeFilters, setActiveFilters] = useState<EventCategory[]>([
-    'personal', 'work', 'health', 'birthday', 'note', 'diary', 'goal', 'medical'
-  ]);
+  const [selectedCategory, setSelectedCategory] = useState<EventCategory | "all">("all");
   
   const commonEmojis = ["😊", "😂", "❤️", "👍", "🎉", "🎂", "🏆", "⭐", "🔥", "💯", "🙏", "✅", "💪"];
 
   const [isEditMode, setIsEditMode] = useState(false);
   
+  // Fix the DateRange type issue by making 'to' optional in our state
   const [dateRange, setDateRange] = useState<{
-    from: Date | undefined;
-    to: Date | undefined;
+    from: Date;
+    to?: Date;
   }>({
     from: startOfMonth(currentMonth),
     to: endOfMonth(currentMonth)
   });
+
+  // Function to handle DateRange changes safely
+  const handleDateRangeChange = (range: DateRange | undefined) => {
+    if (!range) {
+      // If range is undefined, reset to current month
+      setDateRange({
+        from: startOfMonth(currentMonth),
+        to: endOfMonth(currentMonth)
+      });
+    } else if (range.from) {
+      // If range.from exists, update the state
+      setDateRange({
+        from: range.from,
+        to: range.to
+      });
+    }
+  };
 
   useEffect(() => {
     const loadEvents = () => {
@@ -109,50 +135,48 @@ const Calendar = () => {
         }));
       }
       
+      // Add events from other sources, ensuring no duplicate IDs
+      const processSources = (source: any[], category: EventCategory, prefix: string) => {
+        if (!source || !Array.isArray(source)) return [];
+        return source.map((item: any) => {
+          const id = `${prefix}-${item.id}`;
+          // Check if this event already exists in allEvents
+          if (allEvents.some(e => e.id === id)) return null;
+          
+          return {
+            id,
+            title: category === 'diary' ? "Diary Entry" : (item.title || (category === 'medical' ? "Medical Appointment" : "")),
+            description: item.content || item.description || item.notes || item.prescription || "",
+            date: new Date(item.date || item.appointmentDate || item.dueDate || item.createdAt),
+            category,
+            tags: category === 'diary' ? [`mood-${item.mood}`, `energy-${item.energy}`] :
+                 category === 'goal' ? [`priority-${item.priority}`, `status-${item.status}`] :
+                 category === 'medical' ? [item.type || "appointment", item.status || "scheduled"] : []
+          };
+        }).filter(Boolean); // Remove null items
+      };
+      
       if (savedDiaryEntries) {
-        const diaryEvents = JSON.parse(savedDiaryEntries).map((entry: any) => ({
-          id: `diary-${entry.id}`,
-          title: "Diary Entry",
-          description: entry.content,
-          date: new Date(entry.date),
-          category: 'diary' as const,
-          tags: [`mood-${entry.mood}`, `energy-${entry.energy}`]
-        }));
+        const diaryEntries = JSON.parse(savedDiaryEntries);
+        const diaryEvents = processSources(diaryEntries, 'diary', 'diary');
         allEvents = [...allEvents, ...diaryEvents];
       }
       
       if (savedNotes) {
-        const noteEvents = JSON.parse(savedNotes).map((note: any) => ({
-          id: `note-${note.id}`,
-          title: note.title,
-          description: note.content,
-          date: new Date(note.date),
-          category: 'note' as const
-        }));
+        const notes = JSON.parse(savedNotes);
+        const noteEvents = processSources(notes, 'note', 'note');
         allEvents = [...allEvents, ...noteEvents];
       }
       
       if (savedGoals) {
-        const goalEvents = JSON.parse(savedGoals).map((goal: any) => ({
-          id: `goal-${goal.id}`,
-          title: goal.title,
-          description: goal.description,
-          date: new Date(goal.dueDate || goal.createdAt),
-          category: 'goal' as const,
-          tags: [`priority-${goal.priority}`, `status-${goal.status}`]
-        }));
+        const goals = JSON.parse(savedGoals);
+        const goalEvents = processSources(goals, 'goal', 'goal');
         allEvents = [...allEvents, ...goalEvents];
       }
       
       if (savedMedical) {
-        const medicalEvents = JSON.parse(savedMedical).map((record: any) => ({
-          id: `medical-${record.id}`,
-          title: record.title || "Medical Appointment",
-          description: record.notes || record.prescription,
-          date: new Date(record.appointmentDate || record.date),
-          category: 'medical' as const,
-          tags: [record.type || "appointment", record.status || "scheduled"]
-        }));
+        const medical = JSON.parse(savedMedical);
+        const medicalEvents = processSources(medical, 'medical', 'medical');
         allEvents = [...allEvents, ...medicalEvents];
       }
       
@@ -313,24 +337,24 @@ const Calendar = () => {
     setSelectedEvent(null);
   };
 
-  const handleFilterToggle = (category: EventCategory) => {
-    if (activeFilters.includes(category)) {
-      setActiveFilters(activeFilters.filter(filter => filter !== category));
-    } else {
-      setActiveFilters([...activeFilters, category]);
-    }
-  };
-
+  // Filter events based on selected category and date range
   const filteredEvents = events.filter(event => {
-    const categoryMatches = activeFilters.includes(event.category);
+    // Category filter
+    const categoryMatches = selectedCategory === "all" || event.category === selectedCategory;
     
+    // Date range filter
     let dateMatches = true;
-    if (dateRange.from && dateRange.to) {
+    if (dateRange.from) {
       const eventDate = new Date(event.date);
-      dateMatches = isWithinInterval(eventDate, {
-        start: dateRange.from,
-        end: dateRange.to
-      });
+      if (dateRange.to) {
+        dateMatches = isWithinInterval(eventDate, {
+          start: dateRange.from,
+          end: dateRange.to
+        });
+      } else {
+        // If only 'from' is set, just check if date is after 'from'
+        dateMatches = eventDate >= dateRange.from;
+      }
     }
     
     return categoryMatches && dateMatches;
@@ -405,7 +429,7 @@ const Calendar = () => {
               <CalendarComponent
                 mode="range"
                 selected={dateRange}
-                onSelect={(range) => setDateRange(range || { from: undefined, to: undefined })}
+                onSelect={handleDateRangeChange}
                 month={startOfMonth(currentMonth)}
                 onDayClick={handleDayClick}
                 className="rounded-md border"
@@ -416,17 +440,40 @@ const Calendar = () => {
             <Card className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold">Events</h2>
-                <Button size="sm" onClick={handleAddEvent}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Event
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Select
+                    value={selectedCategory}
+                    onValueChange={(value) => setSelectedCategory(value as EventCategory | "all")}
+                  >
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Filter by category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Categories</SelectItem>
+                      {Object.keys(CategoryColors).map((category) => (
+                        <SelectItem key={category} value={category}>
+                          <div className="flex items-center">
+                            <div 
+                              className={`w-3 h-3 rounded-full mr-2 ${CategoryColors[category as EventCategory]}`}
+                            />
+                            <span className="capitalize">{category}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button size="sm" onClick={handleAddEvent}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Event
+                  </Button>
+                </div>
               </div>
               <div className="space-y-3">
                 {filteredEvents.length > 0 ? (
                   filteredEvents.map((event) => (
                     <div key={event.id} className="flex items-center justify-between p-2 border rounded-md">
                       <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: CategoryColors[event.category] }}></div>
+                        <div className={`w-3 h-3 rounded-full ${CategoryColors[event.category]}`}></div>
                         <span>
                           {format(new Date(event.date), "MMM d")} - {event.title} 
                           {event.sticker && <span className="ml-2">{event.sticker}</span>}
@@ -457,16 +504,18 @@ const Calendar = () => {
               <h2 className="text-lg font-semibold mb-4">Categories</h2>
               <div className="space-y-2">
                 {Object.entries(CategoryColors).map(([category, color]) => (
-                  <div key={category} className="flex items-center justify-between">
+                  <div 
+                    key={category} 
+                    className={`flex items-center justify-between p-2 rounded-md cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 ${selectedCategory === category ? 'bg-gray-100 dark:bg-gray-700' : ''}`}
+                    onClick={() => setSelectedCategory(selectedCategory === category ? "all" : category as EventCategory)}
+                  >
                     <div className="flex items-center">
-                      <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: color }}></div>
+                      <div className={`w-3 h-3 rounded-full mr-2 ${color}`}></div>
                       <span className="capitalize">{category}</span>
                     </div>
-                    <Toggle
-                      aria-label={category}
-                      pressed={activeFilters.includes(category as EventCategory)}
-                      onPressedChange={() => handleFilterToggle(category as EventCategory)}
-                    />
+                    <Badge variant="outline" className="text-xs">
+                      {events.filter(e => e.category === category).length}
+                    </Badge>
                   </div>
                 ))}
               </div>
@@ -499,6 +548,9 @@ const Calendar = () => {
         <DialogContent className="sm:max-w-[425px] bg-white dark:bg-gray-900">
           <DialogHeader>
             <DialogTitle>{isEditMode ? "Edit Event" : "Add Event"}</DialogTitle>
+            <DialogDescription>
+              {isEditMode ? "Update your calendar event details." : "Fill in the details for your new event."}
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
@@ -540,21 +592,24 @@ const Calendar = () => {
               <label htmlFor="category" className="text-right">
                 Category
               </label>
-              <select
-                id="category"
+              <Select
                 value={newEvent.category}
-                onChange={(e) => setNewEvent({ ...newEvent, category: e.target.value as EventCategory })}
-                className="col-span-3 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                onValueChange={(value) => setNewEvent({ ...newEvent, category: value as EventCategory })}
               >
-                <option value="personal">Personal</option>
-                <option value="work">Work</option>
-                <option value="health">Health</option>
-                <option value="birthday">Birthday</option>
-                <option value="note">Note</option>
-                <option value="diary">Diary</option>
-                <option value="goal">Goal</option>
-                <option value="medical">Medical</option>
-              </select>
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select a category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.keys(CategoryColors).map((category) => (
+                    <SelectItem key={category} value={category}>
+                      <div className="flex items-center">
+                        <div className={`w-3 h-3 rounded-full mr-2 ${CategoryColors[category as EventCategory]}`}></div>
+                        <span className="capitalize">{category}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <DialogFooter>
@@ -567,6 +622,7 @@ const Calendar = () => {
         <DialogContent className="sm:max-w-[425px] bg-white dark:bg-gray-900">
           <DialogHeader>
             <DialogTitle>{selectedEvent?.title}</DialogTitle>
+            <DialogDescription>Event details</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-start gap-4">
@@ -589,10 +645,23 @@ const Calendar = () => {
               <label htmlFor="category" className="text-right">
                 Category
               </label>
-              <div className="col-span-3 capitalize">
-                {selectedEvent?.category}
+              <div className="flex items-center col-span-3">
+                <div className={`w-3 h-3 rounded-full mr-2 ${selectedEvent ? CategoryColors[selectedEvent.category] : ''}`}></div>
+                <span className="capitalize">
+                  {selectedEvent?.category}
+                </span>
               </div>
             </div>
+            {selectedEvent?.sticker && (
+              <div className="grid grid-cols-4 items-center gap-4">
+                <label className="text-right">
+                  Sticker
+                </label>
+                <div className="col-span-3 text-2xl">
+                  {selectedEvent.sticker}
+                </div>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <div className="flex space-x-2 w-full justify-between">
@@ -616,6 +685,7 @@ const Calendar = () => {
         <DialogContent className="sm:max-w-[425px] bg-white dark:bg-gray-900">
           <DialogHeader>
             <DialogTitle>Add Sticker</DialogTitle>
+            <DialogDescription>Choose an emoji to use as a sticker</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
@@ -642,9 +712,25 @@ const Calendar = () => {
                 className="col-span-3"
               />
             </div>
+            <div className="grid grid-cols-1">
+              <div className="flex flex-wrap gap-2 justify-center">
+                {commonEmojis.map((emoji) => (
+                  <Button 
+                    key={emoji} 
+                    variant={stickerEmoji === emoji ? "default" : "outline"} 
+                    onClick={() => setStickerEmoji(emoji)}
+                    className="text-xl h-10 w-10 p-0"
+                  >
+                    {emoji}
+                  </Button>
+                ))}
+              </div>
+            </div>
           </div>
           <DialogFooter>
-            <Button onClick={handleSaveSticker}>Save Sticker</Button>
+            <Button onClick={handleSaveSticker}>
+              {selectedEvent ? "Add Sticker to Event" : "Add Sticker to Calendar"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

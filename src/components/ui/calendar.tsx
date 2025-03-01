@@ -63,18 +63,21 @@ function Calendar({
       components={{
         IconLeft: () => <ChevronLeft className="h-5 w-5" />,
         IconRight: () => <ChevronRight className="h-5 w-5" />,
-        DayContent: (props: DayContentProps) => (
-          <div className="relative w-full h-full flex flex-col items-center justify-center">
-            <span>{props.date.getDate()}</span>
-            {props.displayMonth && props.activeModifiers.outside === true ? null : (
-              <>
-                {props.activeModifiers.has_event && (
-                  <Dot className="h-3 w-3 text-purple-400 absolute bottom-0" />
-                )}
-              </>
-            )}
-          </div>
-        ),
+        DayContent: (props) => {
+          // Extract date from props to show event indicator
+          const date = props.date;
+          // Check if this date has the has_event modifier
+          const hasEvent = props.activeModifiers?.has_event || false;
+          
+          return (
+            <div className="relative w-full h-full flex flex-col items-center justify-center">
+              <span>{date.getDate()}</span>
+              {hasEvent && (
+                <Dot className="h-3 w-3 text-purple-400 absolute bottom-0" />
+              )}
+            </div>
+          );
+        },
       }}
       {...props}
     />
