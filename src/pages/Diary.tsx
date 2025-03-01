@@ -481,10 +481,10 @@ const Diary = () => {
                 onClick={() => navigate("/")}
                 className="mr-4"
               >
-                <ArrowLeft className="h-5 w-5" />
+                <ArrowLeft className="h-4 w-4" />
               </Button>
               <div className="flex items-center">
-                <BookOpen className="h-5 w-5 mr-2" />
+                <BookOpen className="h-4 w-4 mr-2" />
                 <h1 className="text-xl font-semibold">Diary</h1>
               </div>
             </div>
@@ -516,7 +516,7 @@ const Diary = () => {
                   className="absolute right-0 top-0 h-full"
                   onClick={handleSearch}
                 >
-                  <Search className="h-4 w-4" />
+                  <Search className="h-3 w-3" />
                 </Button>
               </div>
               
@@ -526,7 +526,7 @@ const Diary = () => {
                     variant="outline" 
                     className={`${(moodFilter || energyFilter || dateRangeFilter !== "all") ? "bg-purple-100 dark:bg-purple-900/30" : ""}`}
                   >
-                    <Filter className="h-4 w-4 mr-2" />
+                    <Filter className="h-3 w-3 mr-2" />
                     Filter
                   </Button>
                 </DropdownMenuTrigger>
@@ -588,7 +588,7 @@ const Diary = () => {
                 onClick={toggleViewPastEntries}
                 className={`flex items-center gap-2 ${viewingPastEntries ? "bg-purple-600 hover:bg-purple-700" : ""}`}
               >
-                <Eye className="h-4 w-4" />
+                <Eye className="h-3 w-3" />
                 {viewingPastEntries ? "Current Day" : "View Past"}
               </Button>
               
@@ -597,7 +597,7 @@ const Diary = () => {
                 onClick={() => setShowStatistics(!showStatistics)}
                 className={`hidden md:flex items-center gap-2 ${showStatistics ? "bg-purple-600 hover:bg-purple-700" : ""}`}
               >
-                <BarChart className="h-4 w-4" />
+                <BarChart className="h-3 w-3" />
                 Stats
               </Button>
               
@@ -605,7 +605,7 @@ const Diary = () => {
                 <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
                   <PopoverTrigger asChild>
                     <Button variant="outline" className="flex items-center gap-2">
-                      <CalendarIcon className="h-4 w-4" />
+                      <CalendarIcon className="h-3 w-3" />
                       {format(selectedDate, 'MMM d, yyyy')}
                     </Button>
                   </PopoverTrigger>
@@ -623,18 +623,14 @@ const Diary = () => {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className="md:flex items-center gap-2 hidden">
-                    <Download className="h-4 w-4" />
+                    <Download className="h-3 w-3" />
                     Export
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
                   <DropdownMenuItem onClick={exportAsPDF}>
-                    <FileText className="h-4 w-4 mr-2" />
+                    <FileText className="h-3 w-3 mr-2" />
                     Export as PDF
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={exportAsJSON}>
-                    <FileText className="h-4 w-4 mr-2" />
-                    Export as JSON
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -656,7 +652,7 @@ const Diary = () => {
                     const percentage = calculatePercentage(mood.value, moodStats, moodOptions);
                     return (
                       <div key={mood.value} className="flex items-center">
-                        <MoodIcon className={`h-5 w-5 mr-2 ${mood.color}`} />
+                        <MoodIcon className={`h-4 w-4 mr-2 ${mood.color}`} />
                         <div className="flex-1 mx-2">
                           <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                             <div
@@ -682,7 +678,7 @@ const Diary = () => {
                     const percentage = calculatePercentage(energy.value, energyStats, energyOptions);
                     return (
                       <div key={energy.value} className="flex items-center">
-                        <EnergyIcon className={`h-5 w-5 mr-2 ${energy.color}`} />
+                        <EnergyIcon className={`h-4 w-4 mr-2 ${energy.color}`} />
                         <div className="flex-1 mx-2">
                           <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                             <div
@@ -739,7 +735,7 @@ const Diary = () => {
                 }
               </h2>
               <Button onClick={() => setIsWriting(true)} className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
-                <Plus className="mr-2 h-4 w-4" /> New Entry
+                <Plus className="mr-2 h-3 w-3" /> New Entry
               </Button>
             </div>
           </Card>
@@ -775,7 +771,7 @@ const Diary = () => {
                                   ? 'bg-primary/10 ' + mood.color
                                   : 'hover:bg-gray-100 dark:hover:bg-gray-800'
                               }`}>
-                                <Icon className={`h-8 w-8 ${
+                                <Icon className={`h-6 w-6 ${
                                   selectedMood === mood.value ? mood.color : ''
                                 }`} />
                               </div>
@@ -812,7 +808,7 @@ const Diary = () => {
                                   ? 'bg-primary/10 ' + energy.color
                                   : 'hover:bg-gray-100 dark:hover:bg-gray-800'
                               }`}>
-                                <Icon className={`h-8 w-8 ${
+                                <Icon className={`h-6 w-6 ${
                                   selectedEnergy === energy.value ? energy.color : ''
                                 }`} />
                               </div>
@@ -843,7 +839,7 @@ const Diary = () => {
                               className={selectedWeather === weather.value ? "bg-purple-600 hover:bg-purple-700" : ""}
                               onClick={() => setSelectedWeather(weather.value)}
                             >
-                              <WeatherIcon className="h-4 w-4 mr-2" />
+                              <WeatherIcon className="h-3 w-3 mr-2" />
                               {weather.label}
                             </Button>
                           );
@@ -946,7 +942,7 @@ const Diary = () => {
                         onClick={() => fileInputRef.current?.click()}
                         className="w-full"
                       >
-                        <Camera className="h-4 w-4 mr-2" />
+                        <Camera className="h-3 w-3 mr-2" />
                         Add Image
                       </Button>
                       <input
@@ -980,7 +976,7 @@ const Diary = () => {
                     onClick={handleSaveEntry}
                     className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
                   >
-                    <Save className="mr-2 h-4 w-4" /> 
+                    <Save className="mr-2 h-3 w-3" /> 
                     {isEditing ? "Update Entry" : "Save Entry"}
                   </Button>
                 </div>
@@ -996,7 +992,7 @@ const Diary = () => {
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
               className="rounded-full"
             >
-              <ArrowUp className="h-4 w-4 mr-2" />
+              <ArrowUp className="h-3 w-3 mr-2" />
               Back to Top
             </Button>
           </div>
@@ -1041,9 +1037,9 @@ const Diary = () => {
                       </div>
                       <div className="flex items-center space-x-4">
                         <div className="flex items-center space-x-2">
-                          <MoodIconComponent className={`h-5 w-5 ${mood?.color || ''}`} />
-                          <EnergyIconComponent className={`h-5 w-5 ${energy?.color || ''}`} />
-                          {WeatherIconComponent && <WeatherIconComponent className="h-5 w-5 text-blue-500" />}
+                          <MoodIconComponent className={`h-4 w-4 ${mood?.color || ''}`} />
+                          <EnergyIconComponent className={`h-4 w-4 ${energy?.color || ''}`} />
+                          {WeatherIconComponent && <WeatherIconComponent className="h-4 w-4 text-blue-500" />}
                         </div>
                         <div className="flex items-center space-x-2">
                           <Button 
@@ -1051,7 +1047,7 @@ const Diary = () => {
                             size="icon"
                             onClick={() => handleEditEntry(entry)}
                           >
-                            <Edit className="h-4 w-4" />
+                            <Edit className="h-3 w-3" />
                           </Button>
                           <Button 
                             variant="ghost" 
@@ -1059,7 +1055,7 @@ const Diary = () => {
                             onClick={() => handleDeleteEntry(entry.id)}
                             className="text-red-500 hover:text-red-600"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-3 w-3" />
                           </Button>
                         </div>
                       </div>
@@ -1086,7 +1082,7 @@ const Diary = () => {
                     {entry.tags && entry.tags.length > 0 && (
                       <div className="flex flex-wrap gap-2 mt-2">
                         {entry.tags.map(tag => (
-                          <div key={tag} className="bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 px-2 py-0.5 rounded-full text-xs">
+                          <div key={tag} className="bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 px-2 py-1 rounded-full text-xs">
                             #{tag}
                           </div>
                         ))}
