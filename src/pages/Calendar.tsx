@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -315,81 +316,6 @@ const Calendar = () => {
                 }}
               />
             </div>
-            
-            <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-              <div className="flex items-center space-x-4">
-                <Button 
-                  variant="outline" 
-                  size="icon"
-                  onClick={handlePrevMonth}
-                  className="rounded-full bg-gray-800/50 border-purple-500/20 hover:bg-purple-500/20"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                
-                <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="bg-gray-800/50 border-purple-500/20 hover:bg-purple-500/20 px-4">
-                      <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400 font-medium">
-                        {format(date, 'MMMM yyyy')}
-                      </span>
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="p-4 bg-gray-800 border-purple-500/30 text-white shadow-xl shadow-purple-500/10 rounded-xl">
-                    <div className="space-y-4">
-                      <h3 className="text-sm font-medium text-purple-300">Go to date</h3>
-                      <Input
-                        type="date"
-                        onChange={handleCustomDateChange}
-                        className="w-full bg-gray-700 border-purple-500/30"
-                      />
-                      <Button 
-                        onClick={handleCustomDateSubmit}
-                        className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-                      >
-                        Apply
-                      </Button>
-                    </div>
-                  </PopoverContent>
-                </Popover>
-                
-                <Button 
-                  variant="outline" 
-                  size="icon"
-                  onClick={handleNextMonth}
-                  className="rounded-full bg-gray-800/50 border-purple-500/20 hover:bg-purple-500/20"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Button 
-                  onClick={handleGoToToday}
-                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-md shadow-purple-500/20"
-                >
-                  Today
-                </Button>
-              </div>
-            </div>
-            
-            <div className="mb-6">
-              <Select
-                value={filterCategory}
-                onValueChange={setFilterCategory}
-              >
-                <SelectTrigger className="w-[150px] bg-gray-800/50 border-purple-500/20">
-                  <SelectValue placeholder="Filter events" />
-                </SelectTrigger>
-                <SelectContent className="bg-gray-800 border-purple-500/30 text-white rounded-xl">
-                  <SelectItem value="all">All Events</SelectItem>
-                  <SelectItem value="todo">Todo</SelectItem>
-                  <SelectItem value="diary">Diary</SelectItem>
-                  <SelectItem value="budget">Budget</SelectItem>
-                  <SelectItem value="note">Note</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
           </Card>
 
           <Card className="md:col-span-4 bg-gray-800/30 backdrop-blur-sm border-purple-500/20 shadow-lg shadow-purple-500/5 rounded-xl p-6 animate-fade-in" style={{animationDelay: "0.1s"}}>
@@ -464,6 +390,81 @@ const Calendar = () => {
                     </div>
                   </DialogContent>
                 </Dialog>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-3 bg-gray-800/50 p-3 rounded-lg border border-purple-500/20">
+                <div className="flex items-center space-x-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={handlePrevMonth}
+                    className="rounded-full bg-gray-800/50 border-purple-500/20 hover:bg-purple-500/20 h-7 w-7 p-0"
+                  >
+                    <ChevronLeft className="h-3 w-3" />
+                  </Button>
+                  
+                  <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm" className="bg-gray-800/50 border-purple-500/20 hover:bg-purple-500/20 h-7 px-2 text-xs">
+                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400 font-medium">
+                          {format(date, 'MMM yyyy')}
+                        </span>
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="p-4 bg-gray-800 border-purple-500/30 text-white shadow-xl shadow-purple-500/10 rounded-xl w-auto">
+                      <div className="space-y-4">
+                        <h3 className="text-sm font-medium text-purple-300">Go to date</h3>
+                        <Input
+                          type="date"
+                          onChange={handleCustomDateChange}
+                          className="w-full bg-gray-700 border-purple-500/30"
+                        />
+                        <Button 
+                          onClick={handleCustomDateSubmit}
+                          className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                          size="sm"
+                        >
+                          Apply
+                        </Button>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                  
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={handleNextMonth}
+                    className="rounded-full bg-gray-800/50 border-purple-500/20 hover:bg-purple-500/20 h-7 w-7 p-0"
+                  >
+                    <ChevronRight className="h-3 w-3" />
+                  </Button>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Button 
+                    onClick={handleGoToToday}
+                    size="sm"
+                    className="h-7 px-2 text-xs bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-md shadow-purple-500/20"
+                  >
+                    Today
+                  </Button>
+                  
+                  <Select
+                    value={filterCategory}
+                    onValueChange={setFilterCategory}
+                  >
+                    <SelectTrigger className="w-[110px] bg-gray-800/50 border-purple-500/20 h-7 text-xs">
+                      <SelectValue placeholder="Filter" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-800 border-purple-500/30 text-white rounded-xl">
+                      <SelectItem value="all">All Events</SelectItem>
+                      <SelectItem value="todo">Todo</SelectItem>
+                      <SelectItem value="diary">Diary</SelectItem>
+                      <SelectItem value="budget">Budget</SelectItem>
+                      <SelectItem value="note">Note</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               <div className="flex items-center space-x-2 mb-4">
