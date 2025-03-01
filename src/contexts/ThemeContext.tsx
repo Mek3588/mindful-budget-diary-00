@@ -8,6 +8,7 @@ export const ThemeContext = createContext<ThemeContextType | undefined>(undefine
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   const [currentTheme, setCurrentTheme] = useState<Theme>(() => {
     const savedThemeId = localStorage.getItem('selected-theme');
+    // If the saved theme doesn't exist in our themes array anymore, use the default (first) theme
     return themes.find(theme => theme.id === savedThemeId) || themes[0];
   });
 

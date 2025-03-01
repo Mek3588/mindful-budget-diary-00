@@ -1,4 +1,3 @@
-
 import { 
   Dialog, DialogContent, DialogHeader, DialogTitle, 
   DialogDescription, DialogFooter 
@@ -245,9 +244,9 @@ export function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
           <div className="space-y-4">
             <p>The Theme Selection feature allows you to personalize your journal experience:</p>
             <ul className="list-disc pl-5 space-y-2">
-              <li><strong>Masculine Themes:</strong> A collection of color schemes designed with masculine aesthetics.</li>
-              <li><strong>Feminine Themes:</strong> A collection of color schemes designed with feminine aesthetics.</li>
-              <li><strong>Quick Toggle:</strong> Switch between light, dark, and blue themes using the icon in the header.</li>
+              <li><strong>Dark Theme:</strong> A darker color scheme designed with masculine aesthetics.</li>
+              <li><strong>Rose Garden:</strong> A light color scheme designed with feminine aesthetics.</li>
+              <li><strong>Quick Toggle:</strong> Switch between themes using the icon in the header.</li>
               <li><strong>Custom Colors:</strong> Each theme has unique primary, secondary, and accent colors.</li>
             </ul>
             <p>Your theme preference is saved and will be remembered the next time you use the app.</p>
