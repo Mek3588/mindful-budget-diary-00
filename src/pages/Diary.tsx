@@ -5,9 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { 
-  ArrowLeft, Calendar as CalendarIcon, Save, Trash2, 
+  ArrowLeft, CalendarIcon, Save, Trash2, 
   Edit, ChevronLeft, ChevronRight, Mic, Camera, Image as ImageIcon,
-  ChevronDown, ChevronUp, Search, Filter, Calendar
+  ChevronDown, ChevronUp, Search, Filter
 } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { format, isSameDay, parseISO, startOfMonth, endOfMonth } from "date-fns";
@@ -268,9 +268,22 @@ const Diary = () => {
   });
 
   // Set date filter
-  const handleDateFilterChange = (startDate: Date | undefined, endDate: Date | undefined) => {
-    if (startDate) setFilterStartDate(startDate);
-    if (endDate) setFilterEndDate(endDate);
+  const handleDateFilterChange = (dateRange: { from: Date | undefined; to: Date | undefined } | undefined) => {
+    if (dateRange?.from) setFilterStartDate(dateRange.from);
+    if (dateRange?.to) setFilterEndDate(dateRange.to);
+  };
+
+  // Handle calendar date selection in dialog
+  const handleCalendarDateSelect = (date: Date | undefined) => {
+    if (date) {
+      setSelectedDate(date);
+      setShowCalendarDialog(false);
+      // Filter to show entries for this date
+      const formattedDate = format(date, "yyyy-MM-dd");
+      setFilterStartDate(new Date(formattedDate));
+      setFilterEndDate(new Date(formattedDate + "T23:59:59"));
+      setShowFilterOptions(true);
+    }
   };
 
   return (
@@ -304,7 +317,7 @@ const Diary = () => {
                 size="sm" 
                 onClick={() => setShowCalendarDialog(true)}
               >
-                <Calendar className="h-4 w-4 mr-1" />
+                <CalendarIcon className="h-4 w-4 mr-1" />
                 Calendar
               </Button>
             </div>
@@ -553,7 +566,10 @@ const Diary = () => {
                         <Calendar
                           mode="single"
                           selected={filterStartDate}
-                          onSelect={(date) => date && handleDateFilterChange(date, undefined)}
+                          onSelect={(date) => date && handleDateFilterChange({
+                            from: date,
+                            to: filterEndDate
+                          })}
                           initialFocus
                         />
                       </PopoverContent>
@@ -573,7 +589,10 @@ const Diary = () => {
                         <Calendar
                           mode="single"
                           selected={filterEndDate}
-                          onSelect={(date) => date && handleDateFilterChange(undefined, date)}
+                          onSelect={(date) => date && handleDateFilterChange({
+                            from: filterStartDate,
+                            to: date
+                          })}
                           initialFocus
                         />
                       </PopoverContent>
@@ -735,17 +754,7 @@ const Diary = () => {
           <Calendar
             mode="single"
             selected={selectedDate}
-            onSelect={(date) => {
-              if (date) {
-                setSelectedDate(date);
-                setShowCalendarDialog(false);
-                // Filter to show entries for this date
-                const formattedDate = format(date, "yyyy-MM-dd");
-                setFilterStartDate(new Date(formattedDate));
-                setFilterEndDate(new Date(formattedDate + "T23:59:59"));
-                setShowFilterOptions(true);
-              }
-            }}
+            onSelect={handleCalendarDateSelect}
             className="rounded-md border"
           />
         </DialogContent>
