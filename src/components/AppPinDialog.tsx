@@ -64,7 +64,7 @@ export function AppPinDialog({ onClose, onSuccess }: AppPinDialogProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleDialogClose}>
-      <DialogContent className="bg-gray-800/90 backdrop-blur-xl border-purple-500/30 text-white shadow-xl shadow-purple-500/10 rounded-xl">
+      <DialogContent className="bg-gray-800 border-purple-500/30 text-white shadow-xl shadow-purple-500/10 rounded-xl">
         <DialogHeader>
           <div className="flex flex-col items-center mb-4">
             <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-3 rounded-full mb-4">
@@ -87,7 +87,7 @@ export function AppPinDialog({ onClose, onSuccess }: AppPinDialogProps) {
                 maxLength={4}
                 value={pin}
                 onChange={(e) => setPin(e.target.value)}
-                className="text-center text-xl tracking-widest bg-gray-700/70 border-purple-500/30 focus:border-purple-500/60 h-14 placeholder:text-gray-500"
+                className="text-center text-xl tracking-widest bg-gray-700 border-purple-500/30 focus:border-purple-500/60 h-14 placeholder:text-gray-500"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     handlePinSubmit();

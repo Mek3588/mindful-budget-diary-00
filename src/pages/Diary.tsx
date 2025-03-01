@@ -2,13 +2,13 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, BookOpen, Plus, Save, Smile, Meh, Frown, HeartCrack, Heart, Angry, Stars, Sun, Cloud, CloudRain, CloudLightning, Zap, Edit, Trash2, Calendar as CalendarIcon } from "lucide-react";
+import { ArrowLeft, BookOpen, Plus, Save, Smile, Meh, Frown, HeartCrack, Heart, Angry, Stars, Sun, Cloud, CloudRain, CloudLightning, Zap, Edit, Trash2, Calendar as CalendarIcon, Eye, ArrowUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { format, isSameDay } from "date-fns";
+import { format, isSameDay, isBefore } from "date-fns";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -74,6 +74,7 @@ const Diary = () => {
   const [entryToDelete, setEntryToDelete] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editingEntry, setEditingEntry] = useState<DiaryEntry | null>(null);
+  const [viewingPastEntries, setViewingPastEntries] = useState(false);
 
   // Load entries from localStorage on component mount
   useEffect(() => {
@@ -91,13 +92,30 @@ const Diary = () => {
     }
   }, []);
   
-  // Filter entries by selected date
+  // Filter entries by selected date or show past entries
   useEffect(() => {
-    const filtered = entries.filter(entry => 
-      isSameDay(new Date(entry.date), selectedDate)
-    );
+    let filtered;
+    
+    if (viewingPastEntries) {
+      // When viewing past entries, show all entries before today
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      filtered = entries.filter(entry => 
+        isBefore(new Date(entry.date), today)
+      );
+      
+      // Sort by date (newest first)
+      filtered.sort((a, b) => b.date.getTime() - a.date.getTime());
+    } else {
+      // When viewing by date, filter entries for the selected date
+      filtered = entries.filter(entry => 
+        isSameDay(new Date(entry.date), selectedDate)
+      );
+    }
+    
     setFilteredEntries(filtered);
-  }, [entries, selectedDate]);
+  }, [entries, selectedDate, viewingPastEntries]);
 
   const updateStats = (entriesData: DiaryEntry[]) => {
     // Initialize all possible values to 0
@@ -204,6 +222,12 @@ const Diary = () => {
     setSelectedMood(entry.mood);
     setSelectedEnergy(entry.energy);
     setIsWriting(true);
+    
+    // Exit past entries viewing mode when editing
+    if (viewingPastEntries) {
+      setViewingPastEntries(false);
+      setSelectedDate(new Date(entry.date));
+    }
   };
   
   const handleDeleteEntry = (entryId: string) => {
@@ -237,7 +261,16 @@ const Diary = () => {
     if (date) {
       setSelectedDate(date);
       setDatePickerOpen(false);
+      
+      // Exit past entries viewing mode when selecting a specific date
+      if (viewingPastEntries) {
+        setViewingPastEntries(false);
+      }
     }
+  };
+
+  const toggleViewPastEntries = () => {
+    setViewingPastEntries(!viewingPastEntries);
   };
 
   const MoodIcon = moodOptions.find(mood => mood.value === selectedMood)?.icon || Meh;
@@ -273,87 +306,113 @@ const Diary = () => {
             </div>
             
             <div className="flex items-center gap-2">
-              <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="flex items-center gap-2">
-                    <CalendarIcon className="h-4 w-4" />
-                    {format(selectedDate, 'MMM d, yyyy')}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="end">
-                  <Calendar
-                    mode="single"
-                    selected={selectedDate}
-                    onSelect={handleDateSelect}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <Button 
+                variant={viewingPastEntries ? "default" : "outline"} 
+                onClick={toggleViewPastEntries}
+                className={`flex items-center gap-2 ${viewingPastEntries ? "bg-purple-600 hover:bg-purple-700" : ""}`}
+              >
+                <Eye className="h-4 w-4" />
+                {viewingPastEntries ? "Current Day" : "View Past Entries"}
+              </Button>
+              
+              {!viewingPastEntries && (
+                <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="flex items-center gap-2">
+                      <CalendarIcon className="h-4 w-4" />
+                      {format(selectedDate, 'MMM d, yyyy')}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="end">
+                    <Calendar
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={handleDateSelect}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              )}
             </div>
           </div>
         </div>
       </nav>
 
       <main className="pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        {/* Mood Tracker Stats */}
-        <Card className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-6 mb-6">
-          <h2 className="text-lg font-semibold mb-4">Mood Tracker</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <h3 className="text-md font-medium">Mood Distribution</h3>
-              <div className="space-y-3">
-                {moodOptions.map(mood => {
-                  const MoodIcon = mood.icon;
-                  const percentage = calculatePercentage(mood.value, moodStats, moodOptions);
-                  return (
-                    <div key={mood.value} className="flex items-center">
-                      <MoodIcon className={`h-5 w-5 mr-2 ${mood.color}`} />
-                      <div className="flex-1 mx-2">
-                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                          <div
-                            className={`h-2 rounded-full ${mood.color.replace('text-', 'bg-')}`}
-                            style={{ width: `${percentage}%` }}
-                          ></div>
+        {/* Don't show mood stats when viewing past entries */}
+        {!viewingPastEntries && (
+          <Card className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-6 mb-6">
+            <h2 className="text-lg font-semibold mb-4">Mood Tracker</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <h3 className="text-md font-medium">Mood Distribution</h3>
+                <div className="space-y-3">
+                  {moodOptions.map(mood => {
+                    const MoodIcon = mood.icon;
+                    const percentage = calculatePercentage(mood.value, moodStats, moodOptions);
+                    return (
+                      <div key={mood.value} className="flex items-center">
+                        <MoodIcon className={`h-5 w-5 mr-2 ${mood.color}`} />
+                        <div className="flex-1 mx-2">
+                          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                            <div
+                              className={`h-2 rounded-full ${mood.color.replace('text-', 'bg-')}`}
+                              style={{ width: `${percentage}%` }}
+                            ></div>
+                          </div>
                         </div>
+                        <span className="text-xs text-gray-500 dark:text-gray-400 w-12 text-right">
+                          {percentage}% ({moodStats[mood.value] || 0})
+                        </span>
                       </div>
-                      <span className="text-xs text-gray-500 dark:text-gray-400 w-12 text-right">
-                        {percentage}% ({moodStats[mood.value] || 0})
-                      </span>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                <h3 className="text-md font-medium">Energy Distribution</h3>
+                <div className="space-y-3">
+                  {energyOptions.map(energy => {
+                    const EnergyIcon = energy.icon;
+                    const percentage = calculatePercentage(energy.value, energyStats, energyOptions);
+                    return (
+                      <div key={energy.value} className="flex items-center">
+                        <EnergyIcon className={`h-5 w-5 mr-2 ${energy.color}`} />
+                        <div className="flex-1 mx-2">
+                          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                            <div
+                              className={`h-2 rounded-full ${energy.color.replace('text-', 'bg-')}`}
+                              style={{ width: `${percentage}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                        <span className="text-xs text-gray-500 dark:text-gray-400 w-12 text-right">
+                          {percentage}% ({energyStats[energy.value] || 0})
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
-            
-            <div className="space-y-4">
-              <h3 className="text-md font-medium">Energy Distribution</h3>
-              <div className="space-y-3">
-                {energyOptions.map(energy => {
-                  const EnergyIcon = energy.icon;
-                  const percentage = calculatePercentage(energy.value, energyStats, energyOptions);
-                  return (
-                    <div key={energy.value} className="flex items-center">
-                      <EnergyIcon className={`h-5 w-5 mr-2 ${energy.color}`} />
-                      <div className="flex-1 mx-2">
-                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                          <div
-                            className={`h-2 rounded-full ${energy.color.replace('text-', 'bg-')}`}
-                            style={{ width: `${percentage}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                      <span className="text-xs text-gray-500 dark:text-gray-400 w-12 text-right">
-                        {percentage}% ({energyStats[energy.value] || 0})
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </Card>
+          </Card>
+        )}
 
-        {!isWriting ? (
+        {viewingPastEntries && (
+          <Card className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-6 mb-6">
+            <div className="text-center">
+              <h2 className="text-lg font-semibold mb-4">
+                Past Entries ({filteredEntries.length})
+              </h2>
+              <p className="text-gray-500 dark:text-gray-400">
+                Viewing all entries from previous days
+              </p>
+            </div>
+          </Card>
+        )}
+
+        {!isWriting && !viewingPastEntries ? (
           <Card className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-6 mb-6">
             <div className="text-center">
               <h2 className="text-lg font-semibold mb-4">
@@ -367,7 +426,9 @@ const Diary = () => {
               </Button>
             </div>
           </Card>
-        ) : (
+        ) : null}
+
+        {isWriting && (
           <Card className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-6 mb-6">
             <div className="space-y-6">
               <div className="space-y-4">
@@ -477,11 +538,27 @@ const Diary = () => {
           </Card>
         )}
 
+        {viewingPastEntries && filteredEntries.length > 0 && (
+          <div className="flex justify-center mb-4">
+            <Button 
+              variant="outline" 
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              className="rounded-full"
+            >
+              <ArrowUp className="h-4 w-4 mr-2" />
+              Back to Top
+            </Button>
+          </div>
+        )}
+
         <div className="space-y-4">
           {filteredEntries.length === 0 && !isWriting ? (
             <Card className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-6 text-center">
               <p className="text-gray-500 dark:text-gray-400">
-                No entries for {format(selectedDate, 'MMMM d, yyyy')}
+                {viewingPastEntries 
+                  ? "No past entries found" 
+                  : `No entries for ${format(selectedDate, 'MMMM d, yyyy')}`
+                }
               </p>
             </Card>
           ) : (
