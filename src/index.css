@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -315,7 +316,7 @@
   /* Fix for medical record cards in mobile view */
   .collapsible-card-content {
     width: 100%;
-    overflow-visible;
+    overflow: visible;
   }
   
   /* Ensure buttons and icons are visible on mobile */
