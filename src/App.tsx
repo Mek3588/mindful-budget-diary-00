@@ -29,6 +29,12 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const currentRoute = location.pathname.substring(1) || "index";
   
   useEffect(() => {
+    // Initialize default protected routes if not set
+    const hasProtectedRoutes = localStorage.getItem("protected-routes");
+    if (!hasProtectedRoutes) {
+      localStorage.setItem("protected-routes", JSON.stringify(["diary", "budget", "security", "medical", "goals"]));
+    }
+    
     // Check if user has entered the main PIN for this session
     const hasEnteredPin = sessionStorage.getItem("has-entered-pin");
     
@@ -69,7 +75,7 @@ const App = () => {
           <BrowserRouter>
             <div className="flex min-h-screen">
               <AppSidebar />
-              <div className="flex-1 ml-16 sm:ml-64">
+              <div className="flex-1">
                 <ProtectedRoute>
                   <Routes>
                     <Route path="/" element={<Index />} />
