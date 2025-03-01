@@ -28,8 +28,6 @@ import { useMobile } from "@/hooks/use-mobile";
 import { HelpDialog } from "@/components/HelpDialog";
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
-  const [showHelpDialog, setShowHelpDialog] = useState(false);
-  
   return (
     <ScrollArea className="h-full">
       <div className="p-4 space-y-4">
@@ -38,6 +36,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           className="flex items-center justify-start w-full p-2"
           onClick={() => {
             if (onNavigate) onNavigate();
+            window.location.href = "/notes";
           }}
         >
           <BookText className="mr-2 h-5 w-5" />
@@ -98,21 +97,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           <SettingsIcon className="mr-2 h-5 w-5" />
           <span>Settings</span>
         </Button>
-        <hr className="border-t border-gray-200 dark:border-gray-700" />
-        <Button
-          variant="ghost"
-          className="flex items-center justify-start w-full p-2"
-          onClick={() => {
-            setShowHelpDialog(true);
-            if (onNavigate) onNavigate();
-          }}
-        >
-          <HelpCircle className="mr-2 h-5 w-5" />
-          <span>Help & Documentation</span>
-        </Button>
       </div>
-      
-      <HelpDialog open={showHelpDialog} onOpenChange={setShowHelpDialog} />
     </ScrollArea>
   );
 }
@@ -157,7 +142,8 @@ export default function Index() {
                 variant="ghost"
                 size="icon"
                 onClick={() => setShowHelpDialog(true)}
-                className="text-gray-600 dark:text-gray-300 hidden sm:flex"
+                aria-label="Help"
+                className="text-gray-600 dark:text-gray-300"
               >
                 <HelpCircle className="h-5 w-5" />
               </Button>

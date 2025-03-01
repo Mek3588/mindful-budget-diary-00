@@ -12,7 +12,7 @@ interface HelpDialogProps {
 export function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[80vh] bg-background border border-border">
+      <DialogContent className="sm:max-w-[600px] max-h-[80vh] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
         <DialogHeader>
           <DialogTitle className="text-xl flex items-center gap-2">
             <BookText className="h-5 w-5" />
@@ -75,6 +75,7 @@ export function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
                 <li><strong>Balance:</strong> See your current financial standing at a glance.</li>
                 <li><strong>History:</strong> Review past transactions with timestamps.</li>
                 <li><strong>Charts:</strong> Visualize your spending patterns.</li>
+                <li><strong>Edit & Delete:</strong> Modify or remove transactions as needed.</li>
               </ul>
               <p>All budget data is stored locally for your privacy and can be exported if needed.</p>
             </TabsContent>

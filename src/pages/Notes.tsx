@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, FileText, Plus, Save, X } from "lucide-react";
+import { ArrowLeft, FileText, Plus, Save, X, Edit, Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -22,6 +22,8 @@ const Notes = () => {
   const [notes, setNotes] = useState<Note[]>([]);
   const [newNote, setNewNote] = useState({ title: "", content: "" });
   const [isWriting, setIsWriting] = useState(false);
+  const [editingNote, setEditingNote] = useState<string | null>(null);
+  const [editedNote, setEditedNote] = useState({ title: "", content: "" });
 
   // Load notes from localStorage on component mount
   useEffect(() => {
@@ -61,7 +63,7 @@ const Notes = () => {
       title: note.title,
       description: note.content,
       date: note.date,
-      category: 'diary' as const
+      category: 'notes' as const
     };
 
     // Get existing calendar events
@@ -83,6 +85,52 @@ const Notes = () => {
     localStorage.setItem('calendar-events', JSON.stringify(updatedEvents));
     
     toast.success("Note deleted successfully!");
+  };
+
+  const handleEditNote = (id: string) => {
+    const noteToEdit = notes.find(note => note.id === id);
+    if (noteToEdit) {
+      setEditingNote(id);
+      setEditedNote({
+        title: noteToEdit.title,
+        content: noteToEdit.content
+      });
+    }
+  };
+
+  const handleSaveEdit = (id: string) => {
+    if (!editedNote.title.trim() || !editedNote.content.trim()) {
+      toast.error("Please provide both title and content for your note");
+      return;
+    }
+
+    const now = new Date();
+    
+    // Update note in notes array
+    const updatedNotes = notes.map(note => 
+      note.id === id 
+        ? { ...note, title: editedNote.title, content: editedNote.content, updatedAt: now }
+        : note
+    );
+    
+    setNotes(updatedNotes);
+
+    // Update calendar event
+    const existingEvents = JSON.parse(localStorage.getItem('calendar-events') || '[]');
+    const updatedEvents = existingEvents.map((event: any) => 
+      event.id === `note-${id}`
+        ? { ...event, title: editedNote.title, description: editedNote.content }
+        : event
+    );
+    
+    localStorage.setItem('calendar-events', JSON.stringify(updatedEvents));
+    
+    setEditingNote(null);
+    toast.success("Note updated successfully!");
+  };
+
+  const cancelEdit = () => {
+    setEditingNote(null);
   };
 
   return (
@@ -145,29 +193,65 @@ const Notes = () => {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {notes.map((note) => (
               <Card key={note.id} className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-6">
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-semibold">{note.title}</h3>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleDeleteNote(note.id)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-                <p className="text-sm text-gray-600 dark:text-gray-300 whitespace-pre-wrap">
-                  {note.content}
-                </p>
-                <div className="mt-4 pt-2 border-t border-gray-200 dark:border-gray-700">
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Created: {format(note.date, "MMM d, yyyy 'at' h:mm a")}
-                  </p>
-                  {note.updatedAt && note.updatedAt.getTime() !== note.date.getTime() && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Updated: {format(note.updatedAt, "MMM d, yyyy 'at' h:mm a")}
+                {editingNote === note.id ? (
+                  <div className="space-y-4">
+                    <Input
+                      placeholder="Note title"
+                      value={editedNote.title}
+                      onChange={(e) => setEditedNote({ ...editedNote, title: e.target.value })}
+                    />
+                    <Textarea
+                      placeholder="Write your note here..."
+                      value={editedNote.content}
+                      onChange={(e) => setEditedNote({ ...editedNote, content: e.target.value })}
+                      className="min-h-[100px]"
+                    />
+                    <div className="flex justify-end gap-2">
+                      <Button variant="outline" onClick={cancelEdit}>
+                        Cancel
+                      </Button>
+                      <Button onClick={() => handleSaveEdit(note.id)}>
+                        <Check className="h-4 w-4 mr-2" />
+                        Save
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="font-semibold">{note.title}</h3>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleEditNote(note.id)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDeleteNote(note.id)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-300 whitespace-pre-wrap">
+                      {note.content}
                     </p>
-                  )}
-                </div>
+                    <div className="mt-4 pt-2 border-t border-gray-200 dark:border-gray-700">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Created: {format(note.date, "MMM d, yyyy 'at' h:mm a")}
+                      </p>
+                      {note.updatedAt && note.updatedAt.getTime() !== note.date.getTime() && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          Updated: {format(note.updatedAt, "MMM d, yyyy 'at' h:mm a")}
+                        </p>
+                      )}
+                    </div>
+                  </>
+                )}
               </Card>
             ))}
           </div>

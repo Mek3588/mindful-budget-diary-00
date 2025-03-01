@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, DollarSign, Plus, Save, X } from "lucide-react";
+import { ArrowLeft, DollarSign, Plus, Save, X, Edit, Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -29,6 +29,12 @@ const Budget = () => {
     type: 'expense' as TransactionType
   });
   const [isAdding, setIsAdding] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState<string | null>(null);
+  const [editedTransaction, setEditedTransaction] = useState({
+    description: "",
+    amount: "",
+    type: 'expense' as TransactionType
+  });
 
   // Load transactions from localStorage on component mount
   useEffect(() => {
@@ -91,6 +97,64 @@ const Budget = () => {
     localStorage.setItem('calendar-events', JSON.stringify(updatedEvents));
     
     toast.success("Transaction deleted successfully!");
+  };
+
+  const handleEditTransaction = (id: string) => {
+    const transactionToEdit = transactions.find(transaction => transaction.id === id);
+    if (transactionToEdit) {
+      setEditingTransaction(id);
+      setEditedTransaction({
+        description: transactionToEdit.description,
+        amount: transactionToEdit.amount.toString(),
+        type: transactionToEdit.type
+      });
+    }
+  };
+
+  const handleSaveEdit = (id: string) => {
+    if (!editedTransaction.description.trim() || !editedTransaction.amount) {
+      toast.error("Please provide both description and amount");
+      return;
+    }
+
+    const now = new Date();
+    const amount = parseFloat(editedTransaction.amount);
+    
+    // Update transaction in transactions array
+    const updatedTransactions = transactions.map(transaction => 
+      transaction.id === id 
+        ? { 
+            ...transaction, 
+            description: editedTransaction.description, 
+            amount: amount,
+            type: editedTransaction.type,
+            updatedAt: now 
+          }
+        : transaction
+    );
+    
+    setTransactions(updatedTransactions);
+
+    // Update calendar event
+    const existingEvents = JSON.parse(localStorage.getItem('calendar-events') || '[]');
+    const updatedEvents = existingEvents.map((event: any) => 
+      event.id === `budget-${id}`
+        ? { 
+            ...event, 
+            title: `${editedTransaction.type === 'income' ? 'Income' : 'Expense'}: ${editedTransaction.description}`,
+            description: `Amount: $${amount.toFixed(2)}`
+          }
+        : event
+    );
+    
+    localStorage.setItem('calendar-events', JSON.stringify(updatedEvents));
+    
+    setEditingTransaction(null);
+    toast.success("Transaction updated successfully!");
+  };
+
+  const cancelEdit = () => {
+    setEditingTransaction(null);
   };
 
   const totalBalance = transactions.reduce((acc, curr) => 
@@ -189,29 +253,91 @@ const Budget = () => {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {transactions.map((transaction) => (
               <Card key={transaction.id} className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-6">
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <h3 className="font-semibold">{transaction.description}</h3>
-                    <p className={`text-sm ${
-                      transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                      {transaction.type === 'income' ? '+' : '-'}${transaction.amount.toFixed(2)}
-                    </p>
+                {editingTransaction === transaction.id ? (
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor={`edit-description-${transaction.id}`}>Description</Label>
+                      <Input
+                        id={`edit-description-${transaction.id}`}
+                        placeholder="Transaction description"
+                        value={editedTransaction.description}
+                        onChange={(e) => setEditedTransaction({ ...editedTransaction, description: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor={`edit-amount-${transaction.id}`}>Amount</Label>
+                      <Input
+                        id={`edit-amount-${transaction.id}`}
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="Amount"
+                        value={editedTransaction.amount}
+                        onChange={(e) => setEditedTransaction({ ...editedTransaction, amount: e.target.value })}
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant={editedTransaction.type === 'income' ? 'default' : 'outline'}
+                        onClick={() => setEditedTransaction({ ...editedTransaction, type: 'income' })}
+                        className="flex-1"
+                      >
+                        Income
+                      </Button>
+                      <Button
+                        variant={editedTransaction.type === 'expense' ? 'default' : 'outline'}
+                        onClick={() => setEditedTransaction({ ...editedTransaction, type: 'expense' })}
+                        className="flex-1"
+                      >
+                        Expense
+                      </Button>
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <Button variant="outline" onClick={cancelEdit}>
+                        Cancel
+                      </Button>
+                      <Button onClick={() => handleSaveEdit(transaction.id)}>
+                        <Check className="h-4 w-4 mr-2" />
+                        Save
+                      </Button>
+                    </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleDeleteTransaction(transaction.id)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-                <div className="mt-4 pt-2 border-t border-gray-200 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400">
-                  <p>Created: {format(transaction.date, "MMM d, yyyy 'at' h:mm a")}</p>
-                  {transaction.updatedAt && transaction.updatedAt.getTime() !== transaction.date.getTime() && (
-                    <p>Updated: {format(transaction.updatedAt, "MMM d, yyyy 'at' h:mm a")}</p>
-                  )}
-                </div>
+                ) : (
+                  <>
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <h3 className="font-semibold">{transaction.description}</h3>
+                        <p className={`text-sm ${
+                          transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
+                        }`}>
+                          {transaction.type === 'income' ? '+' : '-'}${transaction.amount.toFixed(2)}
+                        </p>
+                      </div>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleEditTransaction(transaction.id)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDeleteTransaction(transaction.id)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="mt-4 pt-2 border-t border-gray-200 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400">
+                      <p>Created: {format(transaction.date, "MMM d, yyyy 'at' h:mm a")}</p>
+                      {transaction.updatedAt && transaction.updatedAt.getTime() !== transaction.date.getTime() && (
+                        <p>Updated: {format(transaction.updatedAt, "MMM d, yyyy 'at' h:mm a")}</p>
+                      )}
+                    </div>
+                  </>
+                )}
               </Card>
             ))}
           </div>
