@@ -68,17 +68,12 @@ function Calendar({
           const date = props.date;
           // Check if this date has the has_event modifier
           const hasEvent = props.activeModifiers?.has_event || false;
-          // Check if this date has the has_sticker modifier
-          const hasSticker = props.activeModifiers?.has_sticker || false;
           
           return (
             <div className="relative w-full h-full flex flex-col items-center justify-center">
               <span>{date.getDate()}</span>
               {hasEvent && (
                 <Dot className="h-2 w-2 text-purple-400 absolute bottom-0" />
-              )}
-              {hasSticker && (
-                <span className="absolute top-0 right-0 text-xs">🔖</span>
               )}
             </div>
           );
