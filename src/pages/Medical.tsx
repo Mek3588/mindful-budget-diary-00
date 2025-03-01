@@ -56,7 +56,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
-// Type definitions
 type RecordType = "appointment" | "medication" | "vital" | "note";
 
 interface MedicalRecord {
@@ -81,7 +80,6 @@ interface MedicalRecord {
   reminderShown?: boolean;
 }
 
-// Helper function to generate unique IDs
 const generateId = () => {
   return Date.now().toString(36) + Math.random().toString(36).substring(2);
 };
@@ -94,7 +92,7 @@ const Medical = () => {
     return savedRecords ? JSON.parse(savedRecords).map((record: MedicalRecord) => ({
       ...record, 
       date: new Date(record.date),
-      isExpanded: false // Initialize all records as collapsed for clean UI
+      isExpanded: false
     })) : [];
   });
   
@@ -104,7 +102,6 @@ const Medical = () => {
   const [cameraOpen, setCameraOpen] = useState(false);
   const [editingRecordForPhoto, setEditingRecordForPhoto] = useState<string | null>(null);
   
-  // New record form state
   const [newRecord, setNewRecord] = useState<Partial<MedicalRecord>>({
     type: "appointment",
     title: "",
@@ -119,10 +116,9 @@ const Medical = () => {
   
   const [selectedTab, setSelectedTab] = useState<string>("upcoming");
   
-  // Check for reminders that need to be shown
   useEffect(() => {
     const now = new Date();
-    now.setHours(0, 0, 0, 0); // Start of today
+    now.setHours(0, 0, 0, 0);
     
     records.forEach(record => {
       if (record.reminder && !record.completed && !record.reminderShown) {
@@ -130,9 +126,7 @@ const Medical = () => {
         const reminderDate = addDays(recordDate, -record.reminderDays);
         reminderDate.setHours(0, 0, 0, 0);
         
-        // Check if reminder should be shown today or is past due
         if (!isAfter(reminderDate, now)) {
-          // Show reminder notification
           toast.info(
             <div className="flex items-start">
               <BellRing className="h-5 w-5 text-blue-500 mr-2 flex-shrink-0 mt-0.5" />
@@ -149,7 +143,6 @@ const Medical = () => {
               action: {
                 label: "Dismiss",
                 onClick: () => {
-                  // Mark reminder as shown
                   updateRecord(record.id, {reminderShown: true});
                 }
               }
@@ -160,12 +153,10 @@ const Medical = () => {
     });
   }, [records]);
   
-  // Save records to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem("medical-records", JSON.stringify(records));
   }, [records]);
   
-  // Filter records based on the selected date and tab
   const filteredRecords = records.filter(record => {
     const recordDate = new Date(record.date);
     
@@ -176,17 +167,14 @@ const Medical = () => {
     } else if (selectedTab === "all") {
       return true;
     } else {
-      // Filter by date
       return recordDate.getDate() === selectedDate.getDate() &&
              recordDate.getMonth() === selectedDate.getMonth() &&
              recordDate.getFullYear() === selectedDate.getFullYear();
     }
   });
   
-  // Find dates with records for calendar highlights
   const datesWithRecords = records.map(record => new Date(record.date));
   
-  // Update a specific record
   const updateRecord = (id: string, updates: Partial<MedicalRecord>) => {
     const updatedRecords = records.map(record => 
       record.id === id ? { ...record, ...updates } : record
@@ -194,7 +182,6 @@ const Medical = () => {
     setRecords(updatedRecords);
   };
   
-  // Handler for adding a new record
   const handleAddRecord = () => {
     if (!newRecord.title) {
       uiToast({
@@ -228,17 +215,14 @@ const Medical = () => {
     };
     
     if (editingRecord) {
-      // Update existing record
       setRecords(records.map(r => r.id === editingRecord.id ? {...recordToAdd, id: editingRecord.id} : r));
       setEditingRecord(null);
       toast.success("Record updated successfully");
     } else {
-      // Add new record
       setRecords([...records, recordToAdd]);
       toast.success("Record added successfully");
     }
     
-    // Reset form
     setNewRecord({
       type: "appointment",
       title: "",
@@ -253,13 +237,11 @@ const Medical = () => {
     setIsAddingRecord(false);
   };
   
-  // Handler for deleting a record
   const handleDeleteRecord = (id: string) => {
     setRecords(records.filter(record => record.id !== id));
     toast.success("Record deleted");
   };
   
-  // Handler for toggling record completion
   const handleToggleCompletion = (id: string) => {
     setRecords(records.map(record => 
       record.id === id ? { ...record, completed: !record.completed } : record
@@ -271,14 +253,12 @@ const Medical = () => {
     }
   };
   
-  // Handler for toggling record expansion (collapse/expand)
   const handleToggleExpansion = (id: string) => {
     setRecords(records.map(record => 
       record.id === id ? { ...record, isExpanded: !record.isExpanded } : record
     ));
   };
   
-  // Handler for editing a record
   const handleEditRecord = (record: MedicalRecord) => {
     setEditingRecord(record);
     setNewRecord({
@@ -288,7 +268,6 @@ const Medical = () => {
     setIsAddingRecord(true);
   };
   
-  // Handle adding a photo to a record
   const handleAddPhoto = (recordId: string, photoUrl: string) => {
     setRecords(records.map(record => {
       if (record.id === recordId) {
@@ -303,7 +282,6 @@ const Medical = () => {
     toast.success("Photo added to record");
   };
   
-  // Handle camera capture
   const handleCameraCapture = (imageDataUrl: string) => {
     if (editingRecordForPhoto) {
       handleAddPhoto(editingRecordForPhoto, imageDataUrl);
@@ -316,7 +294,6 @@ const Medical = () => {
     }
   };
   
-  // Get icon based on record type
   const getRecordIcon = (type: RecordType) => {
     switch (type) {
       case "appointment":
@@ -332,7 +309,6 @@ const Medical = () => {
     }
   };
   
-  // Render photos of a record
   const renderPhotos = (photos: string[] = []) => {
     if (photos.length === 0) return null;
     
@@ -351,7 +327,6 @@ const Medical = () => {
     );
   };
   
-  // Render additional fields based on record type
   const renderTypeSpecificFields = () => {
     switch (newRecord.type) {
       case "appointment":
@@ -459,7 +434,6 @@ const Medical = () => {
     <PageLayout title="Medical Records & Reminders" icon={<Stethoscope className="h-5 w-5 mr-2" />} pageType="medical">
       <div className="space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Calendar */}
           <div className="lg:col-span-1">
             <Card className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 h-full">
               <CardHeader>
@@ -495,7 +469,6 @@ const Medical = () => {
             </Card>
           </div>
 
-          {/* Right Column - Records */}
           <div className="lg:col-span-2">
             <Card className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50">
               <CardHeader>
@@ -525,7 +498,6 @@ const Medical = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                {/* Mobile view: Dropdown for tabs */}
                 <div className="block md:hidden mb-4">
                   <Select
                     value={selectedTab}
@@ -543,7 +515,6 @@ const Medical = () => {
                   </Select>
                 </div>
                 
-                {/* Desktop view: Tabs */}
                 <div className="hidden md:block">
                   <Tabs 
                     defaultValue="upcoming" 
@@ -560,7 +531,6 @@ const Medical = () => {
                   </Tabs>
                 </div>
                 
-                {/* Rest of the content */}
                 {filteredRecords.length === 0 ? (
                   <div className="text-center py-12">
                     <Clipboard className="mx-auto h-12 w-12 text-gray-400 mb-4" />
@@ -589,8 +559,8 @@ const Medical = () => {
                     </Button>
                   </div>
                 ) : (
-                  <ScrollArea className="h-[500px] pr-4">
-                    <div className="space-y-4">
+                  <ScrollArea className="h-[500px] pr-4 md:pr-4 overflow-visible">
+                    <div className="space-y-4 pr-2 md:pr-0">
                       {filteredRecords.map((record) => (
                         <Collapsible 
                           key={record.id}
@@ -600,7 +570,7 @@ const Medical = () => {
                             record.completed 
                               ? "bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700" 
                               : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 shadow-sm"
-                          }`}
+                          } w-full`}
                         >
                           <CollapsibleTrigger asChild>
                             <div className="flex items-start justify-between cursor-pointer">
@@ -659,7 +629,6 @@ const Medical = () => {
                               <p className="text-sm">{record.description}</p>
                             )}
                             
-                            {/* Show type-specific details */}
                             {record.type === "appointment" && (record.doctor || record.location) && (
                               <div className="text-sm text-gray-600 dark:text-gray-400">
                                 {record.doctor && <p>Doctor: {record.doctor}</p>}
@@ -687,7 +656,6 @@ const Medical = () => {
                               </div>
                             )}
                             
-                            {/* Reminder details */}
                             {record.reminder && !record.completed && (
                               <div className="text-sm text-blue-600 dark:text-blue-400 flex items-center">
                                 <BellRing className="h-4 w-4 mr-1" />
@@ -701,7 +669,6 @@ const Medical = () => {
                               </div>
                             )}
                             
-                            {/* Photos section */}
                             {record.photos && record.photos.length > 0 && (
                               <div>
                                 <h4 className="text-sm font-medium mb-1">Photos</h4>
@@ -709,7 +676,6 @@ const Medical = () => {
                               </div>
                             )}
                             
-                            {/* Add photo buttons */}
                             <div className="flex gap-2">
                               <Button 
                                 variant="outline" 
@@ -723,7 +689,6 @@ const Medical = () => {
                               </Button>
                             </div>
                             
-                            {/* Action buttons */}
                             <div className="flex space-x-2 pt-2">
                               <Button
                                 variant="ghost"
@@ -754,18 +719,15 @@ const Medical = () => {
         </div>
       </div>
 
-      {/* Camera component for taking photos */}
       <CameraCapture 
         open={cameraOpen} 
         onOpenChange={setCameraOpen} 
         onCapture={handleCameraCapture} 
       />
 
-      {/* Add/Edit Record Dialog */}
       <Dialog open={isAddingRecord} onOpenChange={(open) => {
         setIsAddingRecord(open);
         if (!open) {
-          // Reset the form and editing state when dialog is closed
           setEditingRecord(null);
           setNewRecord({
             type: "appointment",
@@ -893,10 +855,8 @@ const Medical = () => {
               />
             </div>
             
-            {/* Render type-specific fields */}
             {renderTypeSpecificFields()}
             
-            {/* Photos section for new record */}
             {newRecord.photos && newRecord.photos.length > 0 && (
               <div className="space-y-2">
                 <Label>Photos</Label>
