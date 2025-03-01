@@ -83,7 +83,7 @@ export const themes: Theme[] = [
       }
     }
   },
-  // Blue Mode
+  // Blue Mode - Updated with proper blue colors
   {
     id: 'blue',
     name: 'Blue Mode',

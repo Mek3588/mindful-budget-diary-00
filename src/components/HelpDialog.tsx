@@ -6,7 +6,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { 
   CalendarIcon, PieChart, BookText, Pencil, DollarSign, 
-  Settings, Lock, ArrowLeft, ArrowRight 
+  Settings, Lock, ArrowLeft, ArrowRight, Download, Printer
 } from "lucide-react";
 import { useState } from "react";
 
