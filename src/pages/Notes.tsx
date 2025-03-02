@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -667,3 +668,190 @@ const Notes = () => {
                       <VoiceToText onTranscript={handleVoiceTranscriptEdit} />
                       
                       <Textarea
+                        placeholder="Edit your note..."
+                        value={editedNote.content}
+                        onChange={(e) => setEditedNote({ ...editedNote, content: e.target.value })}
+                        className="min-h-[100px]"
+                      />
+                      
+                      {editedNote.sticker && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium">Selected sticker:</span>
+                          <span className="text-2xl">{editedNote.sticker}</span>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => setEditedNote({...editedNote, sticker: ""})}
+                            className="h-6 w-6 p-0"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
+                      
+                      {editImages.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {editImages.map((image, index) => (
+                            <div key={index} className="relative w-20 h-20 rounded-md overflow-hidden group">
+                              <img 
+                                src={image} 
+                                alt={`Note ${index}`} 
+                                className="w-full h-full object-cover" 
+                              />
+                              <Button 
+                                variant="destructive" 
+                                size="icon" 
+                                className="absolute top-1 right-1 w-5 h-5 opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={() => removeImage(index, 'edit')}
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      
+                      <div className="flex flex-wrap gap-2">
+                        <Button 
+                          variant="outline" 
+                          onClick={() => {
+                            setActiveForCamera('edit');
+                            setShowCamera(true);
+                          }}
+                          className="flex items-center gap-1"
+                        >
+                          <Camera className="h-4 w-4" />
+                          <span>Take Photo</span>
+                        </Button>
+                        
+                        <label>
+                          <Button 
+                            variant="outline" 
+                            className="flex items-center gap-1"
+                            asChild
+                          >
+                            <span>
+                              <Image className="h-4 w-4" />
+                              <span>Upload Image</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => handleImageUpload(e, 'edit')}
+                              />
+                            </span>
+                          </Button>
+                        </label>
+                        
+                        {renderStickerPicker('edit')}
+                      </div>
+                      
+                      <div className="flex justify-end gap-2">
+                        <Button variant="outline" onClick={cancelEdit}>
+                          Cancel
+                        </Button>
+                        <Button onClick={() => handleSaveEdit(note.id)}>
+                          <Save className="h-4 w-4 mr-2" />
+                          Save Changes
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          {note.sticker && (
+                            <span className="text-2xl">{note.sticker}</span>
+                          )}
+                          <h3 className="font-semibold text-lg">{note.title}</h3>
+                          {note.archived && (
+                            <span className="px-2 py-0.5 text-xs rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                              Archived
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => toggleArchiveStatus(note.id)}
+                            title={note.archived ? "Unarchive Note" : "Archive Note"}
+                          >
+                            {note.archived ? (
+                              <ArchiveRestore className="h-4 w-4" />
+                            ) : (
+                              <Archive className="h-4 w-4" />
+                            )}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEditNote(note.id)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDeleteNote(note.id)}
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap gap-2 mb-2">
+                          {note.category && (
+                            <span className="px-2 py-0.5 text-xs rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">
+                              {note.category}
+                            </span>
+                          )}
+                          <time className="text-xs text-gray-500">
+                            {format(note.date, "MMM d, yyyy 'at' h:mm a")}
+                          </time>
+                          {note.updatedAt && note.updatedAt.getTime() !== note.date.getTime() && (
+                            <time className="text-xs text-gray-500">
+                              (Updated: {format(note.updatedAt, "MMM d, yyyy")})
+                            </time>
+                          )}
+                        </div>
+                        
+                        <p className="whitespace-pre-wrap">{note.content}</p>
+                        
+                        {note.images && note.images.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mt-4">
+                            {note.images.map((image, index) => (
+                              <div key={index} className="w-20 h-20 rounded-md overflow-hidden">
+                                <img 
+                                  src={image} 
+                                  alt={`Note ${index}`} 
+                                  className="w-full h-full object-cover" 
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </Card>
+              ))
+            )}
+          </div>
+        </div>
+      </main>
+      
+      {showCamera && (
+        <CameraCapture
+          onCapture={handleCameraCapture}
+          open={showCamera}
+          onOpenChange={setShowCamera}
+        />
+      )}
+    </div>
+  );
+};
+
+export default Notes;
