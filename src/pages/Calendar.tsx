@@ -1,3 +1,4 @@
+<lov-code>
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
@@ -50,6 +51,7 @@ interface Event {
   category: EventCategory;
   tags?: string[];
   sticker?: string;
+  completed?: boolean; // Added the completed property
 }
 
 interface Sticker {
@@ -142,6 +144,7 @@ const Calendar = () => {
             description: item.content || item.description || item.notes || item.prescription || "",
             date: new Date(item.date || item.appointmentDate || item.dueDate || item.createdAt),
             category,
+            completed: item.completed || false, // Added completed property
             tags: category === 'diary' ? [`mood-${item.mood}`, `energy-${item.energy}`] :
                  category === 'goal' ? [`priority-${item.priority}`, `status-${item.status}`] :
                  category === 'medical' ? [item.type || "appointment", item.status || "scheduled"] : []
@@ -198,6 +201,8 @@ const Calendar = () => {
   const goToToday = () => {
     const today = new Date();
     setCurrentMonth(today);
+    setSelectedDate(today);
+    setSelectedTab("date");
   };
 
   const getEventsForDate = (date: Date) => {
@@ -288,7 +293,8 @@ const Calendar = () => {
         title: newEvent.title,
         description: newEvent.description,
         date: newEvent.date,
-        category: newEvent.category
+        category: newEvent.category,
+        completed: false // Initialize completed as false for new events
       };
 
       setEvents([...events, event]);
@@ -382,8 +388,8 @@ const Calendar = () => {
     } 
     else if (selectedTab === "completed") {
       return selectedCategory === "all" 
-        ? event.completed 
-        : event.completed && event.category === selectedCategory;
+        ? !!event.completed 
+        : !!event.completed && event.category === selectedCategory;
     } 
     else if (selectedTab === "all") {
       return selectedCategory === "all" ? true : event.category === selectedCategory;
@@ -788,105 +794,4 @@ const Calendar = () => {
                 id="memo"
                 value={stickerMemo}
                 onChange={(e) => setStickerMemo(e.target.value)}
-                placeholder="What's special about this day?"
-                className="col-span-3 bg-gray-800 border-gray-700 text-white"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <label htmlFor="mood" className="text-right text-white">
-                Mood
-              </label>
-              <div className="col-span-3 flex space-x-4">
-                {(['happy', 'neutral', 'sad'] as const).map((mood) => (
-                  <Button 
-                    key={mood} 
-                    variant={stickerMood === mood ? "default" : "outline"} 
-                    onClick={() => setStickerMood(mood)}
-                    className="text-xl"
-                  >
-                    {MoodEmojis[mood]}
-                  </Button>
-                ))}
-              </div>
-            </div>
-            <div className="grid grid-cols-1">
-              <div className="flex flex-wrap gap-2 justify-center">
-                {commonEmojis.map((emoji) => (
-                  <Button 
-                    key={emoji} 
-                    variant={stickerEmoji === emoji ? "default" : "outline"} 
-                    onClick={() => setStickerEmoji(emoji)}
-                    className="text-xl h-10 w-10 p-0"
-                  >
-                    {emoji}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button onClick={handleSaveSticker}>
-              {selectedEvent ? "Add Sticker to Event" : "Add Sticker to Calendar"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={showStickerListDialog} onOpenChange={setShowStickerListDialog}>
-        <DialogContent className="sm:max-w-[500px] bg-gray-900 text-white border border-gray-700 overflow-y-auto max-h-[90vh]">
-          <DialogHeader>
-            <DialogTitle className="text-white">Your Stickers</DialogTitle>
-            <DialogDescription className="text-gray-300">View and manage all your calendar stickers</DialogDescription>
-          </DialogHeader>
-          
-          <div className="py-4">
-            {stickers.length > 0 ? (
-              <div className="space-y-4 max-h-[400px] overflow-y-auto pr-1">
-                {stickers.map((sticker) => (
-                  <div key={sticker.id} className="border border-gray-700 rounded-md p-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="text-2xl">{sticker.emoji}</div>
-                        <div className="text-sm">{format(new Date(sticker.date), "MMM d, yyyy")}</div>
-                        {sticker.mood && <div className="text-xl">{MoodEmojis[sticker.mood]}</div>}
-                      </div>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={() => handleDeleteSticker(sticker.id)}
-                      >
-                        <Trash className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    {sticker.memo && (
-                      <div className="mt-2 text-sm text-gray-300 border-t border-gray-700 pt-2">
-                        {sticker.memo}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-center text-gray-400">No stickers added yet.</p>
-            )}
-            
-            <div className="mt-4">
-              <Button 
-                className="w-full" 
-                onClick={() => {
-                  setShowStickerListDialog(false);
-                  handleAddSticker(new Date());
-                }}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add New Sticker
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-};
-
-export default Calendar;
+                placeholder="What's special about this

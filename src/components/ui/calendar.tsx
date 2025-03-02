@@ -40,10 +40,7 @@ function Calendar({
         ),
         row: "flex w-full mt-2",
         cell: cn(
-          "relative p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-gradient-to-br [&:has([aria-selected])]:from-purple-900/40 [&:has([aria-selected])]:to-pink-900/40 rounded-lg border border-gray-700/50",
-          props.mode === "range"
-            ? "[&:has(>.day-range-end)]:rounded-r-md [&:has(>.day-range-start)]:rounded-l-md first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md"
-            : "[&:has([aria-selected])]:rounded-md"
+          "relative p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-gradient-to-br [&:has([aria-selected])]:from-purple-900/40 [&:has([aria-selected])]:to-pink-900/40 rounded-lg border border-gray-700/50"
         ),
         day: cn(
           buttonVariants({ variant: "ghost" }),
@@ -55,8 +52,6 @@ function Calendar({
         day_today: "bg-gradient-to-br from-purple-800/30 to-pink-800/30 text-white border border-purple-400/30",
         day_outside: "text-gray-500 opacity-50",
         day_disabled: "text-gray-500 opacity-50",
-        day_range_middle:
-          "aria-selected:bg-gradient-to-br aria-selected:from-purple-800/30 aria-selected:to-pink-800/30 aria-selected:text-gray-100",
         day_hidden: "invisible",
         ...classNames,
       }}
