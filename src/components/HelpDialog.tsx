@@ -138,16 +138,17 @@ const HelpDialog = () => {
                 <p>
                   Use the filter tools to find specific entries by date, mood,
                   or content. Sort your entries chronologically or by other
-                  criteria.
+                  criteria to keep your journal organized exactly how you prefer.
                 </p>
               </div>
               <div>
                 <h4 className="font-medium">Archiving Entries</h4>
                 <p>
-                  Want to keep your main view clean while preserving important memories? 
-                  Use the archive feature to store older entries. You can easily switch 
-                  between viewing active entries, archived entries, or all entries using 
-                  the view mode tabs.
+                  Keep your diary clean while preserving important memories by using
+                  the archive feature. Archived entries are stored separately but remain
+                  easily accessible. Use the view mode tabs at the top of your diary to
+                  switch between active entries, archived entries, or view all entries at once.
+                  Simply click the archive icon on any entry to move it to the archive.
                 </p>
               </div>
               <div>
@@ -224,15 +225,18 @@ const HelpDialog = () => {
                 <h4 className="font-medium">Organization</h4>
                 <p>
                   Categorize your notes and use the filtering and sorting tools
-                  to find what you need quickly.
+                  to find what you need quickly. Sort your notes by date, title, or category
+                  to maintain an organized workspace that suits your preferences.
                 </p>
               </div>
               <div>
                 <h4 className="font-medium">Archiving Notes</h4>
                 <p>
-                  Use the archive feature to keep your workspace clean while 
-                  maintaining access to older notes. Switch between active notes, 
-                  archived notes, or view all notes using the view mode tabs.
+                  Manage your workspace efficiently by archiving notes you don't need
+                  regular access to but want to keep for reference. Use the view mode tabs
+                  at the top of the notes page to switch between active notes, archived notes,
+                  or all notes. To archive a note, simply click the archive icon on any note card.
+                  You can also unarchive notes at any time to bring them back to your active collection.
                 </p>
               </div>
             </TabsContent>

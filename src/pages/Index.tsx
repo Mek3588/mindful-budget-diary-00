@@ -1,8 +1,9 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { HelpDialog } from "@/components/HelpDialog";
+import HelpDialog from "@/components/HelpDialog";
 import { ModeToggle } from "@/components/ModeToggle";
 import { useToast } from "@/hooks/use-toast";
 import {
