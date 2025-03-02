@@ -44,11 +44,12 @@ function Calendar({
         head_row: "flex",
         head_cell: cn(
           "text-purple-200 rounded-md font-normal text-[0.8rem] h-8 flex items-center justify-center",
-          isMobile ? "w-9" : "w-10 sm:w-12"
+          isMobile ? "w-8" : "w-10 sm:w-12"
         ),
         row: "flex w-full mt-2",
         cell: cn(
-          "relative p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-gradient-to-br [&:has([aria-selected])]:from-purple-900/40 [&:has([aria-selected])]:to-pink-900/40 rounded-lg border border-gray-700/50"
+          "relative p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-gradient-to-br [&:has([aria-selected])]:from-purple-900/40 [&:has([aria-selected])]:to-pink-900/40 rounded-lg border border-gray-700/50",
+          isMobile ? "max-w-[2.5rem]" : ""
         ),
         day: cn(
           buttonVariants({ variant: "ghost" }),
@@ -78,7 +79,9 @@ function Calendar({
             <div className="relative w-full h-full flex flex-col items-center justify-center">
               <span>{date.getDate()}</span>
               {sticker ? (
-                <span className="text-xs absolute bottom-0.5 left-1/2 transform -translate-x-1/2">{sticker}</span>
+                <span className={`text-xs absolute bottom-0.5 left-1/2 transform -translate-x-1/2 ${isMobile ? 'text-[0.6rem]' : ''}`}>
+                  {sticker}
+                </span>
               ) : hasEvent && (
                 <Dot className="h-2 w-2 text-purple-400 absolute bottom-0" />
               )}
