@@ -54,6 +54,7 @@ import {
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { useMobile } from "@/hooks/use-mobile";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 // Define types
 interface CalendarEvent {
@@ -67,6 +68,62 @@ interface CalendarEvent {
 }
 
 type Category = "personal" | "work" | "social" | "health" | "other";
+
+// Sticker categories
+type StickerCategory = "emotions" | "activities" | "food" | "travel" | "nature" | "weather" | "animals" | "objects";
+
+// Define stickers grouped by category
+interface StickerData {
+  category: StickerCategory;
+  stickers: string[];
+  label: string;
+}
+
+const stickerData: StickerData[] = [
+  {
+    category: "emotions",
+    label: "Emotions",
+    stickers: ["😊", "😃", "😄", "🥰", "😍", "🤗", "😌", "😎", "🥳", "😢", "😭", "😤", "😠", "😡", "😱", "😨", "😰", "😥", "😓", "😩", "😫", "😖", "🥺", "😐", "😑", "😬", "🙄", "😴", "🤔", "🤫"]
+  },
+  {
+    category: "activities",
+    label: "Activities",
+    stickers: ["🏃", "🚶", "🧗", "🏋️", "🏊", "🚴", "⛹️", "🤸", "🏄", "🎯", "🎮", "🎨", "🎭", "🎬", "📚", "💼", "👨‍💻", "🧑‍🍳", "🧹", "🛌", "💇", "💆", "🛀", "🧘", "🎵", "🎸", "🎹", "🎤", "🎧", "📝"]
+  },
+  {
+    category: "food",
+    label: "Food & Drink",
+    stickers: ["🍕", "🍔", "🌭", "🍟", "🥪", "🌮", "🌯", "🥙", "🍗", "🍖", "🍝", "🍜", "🍲", "🍛", "🍣", "🍱", "🥗", "🍚", "🍘", "🍙", "🍰", "🎂", "🧁", "🍮", "🍫", "🍬", "🍭", "🍦", "☕", "🍵"]
+  },
+  {
+    category: "travel",
+    label: "Travel",
+    stickers: ["✈️", "🚗", "🚕", "🚌", "🚎", "🏎️", "🚓", "🚑", "🚒", "🚚", "🚛", "🚜", "🚲", "🛵", "🏍️", "🛺", "🚂", "🚆", "🚊", "🚉", "🚁", "⛵", "🛥️", "🛳️", "🚢", "🗺️", "🧭", "🏕️", "🏖️", "🏞️"]
+  },
+  {
+    category: "nature",
+    label: "Nature",
+    stickers: ["🌱", "🌲", "🌳", "🌴", "🌵", "🌿", "☘️", "🍀", "🍁", "🍂", "🍃", "🌺", "🌸", "🌼", "🌻", "🌞", "🌝", "🌛", "🌜", "🌚", "⭐", "🌟", "✨", "☀️", "🌤️", "⛅", "🌥️", "☁️", "🌨️", "⛈️"]
+  },
+  {
+    category: "weather",
+    label: "Weather",
+    stickers: ["☀️", "🌤️", "⛅", "🌥️", "☁️", "🌦️", "🌧️", "⛈️", "🌩️", "🌨️", "❄️", "☃️", "⛄", "🌬️", "💨", "🌊", "💧", "💦", "☔", "⚡", "🌈", "☂️", "⛱️", "🌡️", "🔥", "💥", "✨", "⚡", "☄️", "💫"]
+  },
+  {
+    category: "animals",
+    label: "Animals",
+    stickers: ["🐶", "🐱", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼", "🐨", "🐯", "🦁", "🐮", "🐷", "🐸", "🐵", "🐔", "🐧", "🐦", "🐤", "🦆", "🦅", "🦉", "🐺", "🐗", "🐴", "🦄", "🐝", "🐛", "🦋", "🐌"]
+  },
+  {
+    category: "objects",
+    label: "Objects",
+    stickers: ["💻", "📱", "⌚", "📷", "📹", "🔋", "🔌", "💡", "🔦", "🕯️", "🧰", "🧲", "🛠️", "🧪", "🧫", "🧬", "🔭", "🔬", "🧠", "👓", "🕶️", "👜", "👛", "👝", "🛍️", "🎒", "👑", "💎", "🔑", "🗝️"]
+  }
+];
+
+// Flatten all stickers for backwards compatibility
+const allStickers = stickerData.flatMap(category => category.stickers);
 
 const categoryColors: Record<Category, string> = {
   personal: "bg-blue-500",
@@ -114,8 +171,9 @@ const CalendarPage = () => {
   const [eventCategory, setEventCategory] = useState<Category>("personal");
   const [eventSticker, setEventSticker] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [availableStickers, setAvailableStickers] = useState(["😊", "📝", "🎮", "🏋️", "🍕", "🛌", "📚", "💼", "🎯", "🎵", "✈️", "🎂", "🏠", "💻", "🏃", "🎬", "🍔", "☕", "🚗", "🛒", "📱", "🧹", "💭", "🎨"]);
+  const [availableStickers, setAvailableStickers] = useState(allStickers);
   const [showStickerList, setShowStickerList] = useState(false);
+  const [selectedStickerCategory, setSelectedStickerCategory] = useState<StickerCategory | "all">("all");
 
   // Load events from localStorage on component mount
   useEffect(() => {
@@ -137,6 +195,18 @@ const CalendarPage = () => {
     }
     return events.filter(event => event.category === selectedCategory);
   }, [events, selectedCategory]);
+
+  // Filter stickers based on selected category
+  useEffect(() => {
+    if (selectedStickerCategory === "all") {
+      setAvailableStickers(allStickers);
+    } else {
+      const categoryStickers = stickerData.find(
+        category => category.category === selectedStickerCategory
+      )?.stickers || [];
+      setAvailableStickers(categoryStickers);
+    }
+  }, [selectedStickerCategory]);
 
   // Check if a specific date has events
   const hasEventsOnDate = (date: Date) => {
@@ -195,6 +265,7 @@ const CalendarPage = () => {
     setEventSticker("");
     setEditingEvent(null);
     setShowDeleteConfirm(false);
+    setSelectedStickerCategory("all");
   };
 
   // Add or update event
@@ -619,23 +690,46 @@ const CalendarPage = () => {
             </div>
             
             {showStickerList && (
-              <div className="grid grid-cols-4 items-center gap-4">
-                <div className="col-span-1"></div>
-                <div className="col-span-3 border rounded-md p-2">
-                  <div className="grid grid-cols-8 gap-1">
-                    {availableStickers.map(sticker => (
-                      <Button
-                        key={sticker}
-                        variant="ghost"
-                        className="h-8 w-8 p-0 text-xl hover:bg-muted"
-                        onClick={() => {
-                          setEventSticker(sticker);
-                          setShowStickerList(false);
-                        }}
-                      >
-                        {sticker}
-                      </Button>
-                    ))}
+              <div className="grid grid-cols-4 items-start gap-4">
+                <div className="col-span-1 text-right pt-2">
+                  <Label>Categories</Label>
+                </div>
+                <div className="col-span-3">
+                  <Select
+                    value={selectedStickerCategory}
+                    onValueChange={(value) => setSelectedStickerCategory(value as StickerCategory | "all")}
+                  >
+                    <SelectTrigger className="mb-3">
+                      <SelectValue placeholder="Sticker category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Stickers</SelectItem>
+                      {stickerData.map((category) => (
+                        <SelectItem key={category.category} value={category.category}>
+                          {category.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  
+                  <div className="border rounded-md p-2">
+                    <ScrollArea className="h-[200px]">
+                      <div className="grid grid-cols-8 gap-1 p-1">
+                        {availableStickers.map(sticker => (
+                          <Button
+                            key={sticker}
+                            variant="ghost"
+                            className="h-8 w-8 p-0 text-xl hover:bg-muted"
+                            onClick={() => {
+                              setEventSticker(sticker);
+                              setShowStickerList(false);
+                            }}
+                          >
+                            {sticker}
+                          </Button>
+                        ))}
+                      </div>
+                    </ScrollArea>
                   </div>
                 </div>
               </div>
