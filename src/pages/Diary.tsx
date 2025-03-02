@@ -18,7 +18,13 @@ import {
   Camera,
   Image,
   Volume2,
-  Smile
+  Smile,
+  Filter,
+  SortAsc,
+  SortDesc,
+  Clock,
+  Archive,
+  ArchiveRestore
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
@@ -37,6 +43,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface DiaryEntry {
   id: string;
@@ -47,6 +59,7 @@ interface DiaryEntry {
   images?: string[];
   sticker?: string;
   category?: string;
+  archived?: boolean;
 }
 
 const MOODS = [
@@ -165,6 +178,11 @@ const Diary = () => {
   const [activeCategory, setActiveCategory] = useState<string>("faces");
   const [sticker, setSticker] = useState<string>("");
   const [editSticker, setEditSticker] = useState<string>("");
+  
+  // New state for sorting, filtering, and view options
+  const [sortOption, setSortOption] = useState<string>("newest");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [viewMode, setViewMode] = useState<"active" | "archived" | "all">("active");
 
   // Load entries from localStorage on component mount
   useEffect(() => {
@@ -174,7 +192,8 @@ const Diary = () => {
       setEntries(
         JSON.parse(savedEntries).map((entry: any) => ({
           ...entry,
-          date: new Date(entry.date)
+          date: new Date(entry.date),
+          archived: entry.archived || false
         }))
       );
     }
@@ -185,19 +204,41 @@ const Diary = () => {
     localStorage.setItem("diary-entries", JSON.stringify(entries));
   }, [entries]);
 
-  const filteredEntries = entries
-    .filter((entry) => {
-      if (!searchTerm) return true;
-      
-      const searchLower = searchTerm.toLowerCase();
-      return (
-        entry.title.toLowerCase().includes(searchLower) ||
-        entry.content.toLowerCase().includes(searchLower) ||
-        entry.mood.toLowerCase().includes(searchLower) ||
-        (entry.category || '').toLowerCase().includes(searchLower)
-      );
-    })
-    .sort((a, b) => b.date.getTime() - a.date.getTime());
+  // Filter entries based on search, category filter, and archive status
+  const getFilteredEntries = () => {
+    return entries
+      .filter((entry) => {
+        // First check if it matches search term
+        const matchesSearch = !searchTerm || 
+          entry.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          entry.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          entry.mood.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (entry.category || '').toLowerCase().includes(searchTerm.toLowerCase());
+        
+        if (!matchesSearch) return false;
+        
+        // Then check if it matches archive status
+        if (viewMode === "active" && entry.archived) return false;
+        if (viewMode === "archived" && !entry.archived) return false;
+        
+        // Finally check category filter
+        return categoryFilter === "all" || entry.category === categoryFilter;
+      })
+      .sort((a, b) => {
+        switch (sortOption) {
+          case "newest":
+            return b.date.getTime() - a.date.getTime();
+          case "oldest":
+            return a.date.getTime() - b.date.getTime();
+          case "titleAsc":
+            return a.title.localeCompare(b.title);
+          case "titleDesc":
+            return b.title.localeCompare(a.title);
+          default:
+            return b.date.getTime() - a.date.getTime();
+        }
+      });
+  };
 
   const handleAddEntry = () => {
     if (!title.trim() || !content.trim() || !date) {
@@ -213,7 +254,8 @@ const Diary = () => {
       mood: mood,
       images: images.length > 0 ? [...images] : undefined,
       sticker: sticker || undefined,
-      category: category
+      category: category,
+      archived: false
     };
 
     // Create calendar event for the diary entry
@@ -256,6 +298,21 @@ const Diary = () => {
     localStorage.setItem('calendar-events', JSON.stringify(updatedEvents));
     
     toast.success("Entry deleted successfully");
+  };
+
+  // New function to toggle archive status
+  const toggleArchiveStatus = (id: string) => {
+    setEntries(entries.map(entry => 
+      entry.id === id 
+        ? { ...entry, archived: !entry.archived } 
+        : entry
+    ));
+    
+    const entryToToggle = entries.find(entry => entry.id === id);
+    if (entryToToggle) {
+      const action = entryToToggle.archived ? "unarchived" : "archived";
+      toast.success(`Diary entry ${action} successfully!`);
+    }
   };
 
   const toggleEntryExpansion = (id: string) => {
@@ -438,6 +495,9 @@ const Diary = () => {
     );
   };
 
+  // Get filtered and sorted entries
+  const filteredEntries = getFilteredEntries();
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800">
       {/* Hidden input elements for file uploads */}
@@ -497,14 +557,67 @@ const Diary = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <Button
-              onClick={() => setIsAddingEntry(true)}
-              className="shrink-0"
-              disabled={isAddingEntry}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Entry
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                onClick={() => setIsAddingEntry(true)}
+                className="shrink-0"
+                disabled={isAddingEntry}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Entry
+              </Button>
+              
+              {/* Sort dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="flex items-center gap-1">
+                    <Clock className="h-4 w-4" />
+                    <span>Sort</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={() => setSortOption("newest")}>
+                    <SortDesc className="h-4 w-4 mr-2" />
+                    Newest first
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setSortOption("oldest")}>
+                    <SortAsc className="h-4 w-4 mr-2" />
+                    Oldest first
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setSortOption("titleAsc")}>
+                    <SortAsc className="h-4 w-4 mr-2" />
+                    Title A-Z
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setSortOption("titleDesc")}>
+                    <SortDesc className="h-4 w-4 mr-2" />
+                    Title Z-A
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              
+              {/* Category filter */}
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger className="w-[130px]">
+                  <Filter className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {DIARY_CATEGORIES.map(category => (
+                    <SelectItem key={category} value={category}>{category}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              {/* View mode tabs */}
+              <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as "active" | "archived" | "all")}>
+                <TabsList className="grid grid-cols-3 w-[240px]">
+                  <TabsTrigger value="active">Active</TabsTrigger>
+                  <TabsTrigger value="archived">Archived</TabsTrigger>
+                  <TabsTrigger value="all">All</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
           </div>
 
           {/* New entry form */}
@@ -687,15 +800,19 @@ const Diary = () => {
                 <h3 className="text-lg font-medium">No diary entries found</h3>
                 <p className="text-gray-500 mt-2">
                   {searchTerm
-                    ? "Try a different search term"
-                    : "Start by adding your first entry"}
+                    ? "Try a different search term or change filters"
+                    : viewMode === "archived" 
+                      ? "No archived entries found" 
+                      : "Start by adding your first entry"}
                 </p>
               </div>
             ) : (
               filteredEntries.map((entry) => (
                 <Card
                   key={entry.id}
-                  className="bg-white/70 backdrop-blur-sm dark:bg-gray-800/70 hover:bg-white/90 dark:hover:bg-gray-800/90 transition-colors"
+                  className={`bg-white/70 backdrop-blur-sm dark:bg-gray-800/70 hover:bg-white/90 dark:hover:bg-gray-800/90 transition-colors ${
+                    entry.archived ? 'border-dashed border-gray-300 dark:border-gray-600' : ''
+                  }`}
                 >
                   {editingEntry === entry.id ? (
                     <div className="p-6 space-y-4">
@@ -873,6 +990,11 @@ const Diary = () => {
                               {entry.title}
                             </h3>
                             {entry.sticker && <span className="text-2xl">{entry.sticker}</span>}
+                            {entry.archived && (
+                              <span className="bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100 text-xs px-2 py-0.5 rounded">
+                                Archived
+                              </span>
+                            )}
                           </div>
                           <div className="text-sm text-muted-foreground mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
                             <span>{format(entry.date, "PPP")}</span>
@@ -889,6 +1011,17 @@ const Diary = () => {
                           </div>
                         </div>
                         <div className="flex gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => toggleArchiveStatus(entry.id)}
+                            title={entry.archived ? "Restore from archive" : "Archive entry"}
+                          >
+                            {entry.archived ? 
+                              <ArchiveRestore className="h-4 w-4" /> : 
+                              <Archive className="h-4 w-4" />
+                            }
+                          </Button>
                           <Button
                             variant="ghost"
                             size="icon"

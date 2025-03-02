@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, FileText, Plus, Save, X, Edit, Check, Mic, Camera, Image, Smile } from "lucide-react";
+import { ArrowLeft, FileText, Plus, Save, X, Edit, Check, Mic, Camera, Image, Smile, Filter, Clock, SortAsc, SortDesc, Archive, ArchiveRestore } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -20,6 +20,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface Note {
   id: string;
@@ -30,6 +36,7 @@ interface Note {
   images?: string[];
   sticker?: string;
   category?: string;
+  archived?: boolean;
 }
 
 const NOTE_CATEGORIES = [
@@ -76,7 +83,7 @@ const STICKERS = {
     "🍛", "🍣", "🍱", "🥟", "🦪", "🍤", "🍙", "🍚", "🍘", "🍥", "🥠", "🥮", "🍢", "🍡", "🍧", "🍨", "🍦", "🥧", "🧁", "🍰",
   ],
   activities: [
-    "⚽", "🏀", "🏈", "⚾", "🥎", "🎾", "🏐", "🏉", "🥏", "🎱", "🪀", "����", "🏸", "🏒", "🏑", "🥍", "🏏", "🥅", "⛳", "🪁",
+    "⚽", "🏀", "🏈", "⚾", "🥎", "🎾", "🏐", "🏉", "🥏", "🎱", "🪀", "🏓", "🏸", "🏒", "🏑", "🥍", "🏏", "🥅", "⛳", "🪁",
     "🏹", "🎣", "🤿", "🥊", "🥋", "🎽", "🛹", "🛼", "🛷", "⛸️", "🥌", "🎿", "⛷️", "🏂", "🪂", "🏋️", "🤼", "🤸", "🤽", "🧗",
     "🤺", "🏄", "🚣", "🧘", "🚴", "🚵", "🎬", "🎭", "🎨", "🎪", "🎤", "🎧", "🎼", "🎹", "🥁", "🎷", "🎺", "🎸", "🎮", "🎲",
     "🧩", "🎯", "🎳", "🪄", "🎭", "🎪", "🎨", "🧵", "🧶", "🎻", "🥇", "🥈", "🥉", "🏅", "🎖️", "🏆", "📱", "📲", "💻", "🖥️",
@@ -119,6 +126,11 @@ const Notes = () => {
   const [showCamera, setShowCamera] = useState(false);
   const [activeForCamera, setActiveForCamera] = useState<'new' | 'edit' | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>("faces");
+  
+  // New state for sorting, filtering, and view options
+  const [sortOption, setSortOption] = useState<string>("newest");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [viewMode, setViewMode] = useState<"active" | "archived" | "all">("active");
 
   useEffect(() => {
     const savedNotes = localStorage.getItem('quick-notes');
@@ -126,7 +138,8 @@ const Notes = () => {
       setNotes(JSON.parse(savedNotes).map((note: any) => ({
         ...note,
         date: new Date(note.date),
-        updatedAt: note.updatedAt ? new Date(note.updatedAt) : undefined
+        updatedAt: note.updatedAt ? new Date(note.updatedAt) : undefined,
+        archived: note.archived || false
       })));
     }
   }, []);
@@ -150,7 +163,8 @@ const Notes = () => {
       updatedAt: now,
       images: images.length > 0 ? [...images] : undefined,
       sticker: newNote.sticker || undefined,
-      category: newNote.category
+      category: newNote.category,
+      archived: false
     };
 
     const calendarEvent = {
@@ -307,6 +321,48 @@ const Notes = () => {
     }
   };
 
+  // New function to toggle archive status
+  const toggleArchiveStatus = (id: string) => {
+    setNotes(notes.map(note => 
+      note.id === id 
+        ? { ...note, archived: !note.archived } 
+        : note
+    ));
+    
+    const noteToToggle = notes.find(note => note.id === id);
+    if (noteToToggle) {
+      const action = noteToToggle.archived ? "unarchived" : "archived";
+      toast.success(`Note ${action} successfully!`);
+    }
+  };
+
+  // Function to filter and sort notes
+  const getFilteredAndSortedNotes = () => {
+    return notes
+      .filter(note => {
+        // First filter by archive status
+        if (viewMode === "active" && note.archived) return false;
+        if (viewMode === "archived" && !note.archived) return false;
+        
+        // Then filter by category if needed
+        return categoryFilter === "all" || note.category === categoryFilter;
+      })
+      .sort((a, b) => {
+        switch (sortOption) {
+          case "newest":
+            return b.date.getTime() - a.date.getTime();
+          case "oldest":
+            return a.date.getTime() - b.date.getTime();
+          case "titleAsc":
+            return a.title.localeCompare(b.title);
+          case "titleDesc":
+            return b.title.localeCompare(a.title);
+          default:
+            return b.date.getTime() - a.date.getTime();
+        }
+      });
+  };
+
   const renderStickerPicker = (type: 'new' | 'edit') => {
     return (
       <Popover>
@@ -357,6 +413,8 @@ const Notes = () => {
       </Popover>
     );
   };
+
+  const filteredAndSortedNotes = getFilteredAndSortedNotes();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-white dark:from-gray-900 dark:to-gray-800">
@@ -505,204 +563,107 @@ const Notes = () => {
                 </div>
               </div>
             ) : (
-              <Button onClick={() => setIsWriting(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                New Note
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-3 justify-between items-start">
+                <Button onClick={() => setIsWriting(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  New Note
+                </Button>
+                
+                <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+                  {/* Sort dropdown */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" className="flex items-center gap-1">
+                        <Clock className="h-4 w-4" />
+                        <span>Sort</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuItem onClick={() => setSortOption("newest")}>
+                        <SortDesc className="h-4 w-4 mr-2" />
+                        Newest first
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setSortOption("oldest")}>
+                        <SortAsc className="h-4 w-4 mr-2" />
+                        Oldest first
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setSortOption("titleAsc")}>
+                        <SortAsc className="h-4 w-4 mr-2" />
+                        Title A-Z
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setSortOption("titleDesc")}>
+                        <SortDesc className="h-4 w-4 mr-2" />
+                        Title Z-A
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  
+                  {/* Category filter */}
+                  <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                    <SelectTrigger className="w-[130px]">
+                      <Filter className="h-4 w-4 mr-2" />
+                      <SelectValue placeholder="Category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Categories</SelectItem>
+                      {NOTE_CATEGORIES.map(category => (
+                        <SelectItem key={category} value={category}>{category}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  
+                  {/* View mode tabs */}
+                  <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as "active" | "archived" | "all")}>
+                    <TabsList className="grid grid-cols-3 w-[240px]">
+                      <TabsTrigger value="active">Active</TabsTrigger>
+                      <TabsTrigger value="archived">Archived</TabsTrigger>
+                      <TabsTrigger value="all">All</TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                </div>
+              </div>
             )}
           </Card>
 
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {notes.map((note) => (
-              <Card key={note.id} className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-6">
-                {editingNote === note.id ? (
-                  <div className="space-y-4">
-                    <Input
-                      placeholder="Note title"
-                      value={editedNote.title}
-                      onChange={(e) => setEditedNote({ ...editedNote, title: e.target.value })}
-                    />
-                    
-                    <div>
-                      <Label htmlFor={`edit-category-${note.id}`}>Category</Label>
-                      <Select 
-                        value={editedNote.category} 
-                        onValueChange={(value) => setEditedNote({ ...editedNote, category: value })}
-                      >
-                        <SelectTrigger id={`edit-category-${note.id}`}>
-                          <SelectValue placeholder="Select category" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {NOTE_CATEGORIES.map((category) => (
-                            <SelectItem key={category} value={category}>{category}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <VoiceToText onTranscript={handleVoiceTranscriptEdit} />
-                    
-                    <Textarea
-                      placeholder="Write your note here..."
-                      value={editedNote.content}
-                      onChange={(e) => setEditedNote({ ...editedNote, content: e.target.value })}
-                      className="min-h-[100px]"
-                    />
-                    
-                    {editedNote.sticker && (
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">Selected sticker:</span>
-                        <span className="text-2xl">{editedNote.sticker}</span>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => setEditedNote({...editedNote, sticker: ""})}
-                          className="h-6 w-6 p-0"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    )}
-                    
-                    {editImages.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {editImages.map((image, index) => (
-                          <div key={index} className="relative w-20 h-20 rounded-md overflow-hidden group">
-                            <img 
-                              src={image} 
-                              alt={`Note ${index}`} 
-                              className="w-full h-full object-cover" 
-                            />
-                            <Button 
-                              variant="destructive" 
-                              size="icon" 
-                              className="absolute top-1 right-1 w-5 h-5 opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={() => removeImage(index, 'edit')}
-                            >
-                              <X className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    
-                    <div className="flex flex-wrap gap-2">
-                      <Button 
-                        variant="outline" 
-                        onClick={() => {
-                          setActiveForCamera('edit');
-                          setShowCamera(true);
-                        }}
-                        className="flex items-center gap-1"
-                      >
-                        <Camera className="h-4 w-4" />
-                        <span>Take Photo</span>
-                      </Button>
+            {filteredAndSortedNotes.length === 0 ? (
+              <div className="md:col-span-2 lg:col-span-3 p-12 text-center">
+                <FileText className="h-12 w-12 mx-auto text-gray-400 mb-3" />
+                <h3 className="text-lg font-medium">No notes found</h3>
+                <p className="text-gray-500 mt-2">
+                  {viewMode === "active" ? 
+                    "Start by adding your first note or change your filters" : 
+                    "No archived notes found. Try changing your filters."}
+                </p>
+              </div>
+            ) : (
+              filteredAndSortedNotes.map((note) => (
+                <Card key={note.id} className={`bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-6 ${note.archived ? 'border-dashed border-gray-300 dark:border-gray-600' : ''}`}>
+                  {editingNote === note.id ? (
+                    <div className="space-y-4">
+                      <Input
+                        placeholder="Note title"
+                        value={editedNote.title}
+                        onChange={(e) => setEditedNote({ ...editedNote, title: e.target.value })}
+                      />
                       
-                      <label>
-                        <Button 
-                          variant="outline" 
-                          className="flex items-center gap-1"
-                          asChild
+                      <div>
+                        <Label htmlFor={`edit-category-${note.id}`}>Category</Label>
+                        <Select 
+                          value={editedNote.category} 
+                          onValueChange={(value) => setEditedNote({ ...editedNote, category: value })}
                         >
-                          <span>
-                            <Image className="h-4 w-4" />
-                            <span>Upload Image</span>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={(e) => handleImageUpload(e, 'edit')}
-                            />
-                          </span>
-                        </Button>
-                      </label>
+                          <SelectTrigger id={`edit-category-${note.id}`}>
+                            <SelectValue placeholder="Select category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {NOTE_CATEGORIES.map((category) => (
+                              <SelectItem key={category} value={category}>{category}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                       
-                      {renderStickerPicker('edit')}
-                    </div>
-                    
-                    <div className="flex justify-end gap-2">
-                      <Button variant="outline" onClick={cancelEdit}>
-                        Cancel
-                      </Button>
-                      <Button onClick={() => handleSaveEdit(note.id)}>
-                        <Check className="h-4 w-4 mr-2" />
-                        Save
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold">{note.title}</h3>
-                        {note.sticker && <span className="text-2xl">{note.sticker}</span>}
-                      </div>
-                      <div className="flex gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleEditNote(note.id)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDeleteNote(note.id)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="mb-2">
-                      <span className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded-md">
-                        {note.category || "Personal"}
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-300 whitespace-pre-wrap">
-                      {note.content}
-                    </p>
-                    
-                    {note.images && note.images.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mt-3 mb-3">
-                        {note.images.map((image, index) => (
-                          <div key={index} className="w-20 h-20 rounded-md overflow-hidden">
-                            <img 
-                              src={image} 
-                              alt={`Note ${index}`} 
-                              className="w-full h-full object-cover" 
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    
-                    <div className="mt-4 pt-2 border-t border-gray-200 dark:border-gray-700">
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        Created: {format(note.date, "MMM d, yyyy 'at' h:mm a")}
-                      </p>
-                      {note.updatedAt && note.updatedAt.getTime() !== note.date.getTime() && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          Updated: {format(note.updatedAt, "MMM d, yyyy 'at' h:mm a")}
-                        </p>
-                      )}
-                    </div>
-                  </>
-                )}
-              </Card>
-            ))}
-          </div>
-        </div>
-      </main>
-
-      <CameraCapture 
-        open={showCamera} 
-        onOpenChange={setShowCamera}
-        onCapture={handleCameraCapture}
-      />
-    </div>
-  );
-};
-
-export default Notes;
+                      <VoiceToText onTranscript={handleVoiceTranscriptEdit} />
+                      
+                      <Textarea
