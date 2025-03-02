@@ -1,4 +1,3 @@
-<lov-code>
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -718,4 +717,4 @@ const Diary = () => {
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0">
-                            <
+                            <Calendar
