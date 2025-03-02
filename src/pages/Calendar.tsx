@@ -53,6 +53,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { useMobile } from "@/hooks/use-mobile";
 
 // Define types
 interface CalendarEvent {
@@ -100,6 +101,7 @@ const categoryDisplayNames: Record<Category, string> = {
 };
 
 const CalendarPage = () => {
+  const isMobile = useMobile();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -157,6 +159,13 @@ const CalendarPage = () => {
     }
     
     return null;
+  };
+
+  // Go to today's date
+  const goToToday = () => {
+    const today = new Date();
+    setSelectedDate(today);
+    setCurrentMonth(today);
   };
 
   // Handle day click in calendar
@@ -273,7 +282,7 @@ const CalendarPage = () => {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-xl">Calendar</CardTitle>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 flex-wrap gap-2">
                 <Select
                   value={selectedCategory}
                   onValueChange={(value) => 
@@ -293,11 +302,19 @@ const CalendarPage = () => {
                   </SelectContent>
                 </Select>
                 <Button 
+                  variant="outline"
+                  size="sm"
+                  onClick={goToToday}
+                >
+                  Today
+                </Button>
+                <Button 
                   onClick={() => {
                     resetEventForm();
                     setShowEventDialog(true);
                   }}
                   size="sm"
+                  className="whitespace-nowrap"
                 >
                   <Plus className="h-4 w-4 mr-1" />
                   Add Event
@@ -342,6 +359,7 @@ const CalendarPage = () => {
                   }}
                   variant="outline" 
                   size="sm"
+                  className="whitespace-nowrap"
                 >
                   <Plus className="h-4 w-4 mr-1" />
                   Add Event
