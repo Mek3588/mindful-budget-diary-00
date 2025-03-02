@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -182,17 +182,25 @@ const CalendarPage = () => {
   const [editEventId, setEditEventId] = useState<string | null>(null);
   const [showHelp, setShowHelp] = useState(false);
 
+  // Load events from localStorage
   useEffect(() => {
     const savedEvents = localStorage.getItem("calendar-events");
     if (savedEvents) {
-      setEvents(JSON.parse(savedEvents));
+      try {
+        setEvents(JSON.parse(savedEvents));
+      } catch (e) {
+        console.error("Failed to parse saved events:", e);
+        setEvents([]);
+      }
     }
   }, []);
 
+  // Save events to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem("calendar-events", JSON.stringify(events));
   }, [events]);
 
+  // Filter events based on category and archive status
   const filteredEvents = useMemo(() => {
     return events.filter(event => {
       const matchesArchiveStatus = 
@@ -208,6 +216,7 @@ const CalendarPage = () => {
     });
   }, [events, selectedCategory, archiveFilter]);
 
+  // Update available stickers when category changes
   useEffect(() => {
     if (selectedStickerCategory === "all") {
       setAvailableStickers(allStickers);
@@ -219,13 +228,15 @@ const CalendarPage = () => {
     }
   }, [selectedStickerCategory]);
 
-  const hasEventsOnDate = (date: Date) => {
+  // Check if a date has events
+  const hasEventsOnDate = useCallback((date: Date) => {
     return filteredEvents.some((event) =>
       isSameDay(date, new Date(event.date))
     );
-  };
+  }, [filteredEvents]);
 
-  const getStickerForDate = (date: Date): string | null => {
+  // Get sticker for a date
+  const getStickerForDate = useCallback((date: Date): string | null => {
     const dateEvents = filteredEvents.filter((event) =>
       isSameDay(date, new Date(event.date))
     );
@@ -236,8 +247,9 @@ const CalendarPage = () => {
     }
     
     return null;
-  };
+  }, [filteredEvents]);
 
+  // Functions to handle events
   const goToToday = () => {
     const today = new Date();
     setSelectedDate(today);
@@ -248,14 +260,7 @@ const CalendarPage = () => {
     if (day) {
       setSelectedDate(day);
       
-      const dateEvents = filteredEvents.filter((event) =>
-        isSameDay(day, new Date(event.date))
-      );
-      
-      if (dateEvents.length === 0) {
-        resetEventForm();
-        setShowEventDialog(true);
-      }
+      // Don't automatically open the event dialog - let user choose to add event
     }
   };
 
@@ -268,6 +273,7 @@ const CalendarPage = () => {
     setEditingEvent(null);
     setShowDeleteConfirm(false);
     setSelectedStickerCategory("all");
+    setEditEventId(null);
   };
 
   const handleSaveEvent = () => {
@@ -279,6 +285,7 @@ const CalendarPage = () => {
     const eventDate = format(selectedDate, "yyyy-MM-dd");
 
     if (editingEvent) {
+      // Update existing event
       const updatedEvents = events.map((event) =>
         event.id === editingEvent.id
           ? {
@@ -294,6 +301,7 @@ const CalendarPage = () => {
       setEvents(updatedEvents);
       toast.success("Event updated successfully");
     } else {
+      // Create new event
       const newEvent: CalendarEvent = {
         id: Date.now().toString(),
         title: eventTitle,
@@ -304,10 +312,11 @@ const CalendarPage = () => {
         sticker: eventSticker,
         archived: false,
       };
-      setEvents([...events, newEvent]);
+      setEvents((prevEvents) => [...prevEvents, newEvent]);
       toast.success("Event created successfully");
     }
 
+    // Close dialogs and reset form
     setShowEventDialog(false);
     setShowEditDialog(false);
     resetEventForm();
@@ -356,12 +365,14 @@ const CalendarPage = () => {
     setShowEditDialog(true);
   };
 
+  // Get events for the selected date
   const eventsForSelectedDate = useMemo(() => {
     return filteredEvents.filter((event) =>
       isSameDay(selectedDate, new Date(event.date))
     );
   }, [filteredEvents, selectedDate]);
 
+  // Sort events for the selected date by time
   const sortedEventsForSelectedDate = useMemo(() => {
     return [...eventsForSelectedDate].sort((a, b) => {
       if (!a.time) return -1;
@@ -369,6 +380,17 @@ const CalendarPage = () => {
       return a.time.localeCompare(b.time);
     });
   }, [eventsForSelectedDate]);
+
+  // Reset form when closing dialogs
+  const handleCloseEventDialog = useCallback(() => {
+    setShowEventDialog(false);
+    resetEventForm();
+  }, []);
+
+  const handleCloseEditDialog = useCallback(() => {
+    setShowEditDialog(false);
+    resetEventForm();
+  }, []);
 
   return (
     <div className="container px-4 mx-auto py-6 pb-20 md:pb-6 min-h-screen">
@@ -610,8 +632,8 @@ const CalendarPage = () => {
                       return a.time.localeCompare(b.time);
                     })
                     .slice(0, 15)
-                    .map((event) => (
-                      <Card key={event.id} className={`shadow-sm ${event.archived ? "opacity-70" : ""}`}>
+                    .map((event, index) => (
+                      <Card key={`${event.id}-${index}`} className={`shadow-sm ${event.archived ? "opacity-70" : ""}`}>
                         <CardHeader className="p-3">
                           <div className="flex justify-between items-start">
                             <div className="space-y-1">
@@ -697,7 +719,7 @@ const CalendarPage = () => {
         onOpenChange={setShowHelp}
       />
 
-      <Dialog open={showEventDialog} onOpenChange={setShowEventDialog}>
+      <Dialog open={showEventDialog} onOpenChange={handleCloseEventDialog}>
         <DialogContent className="sm:max-w-md max-w-[95vw] overflow-hidden">
           <DialogHeader>
             <DialogTitle>
@@ -819,9 +841,9 @@ const CalendarPage = () => {
                     <div className="border rounded-md p-2">
                       <ScrollArea className="h-[150px]">
                         <div className="grid grid-cols-8 gap-1 p-1">
-                          {availableStickers.map(sticker => (
+                          {availableStickers.map((sticker, index) => (
                             <Button
-                              key={sticker}
+                              key={`${sticker}-${index}`}
                               variant="ghost"
                               className="h-8 w-8 p-0 text-xl hover:bg-muted"
                               onClick={() => {
@@ -889,10 +911,7 @@ const CalendarPage = () => {
                   Delete
                 </Button>
               )}
-              <Button variant="outline" onClick={() => {
-                setShowEventDialog(false);
-                resetEventForm();
-              }}>
+              <Button variant="outline" onClick={handleCloseEventDialog}>
                 Cancel
               </Button>
               <Button onClick={handleSaveEvent}>
@@ -903,7 +922,7 @@ const CalendarPage = () => {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+      <Dialog open={showEditDialog} onOpenChange={handleCloseEditDialog}>
         <DialogContent className="sm:max-w-md max-w-[95vw] overflow-hidden">
           <DialogHeader>
             <DialogTitle>Edit Event</DialogTitle>
@@ -930,11 +949,11 @@ const CalendarPage = () => {
               </div>
               
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="event-time" className={isMobile ? "col-span-4" : "text-right"}>
+                <Label htmlFor="edit-event-time" className={isMobile ? "col-span-4" : "text-right"}>
                   Time
                 </Label>
                 <Input
-                  id="event-time"
+                  id="edit-event-time"
                   type="time"
                   value={eventTime}
                   onChange={(e) => setEventTime(e.target.value)}
@@ -943,11 +962,11 @@ const CalendarPage = () => {
               </div>
               
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="event-title" className={isMobile ? "col-span-4" : "text-right"}>
+                <Label htmlFor="edit-event-title" className={isMobile ? "col-span-4" : "text-right"}>
                   Title
                 </Label>
                 <Input
-                  id="event-title"
+                  id="edit-event-title"
                   value={eventTitle}
                   onChange={(e) => setEventTitle(e.target.value)}
                   className={isMobile ? "col-span-4" : "col-span-3"}
@@ -1021,9 +1040,9 @@ const CalendarPage = () => {
                     <div className="border rounded-md p-2">
                       <ScrollArea className="h-[150px]">
                         <div className="grid grid-cols-8 gap-1 p-1">
-                          {availableStickers.map(sticker => (
+                          {availableStickers.map((sticker, index) => (
                             <Button
-                              key={sticker}
+                              key={`${sticker}-${index}`}
                               variant="ghost"
                               className="h-8 w-8 p-0 text-xl hover:bg-muted"
                               onClick={() => {
@@ -1042,11 +1061,11 @@ const CalendarPage = () => {
               )}
               
               <div className="grid grid-cols-4 items-start gap-4">
-                <Label htmlFor="event-description" className={isMobile ? "col-span-4" : "text-right pt-2"}>
+                <Label htmlFor="edit-event-description" className={isMobile ? "col-span-4" : "text-right pt-2"}>
                   Description
                 </Label>
                 <Textarea
-                  id="event-description"
+                  id="edit-event-description"
                   value={eventDescription}
                   onChange={(e) => setEventDescription(e.target.value)}
                   className={isMobile ? "col-span-4" : "col-span-3"}
@@ -1089,10 +1108,7 @@ const CalendarPage = () => {
                 <Trash2 className="h-4 w-4 mr-1" />
                 Delete
               </Button>
-              <Button variant="outline" onClick={() => {
-                setShowEditDialog(false);
-                resetEventForm();
-              }}>
+              <Button variant="outline" onClick={handleCloseEditDialog}>
                 Cancel
               </Button>
               <Button onClick={handleSaveEvent}>Update</Button>
