@@ -6,12 +6,20 @@ import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import { useMobile } from "@/hooks/use-mobile";
 
-export type CalendarProps = React.ComponentProps<typeof DayPicker>;
+export type CalendarProps = React.ComponentProps<typeof DayPicker> & {
+  displaySticker?: (date: Date) => string | null;
+};
+
+// Extend DayContentProps to include our custom props
+interface ExtendedDayContentProps extends DayContentProps {
+  displaySticker?: (date: Date) => string | null;
+}
 
 function Calendar({
   className,
   classNames,
   showOutsideDays = true,
+  displaySticker,
   ...props
 }: CalendarProps) {
   const isMobile = useMobile();
@@ -58,13 +66,13 @@ function Calendar({
       components={{
         IconLeft: () => <ChevronLeft className="h-4 w-4" />,
         IconRight: () => <ChevronRight className="h-4 w-4" />,
-        DayContent: (props: DayContentProps) => {
+        DayContent: (props: ExtendedDayContentProps) => {
           // Extract date from props to show event indicator
           const date = props.date;
           // Check if this date has the has_event modifier
           const hasEvent = props.activeModifiers?.has_event || false;
           // Get emoji sticker if it exists for this date
-          const sticker = props.displaySticker?.(date);
+          const sticker = displaySticker?.(date);
           
           return (
             <div className="relative w-full h-full flex flex-col items-center justify-center">
