@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -135,8 +134,7 @@ const Index = () => {
         ))}
       </div>
       
-      {/* Help Dialog with proper props */}
-      {showHelp && <HelpDialog open={showHelp} onOpenChange={setShowHelp} />}
+      <HelpDialog open={showHelp} onOpenChange={setShowHelp} />
     </div>
   );
 };
