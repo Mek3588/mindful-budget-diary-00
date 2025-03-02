@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -104,7 +105,7 @@ const Index = () => {
     <div className="container px-4 mx-auto py-10">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-bold mb-1">Welcome to LifeOS</h1>
+          <h1 className="text-3xl font-bold mb-1">Your Life Journal</h1>
           <p className="text-muted-foreground max-w-xl">
             Your personal dashboard for managing all aspects of your daily life
           </p>

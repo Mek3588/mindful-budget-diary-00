@@ -54,16 +54,19 @@ import {
   Archive,
   Filter,
   HelpCircle,
+  ArrowsUpDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useMobile } from "@/hooks/use-mobile";
 import { Badge } from "@/components/ui/badge";
 import { PageLayout } from "@/components/PageLayout";
 import HelpDialog from "@/components/HelpDialog";
+import { Switch } from "@/components/ui/switch";
 
 // Define types
 type RecordType = "vitals" | "medication" | "appointment" | "note";
 type ArchiveFilter = "active" | "archived" | "all";
+type UnitSystem = "metric" | "imperial";
 
 interface MedicalRecord {
   id: string;
@@ -104,6 +107,35 @@ const recordTypeInfo = {
   },
 };
 
+// Measurement conversion functions
+const convertWeight = (value: string, toImperial: boolean): string => {
+  if (!value || value.trim() === "") return "";
+  const numValue = parseFloat(value);
+  if (isNaN(numValue)) return value;
+  
+  if (toImperial) {
+    // kg to lbs
+    return (numValue * 2.20462).toFixed(1);
+  } else {
+    // lbs to kg
+    return (numValue / 2.20462).toFixed(1);
+  }
+};
+
+const convertTemperature = (value: string, toImperial: boolean): string => {
+  if (!value || value.trim() === "") return "";
+  const numValue = parseFloat(value);
+  if (isNaN(numValue)) return value;
+  
+  if (toImperial) {
+    // Celsius to Fahrenheit
+    return ((numValue * 9/5) + 32).toFixed(1);
+  } else {
+    // Fahrenheit to Celsius
+    return ((numValue - 32) * 5/9).toFixed(1);
+  }
+};
+
 const MedicalPage = () => {
   const isMobile = useMobile();
   const [records, setRecords] = useState<MedicalRecord[]>([]);
@@ -138,6 +170,7 @@ const MedicalPage = () => {
   const [selectedRecordType, setSelectedRecordType] = useState<RecordType | "all">("all");
   const [archiveFilter, setArchiveFilter] = useState<ArchiveFilter>("active");
   const [showHelp, setShowHelp] = useState(false);
+  const [unitSystem, setUnitSystem] = useState<UnitSystem>("metric");
 
   // Load records from localStorage on component mount
   useEffect(() => {
@@ -145,12 +178,22 @@ const MedicalPage = () => {
     if (savedRecords) {
       setRecords(JSON.parse(savedRecords));
     }
+    
+    const savedUnitSystem = localStorage.getItem("medical-unit-system");
+    if (savedUnitSystem) {
+      setUnitSystem(savedUnitSystem as UnitSystem);
+    }
   }, []);
 
   // Save records to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem("medical-records", JSON.stringify(records));
   }, [records]);
+  
+  // Save unit system preference
+  useEffect(() => {
+    localStorage.setItem("medical-unit-system", unitSystem);
+  }, [unitSystem]);
 
   // Filter records based on type and archive status
   const filteredRecords = useMemo(() => {
@@ -319,6 +362,11 @@ const MedicalPage = () => {
     }
   };
 
+  const toggleUnitSystem = () => {
+    setUnitSystem(current => current === "metric" ? "imperial" : "metric");
+    toast.success(`Switched to ${unitSystem === "metric" ? "imperial" : "metric"} units`);
+  };
+
   const renderFormFields = () => {
     switch (recordType) {
       case "vitals":
@@ -326,12 +374,14 @@ const MedicalPage = () => {
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="weight">Weight (kg)</Label>
+                <Label htmlFor="weight">
+                  Weight {unitSystem === "metric" ? "(kg)" : "(lbs)"}
+                </Label>
                 <Input
                   id="weight"
                   value={vitalValues.weight}
                   onChange={(e) => setVitalValues({...vitalValues, weight: e.target.value})}
-                  placeholder="e.g., 70"
+                  placeholder={unitSystem === "metric" ? "e.g., 70" : "e.g., 154"}
                 />
               </div>
               <div className="space-y-2">
@@ -355,12 +405,14 @@ const MedicalPage = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="temperature">Temperature (°C)</Label>
+                <Label htmlFor="temperature">
+                  Temperature {unitSystem === "metric" ? "(°C)" : "(°F)"}
+                </Label>
                 <Input
                   id="temperature"
                   value={vitalValues.temperature}
                   onChange={(e) => setVitalValues({...vitalValues, temperature: e.target.value})}
-                  placeholder="e.g., 36.8"
+                  placeholder={unitSystem === "metric" ? "e.g., 36.8" : "e.g., 98.6"}
                 />
               </div>
             </div>
@@ -467,6 +519,12 @@ const MedicalPage = () => {
   };
 
   const renderRecordCard = (record: MedicalRecord) => {
+    // Ensure record type exists and is valid before accessing typeInfo
+    if (!record.type || !recordTypeInfo[record.type]) {
+      console.error("Invalid record type:", record.type);
+      return null;
+    }
+    
     const typeInfo = recordTypeInfo[record.type];
     
     return (
@@ -540,7 +598,11 @@ const MedicalPage = () => {
                 <div className="flex items-center">
                   <Weight className="h-4 w-4 mr-2 text-blue-500" />
                   <span className="font-medium">Weight:</span>
-                  <span className="ml-2">{record.values.weight} kg</span>
+                  <span className="ml-2">
+                    {unitSystem === "metric" 
+                      ? `${record.values.weight} kg` 
+                      : `${convertWeight(record.values.weight as string, true)} lbs`}
+                  </span>
                 </div>
               )}
               {record.values.bloodPressure && (
@@ -561,7 +623,11 @@ const MedicalPage = () => {
                 <div className="flex items-center">
                   <Activity className="h-4 w-4 mr-2 text-orange-500" />
                   <span className="font-medium">Temp:</span>
-                  <span className="ml-2">{record.values.temperature} °C</span>
+                  <span className="ml-2">
+                    {unitSystem === "metric" 
+                      ? `${record.values.temperature} °C` 
+                      : `${convertTemperature(record.values.temperature as string, true)} °F`}
+                  </span>
                 </div>
               )}
               {record.values.bloodSugar && (
@@ -630,11 +696,22 @@ const MedicalPage = () => {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex flex-col space-y-2">
             <h2 className="text-2xl font-bold">Personal Health Tracker</h2>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground max-w-xl">
               Track and manage your health records, medications, and medical appointments.
             </p>
           </div>
           <div className="flex gap-2">
+            <div className="flex items-center space-x-2 mr-2 bg-gray-100 dark:bg-gray-800 p-2 rounded-md">
+              <Label htmlFor="unit-toggle" className="text-sm whitespace-nowrap">
+                {unitSystem === "metric" ? "Metric" : "Imperial"}
+              </Label>
+              <Switch
+                id="unit-toggle"
+                checked={unitSystem === "imperial"}
+                onCheckedChange={toggleUnitSystem}
+              />
+              <ArrowsUpDown className="h-4 w-4 text-muted-foreground" />
+            </div>
             <Button onClick={() => {
               resetForm();
               setShowRecordDialog(true);
@@ -840,8 +917,7 @@ const MedicalPage = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Help Dialog with proper props */}
-      {showHelp && <HelpDialog open={showHelp} onOpenChange={setShowHelp} />}
+      <HelpDialog open={showHelp} onOpenChange={setShowHelp} />
     </PageLayout>
   );
 };
