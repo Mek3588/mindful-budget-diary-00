@@ -1,4 +1,4 @@
-
+<lov-code>
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -24,7 +24,8 @@ import {
   SortDesc,
   Clock,
   Archive,
-  ArchiveRestore
+  ArchiveRestore,
+  Trash2
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
@@ -695,119 +696,4 @@ const Diary = () => {
                         onClick={() => setMood(moodOption)}
                       >
                         {moodOption}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex flex-col">
-                  <div className="flex justify-between items-center mb-1">
-                    <Label htmlFor="entry-content">Content</Label>
-                    <div className="flex justify-end ml-auto">
-                      <VoiceToText onTranscript={handleVoiceTranscriptNew} />
-                    </div>
-                  </div>
-                  <div className="p-4 bg-white dark:bg-gray-950 rounded-md border border-input">
-                    <Textarea
-                      id="entry-content"
-                      value={content}
-                      onChange={(e) => setContent(e.target.value)}
-                      placeholder="Write about your day..."
-                      className="min-h-[150px] border-none bg-transparent focus-visible:ring-0 p-0 resize-none"
-                    />
-                  </div>
-                </div>
-
-                {sticker && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">Selected sticker:</span>
-                    <span className="text-2xl">{sticker}</span>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => setSticker("")}
-                      className="h-6 w-6 p-0"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
-                
-                {images.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {images.map((image, index) => (
-                      <div key={index} className="relative w-20 h-20 rounded-md overflow-hidden group">
-                        <img 
-                          src={image} 
-                          alt={`Entry ${index}`} 
-                          className="w-full h-full object-cover" 
-                        />
-                        <Button 
-                          variant="destructive" 
-                          size="icon" 
-                          className="absolute top-1 right-1 w-5 h-5 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() => removeImage(index, 'new')}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                
-                <div className="flex flex-wrap gap-2">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => {
-                      setActiveCaptureFor('new');
-                      setShowCamera(true);
-                    }}
-                    className="flex items-center gap-1"
-                  >
-                    <Camera className="h-4 w-4" />
-                    <span>Take Photo</span>
-                  </Button>
-                  
-                  <label>
-                    <Button 
-                      variant="outline" 
-                      className="flex items-center gap-1"
-                      asChild
-                    >
-                      <span>
-                        <Image className="h-4 w-4" />
-                        <span>Upload Image</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={(e) => handleFileChange(e, 'new')}
-                        />
-                      </span>
-                    </Button>
-                  </label>
-                  
-                  {renderStickerPicker('new')}
-                </div>
-                
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => {
-                    setIsAddingEntry(false);
-                    resetForm();
-                  }}>
-                    Cancel
-                  </Button>
-                  <Button onClick={handleAddEntry}>
-                    Save Entry
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          )}
-        </div>
-      </main>
-    </div>
-  );
-};
-
-export default Diary;
+                      
