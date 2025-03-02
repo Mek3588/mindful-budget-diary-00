@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, Settings as SettingsIcon, Printer } from "lucide-react";
@@ -153,6 +154,13 @@ const Settings = () => {
             .value {
               display: inline-block;
             }
+            .content {
+              white-space: pre-wrap;
+              margin-top: 0.5rem;
+              padding: 0.5rem;
+              background-color: #f9f9f9;
+              border-left: 3px solid #ddd;
+            }
             .date {
               color: #666;
               font-style: italic;
@@ -191,7 +199,7 @@ const Settings = () => {
               content += `
                 <div class="field"><span class="label">Date:</span> <span class="value">${item.date}</span></div>
                 <div class="field"><span class="label">Mood:</span> <span class="value">${item.mood}</span></div>
-                <p>${item.content}</p>
+                <div class="content">${item.content}</div>
               `;
             } else if (printSectionValue === "budget") {
               content += `
@@ -204,7 +212,7 @@ const Settings = () => {
             } else if (printSectionValue === "notes") {
               content += `
                 <div class="field"><span class="label">Title:</span> <span class="value">${item.title}</span></div>
-                <p>${item.content}</p>
+                <div class="content">${item.content}</div>
                 <div class="date">Created: ${item.date}</div>
                 ${item.updatedAt !== "-" ? `<div class="date">Updated: ${item.updatedAt}</div>` : ""}
               `;
@@ -215,7 +223,7 @@ const Settings = () => {
                 <div class="field"><span class="label">Due Date:</span> <span class="value">${item.dueDate}</span></div>
                 <div class="field"><span class="label">Progress:</span> <span class="value">${item.progress}</span></div>
                 <div class="field"><span class="label">Status:</span> <span class="value">${item.status}</span></div>
-                <p>${item.description}</p>
+                <div class="content">${item.description}</div>
               `;
             } else if (printSectionValue === "medical") {
               content += `
@@ -225,7 +233,7 @@ const Settings = () => {
                 <div class="field"><span class="label">Date:</span> <span class="value">${item.date}</span></div>
                 <div class="field"><span class="label">Reminder:</span> <span class="value">${item.reminder}</span></div>
                 <div class="field"><span class="label">Completed:</span> <span class="value">${item.completed}</span></div>
-                <p>${item.notes}</p>
+                <div class="content">${item.notes}</div>
               `;
             }
             
@@ -404,3 +412,4 @@ const Settings = () => {
 };
 
 export default Settings;
+
