@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
@@ -58,8 +57,8 @@ interface Sticker {
   emoji: string;
   date: Date;
   position: { x: number; y: number };
-  memo?: string; // Added memo field for stickers
-  mood?: 'happy' | 'neutral' | 'sad'; // Added mood tracking
+  memo?: string;
+  mood?: 'happy' | 'neutral' | 'sad';
 }
 
 const CategoryColors: Record<EventCategory, string> = {
@@ -99,18 +98,19 @@ const Calendar = () => {
   const [showStickerDialog, setShowStickerDialog] = useState(false);
   const [stickerEmoji, setStickerEmoji] = useState("😊");
   const [stickerDate, setStickerDate] = useState<Date>(new Date());
-  const [stickerMemo, setStickerMemo] = useState(""); // New state for sticker memo
-  const [stickerMood, setStickerMood] = useState<'happy' | 'neutral' | 'sad'>('happy'); // New state for mood
+  const [stickerMemo, setStickerMemo] = useState("");
+  const [stickerMood, setStickerMood] = useState<'happy' | 'neutral' | 'sad'>('happy');
   
   const [selectedCategory, setSelectedCategory] = useState<EventCategory | "all">("all");
   const [showCategoriesPopover, setShowCategoriesPopover] = useState(false);
   
+  const [selectedTab, setSelectedTab] = useState("all");
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  
   const commonEmojis = ["😊", "😂", "❤️", "👍", "🎉", "🎂", "🏆", "⭐", "🔥", "💯", "🙏", "✅", "💪"];
 
   const [isEditMode, setIsEditMode] = useState(false);
-  const [showStickerListDialog, setShowStickerListDialog] = useState(false); // New state for sticker list dialog
-
-  // Removed dateRange state and related functionality
+  const [showStickerListDialog, setShowStickerListDialog] = useState(false);
 
   useEffect(() => {
     const loadEvents = () => {
@@ -129,16 +129,15 @@ const Calendar = () => {
         }));
       }
       
-      // Add events from other sources, ensuring no duplicate IDs
       const processSources = (source: any[], category: EventCategory, prefix: string) => {
         if (!source || !Array.isArray(source)) return [];
         return source.map((item: any, index: number) => {
-          const id = `${prefix}-${item.id || index}-${Date.now()}`;
-          // Check if this event already exists in allEvents
-          if (allEvents.some(e => e.id === id)) return null;
+          const uniqueId = `${prefix}-${item.id || index}-${Math.random().toString(36).substring(2, 9)}`;
+          
+          if (allEvents.some(e => e.id === uniqueId)) return null;
           
           return {
-            id,
+            id: uniqueId,
             title: category === 'diary' ? "Diary Entry" : (item.title || (category === 'medical' ? "Medical Appointment" : "")),
             description: item.content || item.description || item.notes || item.prescription || "",
             date: new Date(item.date || item.appointmentDate || item.dueDate || item.createdAt),
@@ -147,7 +146,7 @@ const Calendar = () => {
                  category === 'goal' ? [`priority-${item.priority}`, `status-${item.status}`] :
                  category === 'medical' ? [item.type || "appointment", item.status || "scheduled"] : []
           };
-        }).filter(Boolean); // Remove null items
+        }).filter(Boolean);
       };
       
       if (savedDiaryEntries) {
@@ -170,7 +169,6 @@ const Calendar = () => {
       
       if (savedMedical) {
         const medical = JSON.parse(savedMedical);
-        // Generate unique keys for medical events to avoid duplicates
         const medicalEvents = processSources(medical, 'medical', 'medical');
         allEvents = [...allEvents, ...medicalEvents];
       }
@@ -226,11 +224,13 @@ const Calendar = () => {
     const eventsOnDate = getEventsForDate(date);
     const stickersOnDate = getStickersForDate(date);
     
+    setSelectedDate(date);
+    setSelectedTab("date");
+    
     if (eventsOnDate.length > 0) {
       setSelectedEvent(eventsOnDate[0]);
       setShowEventDetailsDialog(true);
     } else if (stickersOnDate.length > 0) {
-      // Show sticker details when clicking on a date with stickers
       displayStickersForDate(date);
     } else {
       setNewEvent({
@@ -306,14 +306,13 @@ const Calendar = () => {
     const updatedEvents = events.filter(event => event.id !== eventId);
     setEvents(updatedEvents);
     localStorage.setItem('calendar-events', JSON.stringify(updatedEvents));
-    setShowEventDetailsDialog(false);
     toast.success("Event deleted successfully!");
   };
 
   const handleAddSticker = (date: Date) => {
     setStickerDate(date);
-    setStickerMemo(""); // Reset memo
-    setStickerMood('happy'); // Reset mood
+    setStickerMemo("");
+    setStickerMood('happy');
     setShowStickerDialog(true);
   };
 
@@ -321,8 +320,8 @@ const Calendar = () => {
     const event = events.find(event => event.id === eventId);
     if (event) {
       setStickerDate(new Date(event.date));
-      setStickerMemo(""); // Reset memo
-      setStickerMood('happy'); // Reset mood
+      setStickerMemo("");
+      setStickerMood('happy');
       setShowStickerDialog(true);
       setSelectedEvent(event);
     }
@@ -330,7 +329,6 @@ const Calendar = () => {
 
   const handleSaveSticker = () => {
     if (selectedEvent) {
-      // Add sticker to event
       const updatedEvents = events.map(event => 
         event.id === selectedEvent.id ? {
           ...event,
@@ -343,7 +341,6 @@ const Calendar = () => {
       toast.success(`Sticker added to "${selectedEvent.title}"`);
       setSelectedEvent(null);
     } else {
-      // Add standalone sticker with memo and mood
       const sticker: Sticker = {
         id: Date.now().toString(),
         emoji: stickerEmoji,
@@ -371,10 +368,28 @@ const Calendar = () => {
     toast.success("Sticker deleted successfully!");
   };
 
-  // Filter events based on selected category
   const filteredEvents = events.filter(event => {
-    // Category filter
-    return selectedCategory === "all" || event.category === selectedCategory;
+    if (selectedTab === "date" && selectedCategory !== "all") {
+      return isSameDay(new Date(event.date), selectedDate) && event.category === selectedCategory;
+    }
+    else if (selectedTab === "date") {
+      return isSameDay(new Date(event.date), selectedDate);
+    }
+    else if (selectedTab === "upcoming") {
+      return selectedCategory === "all" 
+        ? new Date(event.date) >= new Date(new Date().setHours(0, 0, 0, 0)) && !event.completed
+        : new Date(event.date) >= new Date(new Date().setHours(0, 0, 0, 0)) && !event.completed && event.category === selectedCategory;
+    } 
+    else if (selectedTab === "completed") {
+      return selectedCategory === "all" 
+        ? event.completed 
+        : event.completed && event.category === selectedCategory;
+    } 
+    else if (selectedTab === "all") {
+      return selectedCategory === "all" ? true : event.category === selectedCategory;
+    }
+    
+    return false;
   });
 
   return (
@@ -402,7 +417,6 @@ const Calendar = () => {
 
       <main className="pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-7">
-          {/* Main Calendar Section - Takes 5/7 of the grid on large screens */}
           <div className="lg:col-span-5 space-y-6">
             <Card className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-4 sm:p-6">
               <div className="flex flex-wrap items-center justify-between mb-4 gap-2">
@@ -427,7 +441,7 @@ const Calendar = () => {
               <div className="w-full overflow-hidden calendar-container">
                 <CalendarComponent
                   mode="single"
-                  selected={new Date()}
+                  selected={selectedDate}
                   onSelect={(date) => date && handleDayClick(date)}
                   month={currentMonth}
                   className="rounded-md border w-full max-w-full"
@@ -438,7 +452,11 @@ const Calendar = () => {
 
             <Card className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-4 sm:p-6">
               <div className="flex flex-wrap items-center justify-between mb-4 gap-3">
-                <h2 className="text-lg font-semibold">Events</h2>
+                <h2 className="text-lg font-semibold">
+                  {selectedTab === "date" 
+                    ? `Events for ${format(selectedDate, "MMMM d, yyyy")}${selectedCategory !== "all" ? ` - ${selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)}` : ""}`
+                    : "Events"}
+                </h2>
                 <div className="flex flex-wrap items-center gap-2">
                   <Select
                     value={selectedCategory}
@@ -498,9 +516,7 @@ const Calendar = () => {
             </Card>
           </div>
 
-          {/* Sidebar - Takes 2/7 of the grid on large screens */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Categories dropdown for mobile */}
             <div className="lg:hidden">
               <Popover open={showCategoriesPopover} onOpenChange={setShowCategoriesPopover}>
                 <PopoverTrigger asChild>
@@ -537,7 +553,6 @@ const Calendar = () => {
               </Popover>
             </div>
 
-            {/* Categories card for desktop */}
             <Card className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-4 sm:p-6 hidden lg:block">
               <h2 className="text-lg font-semibold mb-4">Categories</h2>
               <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
@@ -559,7 +574,6 @@ const Calendar = () => {
               </div>
             </Card>
 
-            {/* Stickers section */}
             <Card className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 p-4 sm:p-6">
               <Collapsible>
                 <CollapsibleTrigger className="flex items-center justify-between w-full">
@@ -571,7 +585,7 @@ const Calendar = () => {
                     {commonEmojis.map((emoji) => (
                       <Button key={emoji} variant="outline" onClick={() => {
                         setStickerEmoji(emoji);
-                        handleAddSticker(new Date()); // Default to today
+                        handleAddSticker(new Date());
                       }}>
                         {emoji}
                       </Button>
@@ -592,7 +606,6 @@ const Calendar = () => {
         </div>
       </main>
 
-      {/* Add/Edit Event Dialog */}
       <Dialog open={showAddEventDialog} onOpenChange={(open) => {
         setShowAddEventDialog(open);
         if (!open) {
@@ -673,7 +686,6 @@ const Calendar = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Event Details Dialog */}
       <Dialog open={showEventDetailsDialog} onOpenChange={setShowEventDetailsDialog}>
         <DialogContent className="sm:max-w-[425px] bg-gray-900 text-white border border-gray-700 overflow-y-auto max-h-[90vh]">
           <DialogHeader>
@@ -737,7 +749,6 @@ const Calendar = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Sticker Dialog */}
       <Dialog open={showStickerDialog} onOpenChange={setShowStickerDialog}>
         <DialogContent className="sm:max-w-[425px] bg-gray-900 text-white border border-gray-700 overflow-y-auto max-h-[90vh]">
           <DialogHeader>
@@ -769,7 +780,6 @@ const Calendar = () => {
                 className="col-span-3 bg-gray-800 border-gray-700 text-white"
               />
             </div>
-            {/* New field for sticker memo */}
             <div className="grid grid-cols-4 items-center gap-4">
               <label htmlFor="memo" className="text-right text-white">
                 Memo
@@ -782,7 +792,6 @@ const Calendar = () => {
                 className="col-span-3 bg-gray-800 border-gray-700 text-white"
               />
             </div>
-            {/* New field for mood selection */}
             <div className="grid grid-cols-4 items-center gap-4">
               <label htmlFor="mood" className="text-right text-white">
                 Mood
@@ -823,7 +832,6 @@ const Calendar = () => {
         </DialogContent>
       </Dialog>
 
-      {/* New Dialog for Sticker List */}
       <Dialog open={showStickerListDialog} onOpenChange={setShowStickerListDialog}>
         <DialogContent className="sm:max-w-[500px] bg-gray-900 text-white border border-gray-700 overflow-y-auto max-h-[90vh]">
           <DialogHeader>
