@@ -1,3 +1,4 @@
+<lov-code>
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
@@ -112,6 +113,7 @@ const Calendar = () => {
 
   const [isEditMode, setIsEditMode] = useState(false);
   const [showStickerListDialog, setShowStickerListDialog] = useState(false);
+  const [stickersForSelectedDate, setStickersForSelectedDate] = useState<Sticker[]>([]);
 
   useEffect(() => {
     const loadEvents = () => {
@@ -230,6 +232,7 @@ const Calendar = () => {
     
     setSelectedDate(date);
     setSelectedTab("date");
+    setStickersForSelectedDate(stickersOnDate);
     
     // Only show event details or stickers if they exist
     if (eventsOnDate.length > 0) {
@@ -238,7 +241,6 @@ const Calendar = () => {
     } else if (stickersOnDate.length > 0) {
       displayStickersForDate(date);
     }
-    // Removed the automatic opening of add event dialog
   };
 
   const displayStickersForDate = (date: Date) => {
@@ -347,6 +349,9 @@ const Calendar = () => {
       toast.success(`Sticker added to "${selectedEvent.title}"`);
       setSelectedEvent(null);
     } else {
+      // Check if a sticker already exists for this date
+      const existingStickers = stickers.filter(s => !isSameDay(s.date, stickerDate));
+      
       const sticker: Sticker = {
         id: Date.now().toString(),
         emoji: stickerEmoji,
@@ -356,8 +361,10 @@ const Calendar = () => {
         mood: stickerMood
       };
       
-      setStickers([...stickers, sticker]);
-      localStorage.setItem('calendar-stickers', JSON.stringify([...stickers, sticker]));
+      // Update stickers array with new sticker (ensuring only one per day)
+      const updatedStickers = [...existingStickers, sticker];
+      setStickers(updatedStickers);
+      localStorage.setItem('calendar-stickers', JSON.stringify(updatedStickers));
       toast.success("Sticker added to calendar!");
     }
     
@@ -399,6 +406,12 @@ const Calendar = () => {
   });
 
   const stickersForDate = stickers.filter(sticker => isSameDay(sticker.date, stickerDate));
+
+  // Custom function to render stickers on calendar days
+  const dayHasSticker = (date: Date): string | null => {
+    const stickerForDay = stickers.find(s => isSameDay(s.date, date));
+    return stickerForDay ? stickerForDay.emoji : null;
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-white dark:from-gray-900 dark:to-gray-800">
@@ -454,6 +467,28 @@ const Calendar = () => {
                   month={currentMonth}
                   className="rounded-md border w-full max-w-full"
                   modifiers={modifiers}
+                  modifiersClassNames={{
+                    has_sticker: "has-sticker-indicator"
+                  }}
+                  components={{
+                    DayContent: (props) => {
+                      const date = props.date;
+                      const sticker = dayHasSticker(date);
+                      const hasEvent = events.some(event => isSameDay(new Date(event.date), date));
+                      
+                      return (
+                        <div className="relative w-full h-full flex flex-col items-center justify-center">
+                          <span className="mb-1">{date.getDate()}</span>
+                          {sticker && (
+                            <span className="text-xs absolute bottom-0.5 left-1/2 transform -translate-x-1/2">{sticker}</span>
+                          )}
+                          {!sticker && hasEvent && (
+                            <Dot className="h-2 w-2 text-purple-400 absolute bottom-0" />
+                          )}
+                        </div>
+                      );
+                    }
+                  }}
                 />
               </div>
             </Card>
@@ -614,6 +649,7 @@ const Calendar = () => {
         </div>
       </main>
 
+      {/* Add Event Dialog */}
       <Dialog open={showAddEventDialog} onOpenChange={(open) => {
         setShowAddEventDialog(open);
         if (!open) {
@@ -694,6 +730,7 @@ const Calendar = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Event Details Dialog */}
       <Dialog open={showEventDetailsDialog} onOpenChange={setShowEventDetailsDialog}>
         <DialogContent className="sm:max-w-[425px] bg-gray-900 text-white border border-gray-700 overflow-y-auto max-h-[90vh]">
           <DialogHeader>
@@ -757,39 +794,6 @@ const Calendar = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Sticker Dialog */}
       <Dialog open={showStickerDialog} onOpenChange={setShowStickerDialog}>
-        <DialogContent className="sm:max-w-[425px] bg-gray-900 text-white border border-gray-700 overflow-y-auto max-h-[90vh]">
-          <DialogHeader>
-            <DialogTitle className="text-white">Add Sticker</DialogTitle>
-            <DialogDescription className="text-gray-300">Choose an emoji to use as a sticker and add a memo</DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <label htmlFor="emoji" className="text-right text-white">
-                Emoji
-              </label>
-              <Input
-                type="text"
-                id="emoji"
-                value={stickerEmoji}
-                onChange={(e) => setStickerEmoji(e.target.value)}
-                className="col-span-3 bg-gray-800 border-gray-700 text-white"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <label htmlFor="date" className="text-right text-white">
-                Date
-              </label>
-              <Input
-                type="date"
-                id="date"
-                value={format(stickerDate, "yyyy-MM-dd")}
-                onChange={(e) => setStickerDate(new Date(e.target.value))}
-                className="col-span-3 bg-gray-800 border-gray-700 text-white"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <label htmlFor="memo" className="text-right text-white">
-                Memo
-              </label>
-              <Textarea
+        <DialogContent className="sm:max
