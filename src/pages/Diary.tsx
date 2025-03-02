@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,8 +45,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import VoiceToText from "@/components/VoiceToText";
 import CameraCapture from "@/components/CameraCapture";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-// Define types
 interface DiaryEntry {
   id: string;
   title: string;
@@ -69,8 +68,106 @@ const moodItems = [
   { value: "sad", label: "Sad", icon: "😔", iconComponent: <Moon className="h-4 w-4" /> },
 ];
 
-// Sticker options
-const stickerOptions = ["💖", "⭐", "🌈", "🎉", "🎂", "🎁", "🌺", "🦋", "✨", "🏆"];
+const STICKER_CATEGORIES = [
+  { id: "emotions", name: "Emotions" },
+  { id: "nature", name: "Nature" },
+  { id: "food", name: "Food" },
+  { id: "activities", name: "Activities" },
+  { id: "travel", name: "Travel" },
+  { id: "objects", name: "Objects" },
+  { id: "symbols", name: "Symbols" },
+  { id: "animals", name: "Animals" },
+];
+
+const STICKERS = {
+  emotions: [
+    "😀", "😃", "😄", "😁", "😆", "😅", "🤣", "😂", "🙂", "🙃", "😉", "😊", "😇", 
+    "🥰", "😍", "🤩", "😘", "😗", "😚", "😙", "😋", "😛", "😜", "🤪", "😝", "🤑", 
+    "🤗", "🤭", "🤫", "🤔", "🤐", "🤨", "😐", "😑", "😶", "😏", "😒", "🙄", "😬", 
+    "🤥", "😌", "😔", "😪", "🤤", "😴", "😷", "🤒", "🤕", "🤢", "🤮", "🤧", "🥵", 
+    "🥶", "🥴", "😵", "🤯", "🤠", "🥳", "😎", "🤓", "🧐", "😕", "😟", "🙁", "☹️", 
+    "😮", "😯", "😲", "😳", "🥺", "😦", "😧", "😨", "😰", "😥", "😢", "😭", "😱"
+  ],
+  nature: [
+    "🌱", "🌲", "🌳", "🌴", "🌵", "🌾", "🌿", "☘️", "🍀", "🍁", "🍂", "🍃", "🍄",
+    "🌰", "🦠", "🌹", "🥀", "🌺", "🌻", "🌼", "🌷", "💐", "🌸", "💮", "🏵️", "🌞", 
+    "🌝", "🌛", "🌜", "🌚", "🌕", "🌖", "🌗", "🌘", "🌑", "🌒", "🌓", "🌔", "🌙", 
+    "🌎", "🌍", "🌏", "🪐", "💫", "⭐", "🌟", "✨", "⚡", "☄️", "💥", "🔥", "🌪️", 
+    "🌈", "☀️", "🌤️", "⛅", "🌥️", "☁️", "🌦️", "🌧️", "⛈️", "🌩️", "🌨️", "❄️", "☃️", 
+    "⛄", "🌬️", "💨", "💧", "💦", "☔", "☂️", "🌊", "🌫️"
+  ],
+  food: [
+    "🍏", "🍎", "🍐", "🍊", "🍋", "🍌", "🍉", "🍇", "🍓", "🍈", "🍒", "🍑", "🥭", 
+    "🍍", "🥥", "🥝", "🍅", "🍆", "���", "🥦", "🥬", "🥒", "🌶️", "🌽", "🥕", "🧄", 
+    "🧅", "🥔", "🍠", "🥐", "🥯", "🍞", "🥖", "🥨", "🧀", "🥚", "🍳", "🧈", "🥞", 
+    "🧇", "🥓", "🥩", "🍗", "🍖", "🦴", "🌭", "🍔", "🍟", "🍕", "🥪", "🥙", "🧆", 
+    "🌮", "🌯", "🥗", "🥘", "🥫", "🍝", "🍜", "🍲", "🍛", "🍣", "🍱", "🥟", "🦪", 
+    "🍤", "🍙", "🍚", "🍘", "🍥", "🥠", "🥮", "🍢", "🍧", "🍨", "🍦", "🥧", "🧁", 
+    "🍰", "🎂", "🍮", "🍭", "🍬", "🍫", "🍿", "🍩", "🍪", "🌰", "🥜", "🍯", "🥛", 
+    "🍼", "🫖", "☕", "🍵", "🧃", "🥤", "🧋", "🍶", "🍺", "🍻", "🥂", "🍷", "🥃", 
+    "🍸", "🍹", "🧉", "🍾", "🧊"
+  ],
+  activities: [
+    "⚽", "🏀", "🏈", "⚾", "🥎", "🎾", "🏐", "🏉", "🥏", "🎱", "🪀", "🏓", "🏸", 
+    "🏒", "🏑", "🥍", "🏏", "🥅", "⛳", "🪁", "🏹", "🎣", "🤿", "🥊", "🥋", "🎽", 
+    "🛹", "🛼", "🛷", "⛸️", "🥌", "🎿", "⛷️", "🏂", "🪂", "🏋️", "🤼", "🤸", "🤺", 
+    "🤾", "🏌️", "🏇", "🧘", "🏄", "🏊", "🤽", "🚣", "🧗", "🚴", "🚵", "🎖️", "🏆", 
+    "🥇", "🥈", "🥉", "🏅", "🎪", "🎫", "🎟️", "🎭", "🎨", "🎬", "🎤", "🎧", "🎼", 
+    "🎹", "🥁", "🎷", "🎺", "🎸", "🪕", "🎻", "🎲", "♟️", "🎯", "🎳", "🎮", "🎰", 
+    "🧩", "👾", "🎭", "🎪", "🎨", "🧵", "🧶", "🎻"
+  ],
+  travel: [
+    "🚗", "🚕", "🚙", "🚌", "🚎", "🏎️", "🚓", "🚑", "🚒", "🚐", "🚚", "🚛", "🚜", 
+    "🦯", "🦽", "🦼", "🛴", "🚲", "🛵", "🏍️", "🛺", "🚔", "🚍", "🚘", "🚖", "🚡", 
+    "🚠", "🚟", "🚃", "🚋", "🚞", "🚝", "🚄", "🚅", "🚈", "🚂", "🚆", "🚇", "🚊", 
+    "🚉", "✈️", "🛫", "🛬", "🛩️", "💺", "🛰️", "🚀", "🛸", "🚁", "🛶", "⛵", "🚤", 
+    "🛥️", "🛳️", "⛴️", "🚢", "⚓", "🚧", "⛽", "🚏", "🚦", "🚥", "🗿", "🗽", "🗼", 
+    "🏰", "🏯", "🏟️", "🏖️", "🏝️", "🏜️", "🌋", "⛰️", "🏔️", "🏕️", "⛺", "🏠", "🏡", 
+    "🏘️", "🏚️", "🏗️", "🏢", "🏬", "🏣", "🏤", "🏥", "🏦", "🏨", "🏪", "🏫", "🏩", 
+    "💒", "🏛️", "⛪", "🕌", "🕍", "🛕", "🕋", "⛩️", "🛤️", "🛣️", "🗾", "🎑", "🏞️"
+  ],
+  objects: [
+    "⌚", "📱", "📲", "💻", "⌨️", "🖥️", "🖨️", "🖱️", "🖲️", "🕹️", "🗜️", "💽", "💾", 
+    "💿", "📀", "📼", "📷", "📸", "📹", "🎥", "📽️", "🎞️", "📞", "☎️", "📟", "📠", 
+    "📺", "📻", "🎙️", "🎚️", "🎛️", "🧭", "⏱️", "⏲️", "⏰", "🕰️", "⌛", "⏳", "📡", 
+    "🔋", "🔌", "💡", "🔦", "🕯️", "🪔", "🧯", "🛢️", "💸", "💵", "💴", "💶", "💷", 
+    "💰", "💳", "💎", "⚖️", "🧰", "🔧", "🔨", "⚒️", "🛠️", "⛏️", "🔩", "⚙️", "🧱", 
+    "⛓️", "🧲", "🔫", "💣", "🧨", "🪓", "🔪", "🗡️", "⚔️", "🛡️", "🚬", "⚰️", "⚱️", 
+    "🏺", "🔮", "📿", "🧿", "💈", "⚗️", "🔭", "🔬", "🕳️", "💊", "💉", "🩸", "🩹", 
+    "🩺", "🌡️", "🧬", "🦠", "🧫", "🧪", "🧹", "🧺", "🧻", "🚽", "🚰", "🚿", "🛁", 
+    "🛀", "🧼", "🪒", "🧽", "🧴", "🛎️", "🔑", "🗝️", "🚪", "🪑", "🛋️", "🛏️", "🛌", 
+    "🧸", "🖼️", "🛍️", "🛒", "🎁", "🎈", "🎏", "🎀", "🎊", "🎉", "🎎", "🏮", "🎐"
+  ],
+  symbols: [
+    "❤️", "🧡", "💛", "💚", "💙", "💜", "🖤", "🤍", "🤎", "💔", "❣️", "💕", "💞", 
+    "💓", "💗", "💖", "💘", "💝", "💟", "☮️", "✝️", "☪️", "🕉️", "☸️", "✡️", "🔯", 
+    "🕎", "☯️", "☦️", "🛐", "⛎", "♈", "♉", "♊", "♋", "♌", "♍", "♎", "♏", "♐", 
+    "♑", "♒", "♓", "🆔", "⚛️", "🉑", "☢️", "☣️", "📴", "📳", "🈶", "🈚", "🈸", "🈺", 
+    "🈷️", "✴️", "🆚", "💮", "🉐", "㊙️", "㊗️", "🈴", "🈵", "🈹", "🈲", "🅰️", "🅱️", 
+    "🆎", "🆑", "🅾️", "🆘", "❌", "⭕", "🛑", "⛔", "📛", "🚫", "💯", "💢", "♨️", 
+    "🚷", "🚯", "🚳", "🚱", "🔞", "📵", "🚭", "❗", "❕", "❓", "❔", "‼️", "⁉️", "🔅", 
+    "🔆", "〽️", "⚠️", "🚸", "🔱", "⚜️", "🔰", "♻️", "✅", "🈯", "💹", "❇️", "✳️", 
+    "❎", "🌐", "💠", "Ⓜ️", "🌀", "💤", "🏧", "🚾", "♿", "🅿️", "🈳", "🈂️", "🛂", 
+    "🛃", "🛄", "🛅", "🚹", "🚺", "🚼", "⚧", "🚻", "🚮", "🎦", "📶", "🈁", "🔣", 
+    "ℹ️", "🔤", "🔡", "🔠", "🆖", "🆗", "🆙", "🆒", "🆕", "🆓", "0️⃣", "1️⃣", "2️⃣", 
+    "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣", "🔟", "🔢", "#️⃣", "*️⃣", "⏏️", 
+    "▶️", "⏸️", "⏯️", "⏹️", "⏺️", "⏭️", "⏮️", "⏩", "⏪", "⏫", "⏬", "◀️", "🔼", 
+    "🔽", "➡️", "⬅️", "⬆️", "⬇️", "↗️", "↘️", "↙️", "↖️", "↕️", "↔️", "↪️", "↩️", 
+    "⤴️", "⤵️", "🔀", "🔁", "🔂", "🔄", "🔃", "🎵", "🎶", "➕", "➖", "➗", "✖️", "♾️", 
+    "💲", "💱", "™️", "©️", "®️", "👁️‍🗨️", "🔚", "🔙", "🔛", "🔝", "🔜"
+  ],
+  animals: [
+    "🐶", "🐱", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼", "🐨", "🐯", "🦁", "🐮", "🐷", 
+    "🐽", "🐸", "🐵", "🙈", "🙉", "🙊", "🐒", "🐔", "🐧", "🐦", "🐤", "🐣", "🐥", 
+    "🦆", "🦢", "🦉", "🦚", "🦜", "🐺", "🐗", "🐴", "🦄", "🐝", "🐛", "🦋", "🐌", 
+    "🐞", "🐜", "🦗", "🕷️", "🕸️", "🦂", "🦟", "🦠", "🐢", "🐍", "🦎", "🦖", "🦕", 
+    "🐙", "🦑", "🦐", "🦞", "🦀", "🐡", "🐠", "🐟", "🐬", "🐳", "🐋", "🦈", "🐊", 
+    "🐅", "🐆", "🦓", "🦍", "🦧", "🐘", "🦛", "🦏", "🐪", "🐫", "🦒", "🦘", "🐃", 
+    "🐂", "🐄", "🐎", "🐖", "🐏", "🐑", "🦙", "🐐", "🦌", "🐕", "🐩", "🦮", "🐕‍🦺", 
+    "🐈", "🐈‍⬛", "🐓", "🦃", "🦚", "🦜", "🦢", "🦩", "🕊️", "🐇", "🦝", "🦨", "🦡", 
+    "🦦", "🦥", "🐁", "🐀", "🐿️", "🦔", "🐾", "🐉", "🐲", "🌵", "🦔"
+  ]
+};
 
 const Diary = () => {
   const isMobile = useMobile();
@@ -89,8 +186,8 @@ const Diary = () => {
   const [showCamera, setShowCamera] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [openCalendar, setOpenCalendar] = useState(false);
+  const [activeStickerCategory, setActiveStickerCategory] = useState("emotions");
 
-  // Load entries from localStorage on component mount
   useEffect(() => {
     const savedEntries = localStorage.getItem("diary-entries");
     if (savedEntries) {
@@ -98,12 +195,10 @@ const Diary = () => {
     }
   }, []);
 
-  // Save entries to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem("diary-entries", JSON.stringify(entries));
   }, [entries]);
 
-  // Filter entries based on archive filter
   const filteredEntries = useMemo(() => {
     return entries.filter(entry => {
       return archiveFilter === "all" ||
@@ -112,7 +207,6 @@ const Diary = () => {
     });
   }, [entries, archiveFilter]);
 
-  // Sort entries based on sort option
   const sortedEntries = useMemo(() => {
     return [...filteredEntries].sort((a, b) => {
       switch (sortOption) {
@@ -123,7 +217,6 @@ const Diary = () => {
         case "title":
           return a.title.localeCompare(b.title);
         case "mood":
-          // Sort by mood: happy, neutral, sad
           const moodOrder: Record<Mood, number> = { happy: 0, neutral: 1, sad: 2 };
           return moodOrder[a.mood] - moodOrder[b.mood];
         default:
@@ -132,7 +225,6 @@ const Diary = () => {
     });
   }, [filteredEntries, sortOption]);
 
-  // Add new entry
   const handleAddEntry = () => {
     setIsAddingEntry(true);
     setEditingEntry(null);
@@ -143,24 +235,20 @@ const Diary = () => {
     setCapturedImage(null);
   };
 
-  // Save entry
   const handleSaveEntry = () => {
     if (!newEntryTitle.trim()) {
       toast.error("Entry title is required");
       return;
     }
 
-    // Format date for storage
     const entryDate = format(selectedDate, "yyyy-MM-dd");
 
-    // Add image to content if there is one
     let finalContent = newEntryContent;
     if (capturedImage) {
       finalContent = `${finalContent}\n\n![Captured Image](${capturedImage})`;
     }
 
     if (editingEntry) {
-      // Update existing entry
       const updatedEntries = entries.map((entry) =>
         entry.id === editingEntry.id
           ? {
@@ -176,7 +264,6 @@ const Diary = () => {
       setEntries(updatedEntries);
       toast.success("Entry updated successfully");
     } else {
-      // Create new entry
       const newEntry: DiaryEntry = {
         id: Date.now().toString(),
         title: newEntryTitle,
@@ -200,7 +287,6 @@ const Diary = () => {
     setShowStickers(false);
   };
 
-  // Delete entry
   const handleDeleteEntry = () => {
     if (editingEntry) {
       const updatedEntries = entries.filter(
@@ -218,7 +304,6 @@ const Diary = () => {
     }
   };
 
-  // Archive/unarchive entry
   const toggleArchiveEntry = (entryId: string) => {
     const updatedEntries = entries.map((entry) =>
       entry.id === entryId
@@ -227,7 +312,6 @@ const Diary = () => {
     );
     setEntries(updatedEntries);
 
-    // Determine if we're archiving or unarchiving
     const entry = entries.find(e => e.id === entryId);
     if (entry) {
       if (!entry.archived) {
@@ -238,7 +322,6 @@ const Diary = () => {
     }
   };
 
-  // Edit entry
   const handleEditEntry = (entry: DiaryEntry) => {
     setIsAddingEntry(true);
     setEditingEntry(entry);
@@ -248,7 +331,6 @@ const Diary = () => {
     setSelectedDate(new Date(entry.date));
     setSelectedStickers(entry.stickers || []);
     
-    // Check if the entry has a captured image
     const imageMatch = entry.content.match(/\n\n!\[Captured Image\]\((.*)\)/);
     if (imageMatch && imageMatch[1]) {
       setCapturedImage(imageMatch[1]);
@@ -257,7 +339,6 @@ const Diary = () => {
     }
   };
 
-  // Cancel adding/editing entry
   const handleCancelEntry = () => {
     setIsAddingEntry(false);
     setEditingEntry(null);
@@ -270,7 +351,6 @@ const Diary = () => {
     setShowStickers(false);
   };
 
-  // Toggle sticker selection
   const toggleSticker = (sticker: string) => {
     if (selectedStickers.includes(sticker)) {
       setSelectedStickers(selectedStickers.filter(s => s !== sticker));
@@ -279,7 +359,6 @@ const Diary = () => {
     }
   };
 
-  // Handle voice input
   const handleVoiceInput = (text: string) => {
     if (text.trim()) {
       if (newEntryContent) {
@@ -291,24 +370,61 @@ const Diary = () => {
     }
   };
 
-  // Handle camera capture
   const handleImageCapture = (imageDataUrl: string) => {
     setCapturedImage(imageDataUrl);
     setShowCamera(false);
     toast.success("Image captured successfully");
   };
 
-  // Get entries for selected date
   const entriesForSelectedDate = useMemo(() => {
     return sortedEntries.filter((entry) =>
       isSameDay(selectedDate, new Date(entry.date))
     );
   }, [sortedEntries, selectedDate]);
 
+  const renderStickerPicker = () => (
+    <Tabs defaultValue={activeStickerCategory} onValueChange={setActiveStickerCategory}>
+      <TabsList className="grid grid-cols-4 mb-2">
+        {STICKER_CATEGORIES.slice(0, 4).map(category => (
+          <TabsTrigger key={category.id} value={category.id}>
+            {category.name}
+          </TabsTrigger>
+        ))}
+      </TabsList>
+      <TabsList className="grid grid-cols-4 mb-2">
+        {STICKER_CATEGORIES.slice(4).map(category => (
+          <TabsTrigger key={category.id} value={category.id}>
+            {category.name}
+          </TabsTrigger>
+        ))}
+      </TabsList>
+      
+      {STICKER_CATEGORIES.map(category => (
+        <TabsContent key={category.id} value={category.id} className="mt-2">
+          <ScrollArea className="h-[200px]">
+            <div className="grid grid-cols-8 gap-1">
+              {STICKERS[category.id as keyof typeof STICKERS].map((sticker, index) => (
+                <button
+                  key={index}
+                  className={cn(
+                    "text-xl p-1 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 rounded",
+                    selectedStickers.includes(sticker) && "bg-primary/20"
+                  )}
+                  onClick={() => toggleSticker(sticker)}
+                >
+                  {sticker}
+                </button>
+              ))}
+            </div>
+          </ScrollArea>
+        </TabsContent>
+      ))}
+    </Tabs>
+  );
+
   return (
     <div className="container px-4 mx-auto py-6">
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-        {/* Diary entries column */}
         <div className="md:col-span-7 lg:col-span-8 space-y-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -477,6 +593,7 @@ const Diary = () => {
                     size="sm"
                     onClick={() => setShowStickers(!showStickers)}
                   >
+                    <Smile className="h-4 w-4 mr-2" />
                     {showStickers ? 'Hide Stickers' : 'Add Stickers'}
                   </Button>
                   
@@ -497,25 +614,16 @@ const Diary = () => {
                 </div>
 
                 {showStickers && (
-                  <div className="flex flex-wrap gap-3 p-3 bg-muted rounded-md">
-                    {stickerOptions.map(sticker => (
-                      <Button
-                        key={sticker}
-                        variant={selectedStickers.includes(sticker) ? "default" : "outline"}
-                        className="h-9 w-9 p-0 text-lg"
-                        onClick={() => toggleSticker(sticker)}
-                      >
-                        {sticker}
-                      </Button>
-                    ))}
+                  <div className="p-3 bg-muted rounded-md">
+                    {renderStickerPicker()}
                   </div>
                 )}
 
                 {selectedStickers.length > 0 && (
                   <div className="flex flex-wrap gap-2 p-2 bg-background border rounded-md">
                     <span className="text-sm text-muted-foreground mr-1">Selected:</span>
-                    {selectedStickers.map(sticker => (
-                      <span key={sticker} className="text-xl">{sticker}</span>
+                    {selectedStickers.map((sticker, index) => (
+                      <span key={index} className="text-xl">{sticker}</span>
                     ))}
                   </div>
                 )}
@@ -595,23 +703,33 @@ const Diary = () => {
                           </div>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <MoreVertical className="h-4 w-4" />
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-8 w-8"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <MoreVertical className="h-3 w-3" />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={() => handleEditEntry(entry)}>
+                              <DropdownMenuItem onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditEntry(entry);
+                              }}>
                                 <Edit className="h-4 w-4 mr-2" />
                                 Edit
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => toggleArchiveEntry(entry.id)}>
+                              <DropdownMenuItem onClick={(e) => {
+                                e.stopPropagation();
+                                toggleArchiveEntry(entry.id);
+                              }}>
                                 <Archive className="h-4 w-4 mr-2" />
                                 {entry.archived ? "Unarchive" : "Archive"}
                               </DropdownMenuItem>
                               <DropdownMenuItem
-                                onClick={() => {
+                                onClick={(e) => {
+                                  e.stopPropagation();
                                   handleEditEntry(entry);
                                   setShowDeleteConfirm(true);
                                 }}
@@ -641,7 +759,6 @@ const Diary = () => {
           </Card>
         </div>
 
-        {/* Upcoming entries column */}
         <div className="md:col-span-5 lg:col-span-4 space-y-4">
           <Card className="h-full">
             <CardHeader>
@@ -756,7 +873,6 @@ const Diary = () => {
         </div>
       </div>
 
-      {/* Delete Confirmation Dialog */}
       {editingEntry && showDeleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <Card className="max-w-md w-full p-6">
@@ -778,7 +894,6 @@ const Diary = () => {
         </div>
       )}
 
-      {/* Camera Capture Dialog */}
       <CameraCapture
         open={showCamera}
         onOpenChange={setShowCamera}
