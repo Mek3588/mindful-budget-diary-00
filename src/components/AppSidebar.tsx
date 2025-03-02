@@ -15,9 +15,11 @@ import {
   Settings, 
   Target,
   Heart,
-  Menu
+  Menu,
+  HelpCircle
 } from "lucide-react";
 import { useMobile } from "@/hooks/use-mobile";
+import HelpDialog from "@/components/HelpDialog";
 
 export const AppSidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(true);
@@ -25,6 +27,7 @@ export const AppSidebar = () => {
   const navigate = useNavigate();
   const currentPath = location.pathname;
   const isMobile = useMobile();
+  const [showHelp, setShowHelp] = useState(false);
 
   const menuItems = [
     { path: "/", label: "Home", icon: <Home className="h-5 w-5" /> },
@@ -114,7 +117,23 @@ export const AppSidebar = () => {
             ))}
           </ul>
         </div>
+        
+        {/* Help button at the bottom of sidebar */}
+        <div className="border-t border-gray-200 dark:border-gray-700 p-4">
+          <div 
+            onClick={() => setShowHelp(true)}
+            className="flex items-center px-3 py-2 rounded-md transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer"
+          >
+            <span className="flex-shrink-0">
+              <HelpCircle className="h-5 w-5" />
+            </span>
+            <span className="ml-3 text-sm">Help & Info</span>
+          </div>
+        </div>
       </div>
+      
+      {/* Help Dialog with custom state control */}
+      {showHelp && <HelpDialog open={showHelp} onOpenChange={setShowHelp} />}
     </>
   );
 };

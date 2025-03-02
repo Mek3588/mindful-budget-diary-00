@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import HelpDialog from "@/components/HelpDialog";
 import { ModeToggle } from "@/components/ModeToggle";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -18,7 +17,6 @@ import {
   DollarSign,
   Pencil,
   Lock,
-  HelpCircle,
   Target,
   Stethoscope
 } from "lucide-react";
@@ -26,7 +24,6 @@ import {
 const Index = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [showHelpDialog, setShowHelpDialog] = useState(false);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:via-purple-950 dark:to-gray-950">
@@ -36,9 +33,6 @@ const Index = () => {
             My Personal Journal
           </h1>
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => setShowHelpDialog(true)}>
-              <HelpCircle className="h-5 w-5" />
-            </Button>
             <ModeToggle />
           </div>
         </div>
@@ -205,7 +199,6 @@ const Index = () => {
           </Card>
         </div>
       </main>
-      <HelpDialog />
     </div>
   );
 };
