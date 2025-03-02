@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -370,7 +371,7 @@ const CalendarPage = () => {
   }, [eventsForSelectedDate]);
 
   return (
-    <div className="container px-4 mx-auto py-6">
+    <div className="container px-4 mx-auto py-6 pb-20 md:pb-6 min-h-screen">
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
         <div className="md:col-span-7 lg:col-span-8 space-y-4">
           <Card>
@@ -590,8 +591,8 @@ const CalendarPage = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ScrollArea className="h-[calc(100vh-15rem)]">
-                <div className="space-y-4">
+              <ScrollArea className={isMobile ? "h-[50vh]" : "h-[calc(100vh-15rem)]"}>
+                <div className="space-y-4 pb-4">
                   {filteredEvents
                     .filter((event) => {
                       const eventDate = new Date(event.date);
