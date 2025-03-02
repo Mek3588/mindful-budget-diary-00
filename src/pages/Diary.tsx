@@ -23,6 +23,10 @@ import {
   Smile,
   SunMedium,
   Moon,
+  Clock,
+  Image,
+  Filter,
+  Mic,
 } from "lucide-react";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -40,6 +44,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import VoiceToText from "@/components/VoiceToText";
+import CameraCapture from "@/components/CameraCapture";
 
 // Define types
 interface DiaryEntry {
@@ -49,9 +55,11 @@ interface DiaryEntry {
   date: string; // ISO date string
   mood: Mood;
   archived?: boolean; // New archived property
+  stickers?: string[]; // Array of sticker URLs or emoji
 }
 
 type ArchiveFilter = "active" | "archived" | "all";
+type SortOption = "newest" | "oldest" | "title" | "mood";
 
 type Mood = "happy" | "neutral" | "sad";
 
@@ -61,17 +69,25 @@ const moodItems = [
   { value: "sad", label: "Sad", icon: "😔", iconComponent: <Moon className="h-4 w-4" /> },
 ];
 
+// Sticker options
+const stickerOptions = ["💖", "⭐", "🌈", "🎉", "🎂", "🎁", "🌺", "🦋", "✨", "🏆"];
+
 const Diary = () => {
   const isMobile = useMobile();
   const [entries, setEntries] = useState<DiaryEntry[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [archiveFilter, setArchiveFilter] = useState<ArchiveFilter>("active");
+  const [sortOption, setSortOption] = useState<SortOption>("newest");
   const [isAddingEntry, setIsAddingEntry] = useState(false);
   const [newEntryTitle, setNewEntryTitle] = useState("");
   const [newEntryContent, setNewEntryContent] = useState("");
   const [newEntryMood, setNewEntryMood] = useState<Mood>("neutral");
+  const [selectedStickers, setSelectedStickers] = useState<string[]>([]);
   const [editingEntry, setEditingEntry] = useState<DiaryEntry | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showStickers, setShowStickers] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
+  const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [openCalendar, setOpenCalendar] = useState(false);
 
   // Load entries from localStorage on component mount
@@ -96,6 +112,26 @@ const Diary = () => {
     });
   }, [entries, archiveFilter]);
 
+  // Sort entries based on sort option
+  const sortedEntries = useMemo(() => {
+    return [...filteredEntries].sort((a, b) => {
+      switch (sortOption) {
+        case "newest":
+          return new Date(b.date).getTime() - new Date(a.date).getTime();
+        case "oldest":
+          return new Date(a.date).getTime() - new Date(b.date).getTime();
+        case "title":
+          return a.title.localeCompare(b.title);
+        case "mood":
+          // Sort by mood: happy, neutral, sad
+          const moodOrder: Record<Mood, number> = { happy: 0, neutral: 1, sad: 2 };
+          return moodOrder[a.mood] - moodOrder[b.mood];
+        default:
+          return new Date(b.date).getTime() - new Date(a.date).getTime();
+      }
+    });
+  }, [filteredEntries, sortOption]);
+
   // Add new entry
   const handleAddEntry = () => {
     setIsAddingEntry(true);
@@ -103,6 +139,8 @@ const Diary = () => {
     setNewEntryTitle("");
     setNewEntryContent("");
     setNewEntryMood("neutral");
+    setSelectedStickers([]);
+    setCapturedImage(null);
   };
 
   // Save entry
@@ -115,6 +153,12 @@ const Diary = () => {
     // Format date for storage
     const entryDate = format(selectedDate, "yyyy-MM-dd");
 
+    // Add image to content if there is one
+    let finalContent = newEntryContent;
+    if (capturedImage) {
+      finalContent = `${finalContent}\n\n![Captured Image](${capturedImage})`;
+    }
+
     if (editingEntry) {
       // Update existing entry
       const updatedEntries = entries.map((entry) =>
@@ -122,9 +166,10 @@ const Diary = () => {
           ? {
               ...entry,
               title: newEntryTitle,
-              content: newEntryContent,
+              content: finalContent,
               date: entryDate,
               mood: newEntryMood,
+              stickers: selectedStickers,
             }
           : entry
       );
@@ -135,10 +180,11 @@ const Diary = () => {
       const newEntry: DiaryEntry = {
         id: Date.now().toString(),
         title: newEntryTitle,
-        content: newEntryContent,
+        content: finalContent,
         date: entryDate,
         mood: newEntryMood,
         archived: false,
+        stickers: selectedStickers,
       };
       setEntries([...entries, newEntry]);
       toast.success("Entry created successfully");
@@ -149,6 +195,9 @@ const Diary = () => {
     setNewEntryTitle("");
     setNewEntryContent("");
     setNewEntryMood("neutral");
+    setSelectedStickers([]);
+    setCapturedImage(null);
+    setShowStickers(false);
   };
 
   // Delete entry
@@ -164,6 +213,8 @@ const Diary = () => {
       setNewEntryTitle("");
       setNewEntryContent("");
       setNewEntryMood("neutral");
+      setSelectedStickers([]);
+      setShowDeleteConfirm(false);
     }
   };
 
@@ -192,9 +243,18 @@ const Diary = () => {
     setIsAddingEntry(true);
     setEditingEntry(entry);
     setNewEntryTitle(entry.title);
-    setNewEntryContent(entry.content);
+    setNewEntryContent(entry.content.replace(/\n\n!\[Captured Image\]\(.*\)/, '')); // Remove image from content for editing
     setNewEntryMood(entry.mood);
     setSelectedDate(new Date(entry.date));
+    setSelectedStickers(entry.stickers || []);
+    
+    // Check if the entry has a captured image
+    const imageMatch = entry.content.match(/\n\n!\[Captured Image\]\((.*)\)/);
+    if (imageMatch && imageMatch[1]) {
+      setCapturedImage(imageMatch[1]);
+    } else {
+      setCapturedImage(null);
+    }
   };
 
   // Cancel adding/editing entry
@@ -204,15 +264,46 @@ const Diary = () => {
     setNewEntryTitle("");
     setNewEntryContent("");
     setNewEntryMood("neutral");
+    setSelectedStickers([]);
+    setCapturedImage(null);
     setShowDeleteConfirm(false);
+    setShowStickers(false);
+  };
+
+  // Toggle sticker selection
+  const toggleSticker = (sticker: string) => {
+    if (selectedStickers.includes(sticker)) {
+      setSelectedStickers(selectedStickers.filter(s => s !== sticker));
+    } else {
+      setSelectedStickers([...selectedStickers, sticker]);
+    }
+  };
+
+  // Handle voice input
+  const handleVoiceInput = (text: string) => {
+    if (text.trim()) {
+      if (newEntryContent) {
+        setNewEntryContent(currentContent => `${currentContent} ${text}`);
+      } else {
+        setNewEntryContent(text);
+      }
+      toast.success("Voice input added");
+    }
+  };
+
+  // Handle camera capture
+  const handleImageCapture = (imageDataUrl: string) => {
+    setCapturedImage(imageDataUrl);
+    setShowCamera(false);
+    toast.success("Image captured successfully");
   };
 
   // Get entries for selected date
   const entriesForSelectedDate = useMemo(() => {
-    return filteredEntries.filter((entry) =>
+    return sortedEntries.filter((entry) =>
       isSameDay(selectedDate, new Date(entry.date))
     );
-  }, [filteredEntries, selectedDate]);
+  }, [sortedEntries, selectedDate]);
 
   return (
     <div className="container px-4 mx-auto py-6">
@@ -234,7 +325,7 @@ const Diary = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+              <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
                 <div className="flex flex-wrap gap-2 items-center">
                   <span className="text-sm font-medium mr-2">View:</span>
                   <Button
@@ -262,6 +353,39 @@ const Diary = () => {
                     All
                   </Button>
                 </div>
+                
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">Sort:</span>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" className="h-8">
+                        <Filter className="h-3 w-3 mr-2" />
+                        {sortOption === "newest" && "Newest"}
+                        {sortOption === "oldest" && "Oldest"}
+                        {sortOption === "title" && "Title"}
+                        {sortOption === "mood" && "Mood"}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setSortOption("newest")}>
+                        <Clock className="h-4 w-4 mr-2" />
+                        Newest First
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setSortOption("oldest")}>
+                        <Clock className="h-4 w-4 mr-2" />
+                        Oldest First
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setSortOption("title")}>
+                        <Edit className="h-4 w-4 mr-2" />
+                        Title
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setSortOption("mood")}>
+                        <Smile className="h-4 w-4 mr-2" />
+                        Mood
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -276,44 +400,33 @@ const Diary = () => {
                     onChange={(e) => setNewEntryTitle(e.target.value)}
                     className="flex-1 w-full"
                   />
-                  <Button
-                    onClick={() => {
-                      // Open the calendar popover
-                      setOpenCalendar(true);
-                    }}
-                    variant="outline"
-                    className="w-full md:w-auto flex items-center gap-2"
-                  >
-                    <CalendarIcon className="h-4 w-4" />
-                    {format(selectedDate, "PPP")}
-                  </Button>
+                  <Popover open={openCalendar} onOpenChange={setOpenCalendar}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        onClick={() => setOpenCalendar(true)}
+                        variant="outline"
+                        className="w-full md:w-auto flex items-center gap-2"
+                      >
+                        <CalendarIcon className="h-4 w-4" />
+                        {format(selectedDate, "PPP")}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={selectedDate}
+                        onSelect={(date) => {
+                          if (date) {
+                            setSelectedDate(date);
+                            setOpenCalendar(false);
+                          }
+                        }}
+                        disabled={(date) => date > new Date()}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
-                
-                <Popover open={openCalendar} onOpenChange={setOpenCalendar}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-[300px] justify-start text-left font-normal",
-                        !selectedDate && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start" side="bottom">
-                    <Calendar
-                      mode="single"
-                      selected={selectedDate}
-                      onSelect={(date) => date && setSelectedDate(date)}
-                      disabled={(date) =>
-                        date > new Date()
-                      }
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
 
                 <RadioGroup
                   defaultValue={newEntryMood}
@@ -336,6 +449,76 @@ const Diary = () => {
                   onChange={(e) => setNewEntryContent(e.target.value)}
                   className="w-full"
                 />
+
+                {capturedImage && (
+                  <div className="mt-2">
+                    <div className="relative">
+                      <img 
+                        src={capturedImage} 
+                        alt="Captured" 
+                        className="max-h-64 rounded-md object-contain mx-auto border border-muted" 
+                      />
+                      <Button 
+                        variant="destructive" 
+                        size="icon" 
+                        className="absolute top-2 right-2 h-6 w-6 rounded-full"
+                        onClick={() => setCapturedImage(null)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex flex-wrap gap-2">
+                  <Button 
+                    variant="outline" 
+                    type="button" 
+                    size="sm"
+                    onClick={() => setShowStickers(!showStickers)}
+                  >
+                    {showStickers ? 'Hide Stickers' : 'Add Stickers'}
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    type="button" 
+                    size="sm"
+                    onClick={() => setShowCamera(true)}
+                  >
+                    <Image className="h-4 w-4 mr-2" />
+                    Add Image
+                  </Button>
+                  
+                  <VoiceToText 
+                    onTranscript={handleVoiceInput}
+                    placeholder="Speak now..."
+                  />
+                </div>
+
+                {showStickers && (
+                  <div className="flex flex-wrap gap-3 p-3 bg-muted rounded-md">
+                    {stickerOptions.map(sticker => (
+                      <Button
+                        key={sticker}
+                        variant={selectedStickers.includes(sticker) ? "default" : "outline"}
+                        className="h-9 w-9 p-0 text-lg"
+                        onClick={() => toggleSticker(sticker)}
+                      >
+                        {sticker}
+                      </Button>
+                    ))}
+                  </div>
+                )}
+
+                {selectedStickers.length > 0 && (
+                  <div className="flex flex-wrap gap-2 p-2 bg-background border rounded-md">
+                    <span className="text-sm text-muted-foreground mr-1">Selected:</span>
+                    {selectedStickers.map(sticker => (
+                      <span key={sticker} className="text-xl">{sticker}</span>
+                    ))}
+                  </div>
+                )}
 
                 <div className="flex justify-end space-x-2">
                   <Button variant="outline" onClick={handleCancelEntry}>
@@ -390,6 +573,13 @@ const Diary = () => {
                                   Archived
                                 </Badge>
                               )}
+                              {entry.stickers && entry.stickers.length > 0 && (
+                                <div className="flex gap-1">
+                                  {entry.stickers.map((sticker, idx) => (
+                                    <span key={idx} className="text-lg">{sticker}</span>
+                                  ))}
+                                </div>
+                              )}
                             </div>
                             <CardTitle className="text-base flex items-center gap-2">
                               {entry.title}
@@ -436,9 +626,11 @@ const Diary = () => {
                       </CardHeader>
                       {entry.content && (
                         <CardContent className="pb-4 pt-0 px-4">
-                          <p className="text-sm">
-                            {entry.content}
-                          </p>
+                          <div dangerouslySetInnerHTML={{ 
+                            __html: entry.content
+                              .replace(/!\[Captured Image\]\((.*?)\)/g, '<img src="$1" alt="Entry Image" class="max-h-64 w-auto rounded-md object-contain mt-2" />')
+                              .split('\n').join('<br/>') 
+                          }} />
                         </CardContent>
                       )}
                     </Card>
@@ -455,78 +647,96 @@ const Diary = () => {
             <CardHeader>
               <CardTitle>All Entries</CardTitle>
               <CardDescription>
-                All diary entries
+                {archiveFilter === "active" && "Active entries"}
+                {archiveFilter === "archived" && "Archived entries"}
+                {archiveFilter === "all" && "All diary entries"}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <ScrollArea className="h-[calc(100vh-15rem)]">
                 <div className="space-y-4">
-                  {filteredEntries
-                    .sort((a, b) => {
-                      // Sort by date
-                      const dateCompare = new Date(b.date).getTime() - new Date(a.date).getTime();
-                      if (dateCompare !== 0) return dateCompare;
-                      return 0;
-                    })
-                    .map((entry) => (
-                      <Card key={entry.id} className={`shadow-sm ${entry.archived ? "opacity-70" : ""}`}>
-                        <CardHeader className="p-3">
-                          <div className="flex justify-between items-start">
-                            <div className="space-y-1">
-                              <div className="flex items-center space-x-2 flex-wrap gap-2">
-                                {entry.archived && (
-                                  <Badge variant="outline" className="text-gray-500 border-gray-400">
-                                    <Archive className="h-3 w-3 mr-1" />
-                                    Archived
-                                  </Badge>
-                                )}
-                              </div>
-                              <CardTitle className="text-sm flex items-center gap-2">
-                                {entry.title}
-                                <span className="text-xs">
-                                  {entry.mood === "happy" && "😊"}
-                                  {entry.mood === "neutral" && "😐"}
-                                  {entry.mood === "sad" && "😔"}
-                                </span>
-                              </CardTitle>
-                              <div className="flex items-center text-xs text-muted-foreground">
-                                <CalendarIcon className="h-3 w-3 mr-1" />
-                                {format(new Date(entry.date), "MMM d, yyyy")}
-                              </div>
+                  {sortedEntries.map((entry) => (
+                    <Card 
+                      key={entry.id} 
+                      className={`shadow-sm ${entry.archived ? "opacity-70" : ""} cursor-pointer hover:shadow-md transition-shadow`}
+                      onClick={() => setSelectedDate(new Date(entry.date))}
+                    >
+                      <CardHeader className="p-3">
+                        <div className="flex justify-between items-start">
+                          <div className="space-y-1">
+                            <div className="flex items-center space-x-2 flex-wrap gap-2">
+                              {entry.archived && (
+                                <Badge variant="outline" className="text-gray-500 border-gray-400">
+                                  <Archive className="h-3 w-3 mr-1" />
+                                  Archived
+                                </Badge>
+                              )}
+                              {entry.stickers && entry.stickers.length > 0 && (
+                                <div className="flex gap-1">
+                                  {entry.stickers.map((sticker, idx) => (
+                                    <span key={idx} className="text-base">{sticker}</span>
+                                  ))}
+                                </div>
+                              )}
                             </div>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-7 w-7">
-                                  <MoreVertical className="h-3 w-3" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => handleEditEntry(entry)}>
-                                  <Edit className="h-4 w-4 mr-2" />
-                                  Edit
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => toggleArchiveEntry(entry.id)}>
-                                  <Archive className="h-4 w-4 mr-2" />
-                                  {entry.archived ? "Unarchive" : "Archive"}
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => {
-                                    handleEditEntry(entry);
-                                    setShowDeleteConfirm(true);
-                                  }}
-                                  className="text-red-600"
-                                >
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                            <CardTitle className="text-sm flex items-center gap-2">
+                              {entry.title}
+                              <span className="text-xs">
+                                {entry.mood === "happy" && "😊"}
+                                {entry.mood === "neutral" && "😐"}
+                                {entry.mood === "sad" && "😔"}
+                              </span>
+                            </CardTitle>
+                            <div className="flex items-center text-xs text-muted-foreground">
+                              <CalendarIcon className="h-3 w-3 mr-1" />
+                              {format(new Date(entry.date), "MMM d, yyyy")}
+                            </div>
                           </div>
-                        </CardHeader>
-                      </Card>
-                    ))}
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-7 w-7"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <MoreVertical className="h-3 w-3" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditEntry(entry);
+                              }}>
+                                <Edit className="h-4 w-4 mr-2" />
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={(e) => {
+                                e.stopPropagation();
+                                toggleArchiveEntry(entry.id);
+                              }}>
+                                <Archive className="h-4 w-4 mr-2" />
+                                {entry.archived ? "Unarchive" : "Archive"}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEditEntry(entry);
+                                  setShowDeleteConfirm(true);
+                                }}
+                                className="text-red-600"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </CardHeader>
+                    </Card>
+                  ))}
 
-                  {filteredEntries.length === 0 && (
+                  {sortedEntries.length === 0 && (
                     <div className="py-8 text-center">
                       <p className="text-muted-foreground">No entries</p>
                       <Button
@@ -567,6 +777,13 @@ const Diary = () => {
           </Card>
         </div>
       )}
+
+      {/* Camera Capture Dialog */}
+      <CameraCapture
+        open={showCamera}
+        onOpenChange={setShowCamera}
+        onCapture={handleImageCapture}
+      />
     </div>
   );
 };
