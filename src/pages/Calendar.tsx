@@ -30,7 +30,6 @@ import {
 import { format, addMonths, subMonths, isSameDay, startOfMonth, isWithinInterval, endOfMonth, parseISO } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { DateRange } from "react-day-picker";
 import {
   Popover,
   PopoverContent,
@@ -59,6 +58,8 @@ interface Sticker {
   emoji: string;
   date: Date;
   position: { x: number; y: number };
+  memo?: string; // Added memo field for stickers
+  mood?: 'happy' | 'neutral' | 'sad'; // Added mood tracking
 }
 
 const CategoryColors: Record<EventCategory, string> = {
@@ -70,6 +71,12 @@ const CategoryColors: Record<EventCategory, string> = {
   diary: "bg-pink-500",
   goal: "bg-orange-500",
   medical: "bg-red-500"
+};
+
+const MoodEmojis = {
+  happy: "😊",
+  neutral: "😐",
+  sad: "😔"
 };
 
 const Calendar = () => {
@@ -92,6 +99,8 @@ const Calendar = () => {
   const [showStickerDialog, setShowStickerDialog] = useState(false);
   const [stickerEmoji, setStickerEmoji] = useState("😊");
   const [stickerDate, setStickerDate] = useState<Date>(new Date());
+  const [stickerMemo, setStickerMemo] = useState(""); // New state for sticker memo
+  const [stickerMood, setStickerMood] = useState<'happy' | 'neutral' | 'sad'>('happy'); // New state for mood
   
   const [selectedCategory, setSelectedCategory] = useState<EventCategory | "all">("all");
   const [showCategoriesPopover, setShowCategoriesPopover] = useState(false);
@@ -99,32 +108,9 @@ const Calendar = () => {
   const commonEmojis = ["😊", "😂", "❤️", "👍", "🎉", "🎂", "🏆", "⭐", "🔥", "💯", "🙏", "✅", "💪"];
 
   const [isEditMode, setIsEditMode] = useState(false);
-  
-  // Fix the DateRange type issue by making 'to' optional in our state
-  const [dateRange, setDateRange] = useState<{
-    from: Date;
-    to?: Date;
-  }>({
-    from: startOfMonth(currentMonth),
-    to: endOfMonth(currentMonth)
-  });
+  const [showStickerListDialog, setShowStickerListDialog] = useState(false); // New state for sticker list dialog
 
-  // Function to handle DateRange changes safely
-  const handleDateRangeChange = (range: DateRange | undefined) => {
-    if (!range) {
-      // If range is undefined, reset to current month
-      setDateRange({
-        from: startOfMonth(currentMonth),
-        to: endOfMonth(currentMonth)
-      });
-    } else if (range.from) {
-      // If range.from exists, update the state
-      setDateRange({
-        from: range.from,
-        to: range.to
-      });
-    }
-  };
+  // Removed dateRange state and related functionality
 
   useEffect(() => {
     const loadEvents = () => {
@@ -203,14 +189,6 @@ const Calendar = () => {
     }
   }, []);
 
-  // Update dateRange when currentMonth changes
-  useEffect(() => {
-    setDateRange({
-      from: startOfMonth(currentMonth),
-      to: endOfMonth(currentMonth)
-    });
-  }, [currentMonth]);
-
   const nextMonth = () => {
     setCurrentMonth(addMonths(currentMonth, 1));
   };
@@ -222,30 +200,38 @@ const Calendar = () => {
   const goToToday = () => {
     const today = new Date();
     setCurrentMonth(today);
-    // Also update dateRange to show current month
-    setDateRange({
-      from: startOfMonth(today),
-      to: endOfMonth(today)
-    });
   };
 
   const getEventsForDate = (date: Date) => {
     return events.filter(event => isSameDay(new Date(event.date), date));
   };
 
+  const getStickersForDate = (date: Date) => {
+    return stickers.filter(sticker => isSameDay(new Date(sticker.date), date));
+  };
+
   const hasEventsOnDate = (date: Date) => {
     return getEventsForDate(date).length > 0;
   };
 
+  const hasStickersOnDate = (date: Date) => {
+    return getStickersForDate(date).length > 0;
+  };
+
   const modifiers = {
-    has_event: (date: Date) => hasEventsOnDate(date)
+    has_event: (date: Date) => hasEventsOnDate(date) || hasStickersOnDate(date)
   };
 
   const handleDayClick = (date: Date) => {
     const eventsOnDate = getEventsForDate(date);
+    const stickersOnDate = getStickersForDate(date);
+    
     if (eventsOnDate.length > 0) {
       setSelectedEvent(eventsOnDate[0]);
       setShowEventDetailsDialog(true);
+    } else if (stickersOnDate.length > 0) {
+      // Show sticker details when clicking on a date with stickers
+      displayStickersForDate(date);
     } else {
       setNewEvent({
         ...newEvent,
@@ -253,6 +239,11 @@ const Calendar = () => {
       });
       setShowAddEventDialog(true);
     }
+  };
+
+  const displayStickersForDate = (date: Date) => {
+    setStickerDate(date);
+    setShowStickerListDialog(true);
   };
 
   const handleAddEvent = () => {
@@ -321,6 +312,8 @@ const Calendar = () => {
 
   const handleAddSticker = (date: Date) => {
     setStickerDate(date);
+    setStickerMemo(""); // Reset memo
+    setStickerMood('happy'); // Reset mood
     setShowStickerDialog(true);
   };
 
@@ -328,6 +321,8 @@ const Calendar = () => {
     const event = events.find(event => event.id === eventId);
     if (event) {
       setStickerDate(new Date(event.date));
+      setStickerMemo(""); // Reset memo
+      setStickerMood('happy'); // Reset mood
       setShowStickerDialog(true);
       setSelectedEvent(event);
     }
@@ -348,12 +343,14 @@ const Calendar = () => {
       toast.success(`Sticker added to "${selectedEvent.title}"`);
       setSelectedEvent(null);
     } else {
-      // Add standalone sticker
+      // Add standalone sticker with memo and mood
       const sticker: Sticker = {
         id: Date.now().toString(),
         emoji: stickerEmoji,
         date: stickerDate,
-        position: { x: 50, y: 50 }
+        position: { x: 50, y: 50 },
+        memo: stickerMemo,
+        mood: stickerMood
       };
       
       setStickers([...stickers, sticker]);
@@ -363,42 +360,21 @@ const Calendar = () => {
     
     setShowStickerDialog(false);
     setStickerEmoji("😊");
+    setStickerMemo("");
+    setStickerMood('happy');
   };
 
-  // Reset date range to current month
-  const handleResetDateRange = () => {
-    const newFrom = startOfMonth(currentMonth);
-    const newTo = endOfMonth(currentMonth);
-    
-    setDateRange({
-      from: newFrom,
-      to: newTo
-    });
-    
-    toast.success(`Date range reset to ${format(newFrom, "MMMM yyyy")}`);
+  const handleDeleteSticker = (stickerId: string) => {
+    const updatedStickers = stickers.filter(sticker => sticker.id !== stickerId);
+    setStickers(updatedStickers);
+    localStorage.setItem('calendar-stickers', JSON.stringify(updatedStickers));
+    toast.success("Sticker deleted successfully!");
   };
 
-  // Filter events based on selected category and date range
+  // Filter events based on selected category
   const filteredEvents = events.filter(event => {
     // Category filter
-    const categoryMatches = selectedCategory === "all" || event.category === selectedCategory;
-    
-    // Date range filter
-    let dateMatches = true;
-    if (dateRange.from) {
-      const eventDate = new Date(event.date);
-      if (dateRange.to) {
-        dateMatches = isWithinInterval(eventDate, {
-          start: dateRange.from,
-          end: dateRange.to
-        });
-      } else {
-        // If only 'from' is set, just check if date is after 'from'
-        dateMatches = eventDate >= dateRange.from;
-      }
-    }
-    
-    return categoryMatches && dateMatches;
+    return selectedCategory === "all" || event.category === selectedCategory;
   });
 
   return (
@@ -446,29 +422,14 @@ const Calendar = () => {
                     </Button>
                   </div>
                 </div>
-                
-                <div className="flex items-center gap-2">
-                  <span className="text-sm hidden sm:inline-block">
-                    {dateRange.from ? format(dateRange.from, "MMM d") : ""} 
-                    {dateRange.to ? ` - ${format(dateRange.to, "MMM d")}` : ""}
-                  </span>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={handleResetDateRange}
-                  >
-                    Reset Range
-                  </Button>
-                </div>
               </div>
               
               <div className="w-full overflow-hidden calendar-container">
                 <CalendarComponent
-                  mode="range"
-                  selected={dateRange}
-                  onSelect={handleDateRangeChange}
+                  mode="single"
+                  selected={new Date()}
+                  onSelect={(date) => date && handleDayClick(date)}
                   month={currentMonth}
-                  onDayClick={handleDayClick}
                   className="rounded-md border w-full max-w-full"
                   modifiers={modifiers}
                 />
@@ -606,7 +567,7 @@ const Calendar = () => {
                   <ChevronRight className="h-4 w-4 transform transition-transform ui-open:rotate-90" />
                 </CollapsibleTrigger>
                 <CollapsibleContent className="mt-4">
-                  <div className="grid grid-cols-4 gap-2">
+                  <div className="grid grid-cols-4 gap-2 mb-4">
                     {commonEmojis.map((emoji) => (
                       <Button key={emoji} variant="outline" onClick={() => {
                         setStickerEmoji(emoji);
@@ -616,6 +577,14 @@ const Calendar = () => {
                       </Button>
                     ))}
                   </div>
+                  
+                  <Button 
+                    className="w-full mt-2" 
+                    variant="outline"
+                    onClick={() => setShowStickerListDialog(true)}
+                  >
+                    View All Stickers
+                  </Button>
                 </CollapsibleContent>
               </Collapsible>
             </Card>
@@ -773,7 +742,7 @@ const Calendar = () => {
         <DialogContent className="sm:max-w-[425px] bg-gray-900 text-white border border-gray-700 overflow-y-auto max-h-[90vh]">
           <DialogHeader>
             <DialogTitle className="text-white">Add Sticker</DialogTitle>
-            <DialogDescription className="text-gray-300">Choose an emoji to use as a sticker</DialogDescription>
+            <DialogDescription className="text-gray-300">Choose an emoji to use as a sticker and add a memo</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
@@ -800,6 +769,37 @@ const Calendar = () => {
                 className="col-span-3 bg-gray-800 border-gray-700 text-white"
               />
             </div>
+            {/* New field for sticker memo */}
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label htmlFor="memo" className="text-right text-white">
+                Memo
+              </label>
+              <Textarea
+                id="memo"
+                value={stickerMemo}
+                onChange={(e) => setStickerMemo(e.target.value)}
+                placeholder="What's special about this day?"
+                className="col-span-3 bg-gray-800 border-gray-700 text-white"
+              />
+            </div>
+            {/* New field for mood selection */}
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label htmlFor="mood" className="text-right text-white">
+                Mood
+              </label>
+              <div className="col-span-3 flex space-x-4">
+                {(['happy', 'neutral', 'sad'] as const).map((mood) => (
+                  <Button 
+                    key={mood} 
+                    variant={stickerMood === mood ? "default" : "outline"} 
+                    onClick={() => setStickerMood(mood)}
+                    className="text-xl"
+                  >
+                    {MoodEmojis[mood]}
+                  </Button>
+                ))}
+              </div>
+            </div>
             <div className="grid grid-cols-1">
               <div className="flex flex-wrap gap-2 justify-center">
                 {commonEmojis.map((emoji) => (
@@ -820,6 +820,61 @@ const Calendar = () => {
               {selectedEvent ? "Add Sticker to Event" : "Add Sticker to Calendar"}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* New Dialog for Sticker List */}
+      <Dialog open={showStickerListDialog} onOpenChange={setShowStickerListDialog}>
+        <DialogContent className="sm:max-w-[500px] bg-gray-900 text-white border border-gray-700 overflow-y-auto max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle className="text-white">Your Stickers</DialogTitle>
+            <DialogDescription className="text-gray-300">View and manage all your calendar stickers</DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            {stickers.length > 0 ? (
+              <div className="space-y-4 max-h-[400px] overflow-y-auto pr-1">
+                {stickers.map((sticker) => (
+                  <div key={sticker.id} className="border border-gray-700 rounded-md p-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="text-2xl">{sticker.emoji}</div>
+                        <div className="text-sm">{format(new Date(sticker.date), "MMM d, yyyy")}</div>
+                        {sticker.mood && <div className="text-xl">{MoodEmojis[sticker.mood]}</div>}
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => handleDeleteSticker(sticker.id)}
+                      >
+                        <Trash className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    {sticker.memo && (
+                      <div className="mt-2 text-sm text-gray-300 border-t border-gray-700 pt-2">
+                        {sticker.memo}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-center text-gray-400">No stickers added yet.</p>
+            )}
+            
+            <div className="mt-4">
+              <Button 
+                className="w-full" 
+                onClick={() => {
+                  setShowStickerListDialog(false);
+                  handleAddSticker(new Date());
+                }}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add New Sticker
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
