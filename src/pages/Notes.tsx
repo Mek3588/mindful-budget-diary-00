@@ -1,15 +1,18 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, FileText, Plus, Save, X, Edit, Check, Mic, Camera, Image } from "lucide-react";
+import { ArrowLeft, FileText, Plus, Save, X, Edit, Check, Mic, Camera, Image, Smile } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import VoiceToText from "@/components/VoiceToText";
 import CameraCapture from "@/components/CameraCapture";
+import { PopoverContent, Popover, PopoverTrigger } from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Note {
   id: string;
@@ -18,19 +21,84 @@ interface Note {
   date: Date;
   updatedAt?: Date;
   images?: string[];
+  sticker?: string;
 }
+
+// Sticker categories and emojis
+const STICKER_CATEGORIES = [
+  { id: "faces", name: "Faces" },
+  { id: "animals", name: "Animals" },
+  { id: "food", name: "Food" },
+  { id: "activities", name: "Activities" },
+  { id: "travel", name: "Travel" },
+  { id: "objects", name: "Objects" },
+  { id: "symbols", name: "Symbols" },
+  { id: "flags", name: "Flags" },
+];
+
+const STICKERS = {
+  faces: [
+    "😀", "😃", "😄", "😁", "😆", "😅", "🤣", "😂", "🙂", "🙃", "😉", "😊", "😇", "🥰", "😍", "🤩", "😘", "😗", "😚", "😙",
+    "😋", "😛", "😜", "🤪", "😝", "🤑", "🤗", "🤭", "🤫", "🤔", "🤐", "🤨", "😐", "😑", "😶", "😏", "😒", "🙄", "😬", "🤥",
+    "😌", "😔", "😪", "🤤", "😴", "😷", "🤒", "🤕", "🤢", "🤮", "🤧", "🥵", "🥶", "🥴", "😵", "🤯", "🤠", "🥳", "😎", "🤓",
+    "🧐", "😕", "😟", "🙁", "☹️", "😮", "😯", "😲", "😳", "🥺", "😦", "😧", "😨", "😰", "😥", "😢", "😭", "😱", "😖", "😣",
+  ],
+  animals: [
+    "🐶", "🐱", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼", "🐨", "🐯", "🦁", "🐮", "🐷", "🐽", "🐸", "🐵", "🙈", "🙉", "🙊", "🐒",
+    "🐔", "🐧", "🐦", "🐤", "🐣", "🐥", "🦆", "🦢", "🦉", "🦚", "🦜", "🐺", "🐗", "🐴", "🦄", "🐝", "🐛", "🦋", "🐌", "🐞",
+    "🦗", "🦟", "🦂", "🐢", "🐍", "🦎", "🦖", "🦕", "🐙", "🦑", "🦐", "🦞", "🦀", "🐡", "🐠", "🐟", "🐬", "🐳", "🐋", "🦈",
+    "🐊", "🐅", "🐆", "🦓", "🦍", "🦧", "🐘", "🦛", "🦏", "🐪", "🐫", "🦒", "🦘", "🐃", "🐂", "🐄", "🐎", "🐖", "🐏", "🐑",
+  ],
+  food: [
+    "🍏", "🍎", "🍐", "🍊", "🍋", "🍌", "🍉", "🍇", "🍓", "🍈", "🍒", "🍑", "🥭", "🍍", "🥥", "🥝", "🍅", "🍆", "🥑", "🥦",
+    "🥬", "🥒", "🌶️", "🌽", "🥕", "🧄", "🧅", "🥔", "🍠", "🥐", "🥯", "🍞", "🥖", "🥨", "🧀", "🥚", "🍳", "🧈", "🥞", "🧇",
+    "🥓", "🥩", "🍗", "🍖", "🦴", "🌭", "🍔", "🍟", "🍕", "🥪", "🥙", "🧆", "🌮", "🌯", "🥗", "🥘", "🥫", "🍝", "🍜", "🍲",
+    "🍛", "🍣", "🍱", "🥟", "🦪", "🍤", "🍙", "🍚", "🍘", "🍥", "🥠", "🥮", "🍢", "🍡", "🍧", "🍨", "🍦", "🥧", "🧁", "🍰",
+  ],
+  activities: [
+    "⚽", "🏀", "🏈", "⚾", "🥎", "🎾", "🏐", "🏉", "🥏", "🎱", "🪀", "🏓", "🏸", "🏒", "🏑", "🥍", "🏏", "🥅", "⛳", "🪁",
+    "🏹", "🎣", "🤿", "🥊", "🥋", "🎽", "🛹", "🛼", "🛷", "⛸️", "🥌", "🎿", "⛷️", "🏂", "🪂", "🏋️", "🤼", "🤸", "🤽", "🧗",
+    "🤺", "🏄", "🚣", "🧘", "🚴", "🚵", "🎬", "🎭", "🎨", "🎪", "🎤", "🎧", "🎼", "🎹", "🥁", "🎷", "🎺", "🎸", "🎮", "🎲",
+    "🧩", "🎯", "🎳", "🪄", "🎭", "🎪", "🎨", "🧵", "🧶", "🎻", "🥇", "🥈", "🥉", "🏅", "🎖️", "🏆", "📱", "📲", "💻", "🖥️",
+  ],
+  travel: [
+    "🚗", "🚕", "🚙", "🚌", "🚎", "🏎️", "🚓", "🚑", "🚒", "🚐", "🚚", "🚛", "🚜", "🦯", "🦽", "🦼", "🛴", "🚲", "🛵", "🏍️",
+    "🛺", "🚔", "🚍", "🚘", "🚖", "🚡", "🚠", "🚟", "🚃", "🚋", "🚞", "🚝", "🚄", "🚅", "🚈", "🚂", "🚆", "🚇", "🚊", "🚉",
+    "✈️", "🛫", "🛬", "🛩️", "💺", "🛰️", "🚀", "🛸", "🚁", "🛶", "⛵", "🚤", "🛥️", "🛳️", "⛴️", "🚢", "⚓", "🚧", "⛽", "🚏",
+    "🚦", "🚥", "🗺️", "🗿", "🗽", "🗼", "🏰", "🏯", "🏟️", "🎡", "🎢", "🎠", "⛲", "⛱️", "🏖️", "🏝️", "🏜️", "🌋", "⛰️", "🏔️",
+  ],
+  objects: [
+    "⌚", "📱", "📲", "💻", "⌨️", "🖥️", "🖨️", "🖱️", "🖲️", "🕹️", "🗜️", "💽", "💾", "💿", "📀", "📼", "📷", "📸", "📹", "🎥",
+    "📽️", "🎞️", "📞", "☎️", "📟", "📠", "📺", "📻", "🎙️", "🎚️", "🎛️", "🧭", "⏱️", "⏲️", "⏰", "🕰️", "⌛", "⏳", "📡", "🔋",
+    "🔌", "💡", "🔦", "🕯️", "🪔", "🧯", "🛢️", "💸", "💵", "💴", "💶", "💷", "💰", "💳", "💎", "⚖️", "🧰", "🔧", "🔨", "⚒️",
+    "🛠️", "⛏️", "🔩", "⚙️", "🧱", "⛓️", "🧲", "🔫", "💣", "🧨", "🪓", "🔪", "🗡️", "⚔️", "🛡️", "🚬", "⚰️", "⚱️", "🏺", "🔮",
+  ],
+  symbols: [
+    "❤️", "🧡", "💛", "💚", "💙", "💜", "🖤", "🤍", "🤎", "💔", "❣️", "💕", "💞", "💓", "💗", "💖", "💘", "💝", "💟", "☮️",
+    "✝️", "☪️", "🕉️", "☸️", "✡️", "🔯", "🕎", "☯️", "☦️", "🛐", "⛎", "♈", "♉", "♊", "♋", "♌", "♍", "♎", "♏", "♐",
+    "♑", "♒", "♓", "🆔", "⚛️", "🉑", "☢️", "☣️", "📴", "📳", "🈶", "🈚", "🈸", "🈺", "🈷️", "✴️", "🆚", "💮", "🉐", "㊙️",
+    "㊗️", "🈴", "🈵", "🈹", "🈲", "🅰️", "🅱️", "🆎", "🆑", "🅾️", "🆘", "❌", "⭕", "🛑", "⛔", "📛", "🚫", "💯", "💢", "♨️",
+  ],
+  flags: [
+    "🏁", "🚩", "🎌", "🏴", "🏳️", "🏳️‍🌈", "🏳️‍⚧️", "🏴‍☠️", "🇦🇨", "🇦🇩", "🇦🇪", "🇦🇫", "🇦🇬", "🇦🇮", "🇦🇱", "🇦🇲", "🇦🇴", "🇦🇶", "🇦🇷", "🇦🇸",
+    "🇦🇹", "🇦🇺", "🇦🇼", "🇦🇽", "🇦🇿", "🇧🇦", "🇧🇧", "🇧🇩", "🇧🇪", "🇧🇫", "🇧🇬", "🇧🇭", "🇧🇮", "🇧🇯", "🇧🇱", "🇧🇲", "🇧🇳", "🇧🇴", "🇧🇶", "🇧🇷",
+    "🇧🇸", "🇧🇹", "🇧🇻", "🇧🇼", "🇧🇾", "🇧🇿", "🇨🇦", "🇨🇨", "🇨🇩", "🇨🇫", "🇨🇬", "🇨🇭", "🇨🇮", "🇨🇰", "🇨🇱", "🇨🇲", "🇨🇳", "🇨🇴", "🇨🇵", "🇨🇷",
+    "🇨🇺", "🇨🇻", "🇨🇼", "🇨🇽", "🇨🇾", "🇨🇿", "🇩🇪", "🇩🇬", "🇩🇯", "🇩🇰", "🇩🇲", "🇩🇴", "🇩🇿", "🇪🇦", "🇪🇨", "🇪🇪", "🇪🇬", "🇪🇭", "🇪🇷", "🇪🇸",
+  ],
+};
 
 const Notes = () => {
   const navigate = useNavigate();
   const [notes, setNotes] = useState<Note[]>([]);
-  const [newNote, setNewNote] = useState({ title: "", content: "" });
+  const [newNote, setNewNote] = useState({ title: "", content: "", sticker: "" });
   const [isWriting, setIsWriting] = useState(false);
   const [editingNote, setEditingNote] = useState<string | null>(null);
-  const [editedNote, setEditedNote] = useState({ title: "", content: "" });
+  const [editedNote, setEditedNote] = useState({ title: "", content: "", sticker: "" });
   const [images, setImages] = useState<string[]>([]);
   const [editImages, setEditImages] = useState<string[]>([]);
   const [showCamera, setShowCamera] = useState(false);
   const [activeForCamera, setActiveForCamera] = useState<'new' | 'edit' | null>(null);
+  const [activeCategory, setActiveCategory] = useState<string>("faces");
 
   // Load notes from localStorage on component mount
   useEffect(() => {
@@ -62,7 +130,8 @@ const Notes = () => {
       content: newNote.content,
       date: now,
       updatedAt: now,
-      images: images.length > 0 ? [...images] : undefined
+      images: images.length > 0 ? [...images] : undefined,
+      sticker: newNote.sticker || undefined
     };
 
     // Create calendar event for the note
@@ -71,7 +140,8 @@ const Notes = () => {
       title: note.title,
       description: note.content,
       date: note.date,
-      category: 'notes' as const
+      category: 'notes' as const,
+      sticker: note.sticker || undefined
     };
 
     // Get existing calendar events
@@ -79,7 +149,7 @@ const Notes = () => {
     localStorage.setItem('calendar-events', JSON.stringify([...existingEvents, calendarEvent]));
 
     setNotes([note, ...notes]);
-    setNewNote({ title: "", content: "" });
+    setNewNote({ title: "", content: "", sticker: "" });
     setIsWriting(false);
     setImages([]);
     toast.success("Note saved successfully!");
@@ -102,7 +172,8 @@ const Notes = () => {
       setEditingNote(id);
       setEditedNote({
         title: noteToEdit.title,
-        content: noteToEdit.content
+        content: noteToEdit.content,
+        sticker: noteToEdit.sticker || ""
       });
       setEditImages(noteToEdit.images || []);
     }
@@ -124,7 +195,8 @@ const Notes = () => {
             title: editedNote.title, 
             content: editedNote.content, 
             updatedAt: now,
-            images: editImages.length > 0 ? [...editImages] : undefined
+            images: editImages.length > 0 ? [...editImages] : undefined,
+            sticker: editedNote.sticker || undefined
           }
         : note
     );
@@ -135,7 +207,12 @@ const Notes = () => {
     const existingEvents = JSON.parse(localStorage.getItem('calendar-events') || '[]');
     const updatedEvents = existingEvents.map((event: any) => 
       event.id === `note-${id}`
-        ? { ...event, title: editedNote.title, description: editedNote.content }
+        ? { 
+            ...event, 
+            title: editedNote.title, 
+            description: editedNote.content,
+            sticker: editedNote.sticker || undefined
+          }
         : event
     );
     
@@ -204,6 +281,65 @@ const Notes = () => {
     }
   };
 
+  const handleStickerSelect = (sticker: string, type: 'new' | 'edit') => {
+    if (type === 'new') {
+      setNewNote({...newNote, sticker});
+    } else {
+      setEditedNote({...editedNote, sticker});
+    }
+  };
+
+  const renderStickerPicker = (type: 'new' | 'edit') => {
+    return (
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="outline" className="flex items-center gap-1">
+            <Smile className="h-4 w-4" />
+            <span>Add Sticker</span>
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[300px] p-0">
+          <div className="p-2">
+            <Tabs defaultValue={activeCategory} onValueChange={setActiveCategory}>
+              <TabsList className="grid grid-cols-4 mb-2">
+                {STICKER_CATEGORIES.slice(0, 4).map(category => (
+                  <TabsTrigger key={category.id} value={category.id}>
+                    {category.name}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+              <TabsList className="grid grid-cols-4">
+                {STICKER_CATEGORIES.slice(4).map(category => (
+                  <TabsTrigger key={category.id} value={category.id}>
+                    {category.name}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+              
+              {STICKER_CATEGORIES.map(category => (
+                <TabsContent key={category.id} value={category.id} className="mt-2">
+                  <ScrollArea className="h-[200px]">
+                    <div className="grid grid-cols-8 gap-1">
+                      {STICKERS[category.id as keyof typeof STICKERS].map((sticker, index) => (
+                        <button
+                          key={index}
+                          className="text-xl p-1 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                          onClick={() => handleStickerSelect(sticker, type)}
+                        >
+                          {sticker}
+                        </button>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </TabsContent>
+              ))}
+            </Tabs>
+          </div>
+        </PopoverContent>
+      </Popover>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-white dark:from-gray-900 dark:to-gray-800">
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-lg border-b border-gray-200 dark:bg-gray-900/80 dark:border-gray-700">
@@ -247,6 +383,21 @@ const Notes = () => {
                   className="min-h-[100px]"
                 />
                 
+                {newNote.sticker && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">Selected sticker:</span>
+                    <span className="text-2xl">{newNote.sticker}</span>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => setNewNote({...newNote, sticker: ""})}
+                      className="h-6 w-6 p-0"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+                
                 {images.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-2">
                     {images.map((image, index) => (
@@ -269,7 +420,7 @@ const Notes = () => {
                   </div>
                 )}
                 
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Button 
                     variant="outline" 
                     onClick={() => {
@@ -300,12 +451,14 @@ const Notes = () => {
                       </span>
                     </Button>
                   </label>
+                  
+                  {renderStickerPicker('new')}
                 </div>
                 
                 <div className="flex justify-end gap-2">
                   <Button variant="outline" onClick={() => {
                     setIsWriting(false);
-                    setNewNote({ title: "", content: "" });
+                    setNewNote({ title: "", content: "", sticker: "" });
                     setImages([]);
                   }}>
                     Cancel
@@ -344,6 +497,21 @@ const Notes = () => {
                       className="min-h-[100px]"
                     />
                     
+                    {editedNote.sticker && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium">Selected sticker:</span>
+                        <span className="text-2xl">{editedNote.sticker}</span>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => setEditedNote({...editedNote, sticker: ""})}
+                          className="h-6 w-6 p-0"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
+                    
                     {editImages.length > 0 && (
                       <div className="flex flex-wrap gap-2 mt-2">
                         {editImages.map((image, index) => (
@@ -366,7 +534,7 @@ const Notes = () => {
                       </div>
                     )}
                     
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                       <Button 
                         variant="outline" 
                         onClick={() => {
@@ -397,6 +565,8 @@ const Notes = () => {
                           </span>
                         </Button>
                       </label>
+                      
+                      {renderStickerPicker('edit')}
                     </div>
                     
                     <div className="flex justify-end gap-2">
@@ -412,7 +582,10 @@ const Notes = () => {
                 ) : (
                   <>
                     <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-semibold">{note.title}</h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold">{note.title}</h3>
+                        {note.sticker && <span className="text-2xl">{note.sticker}</span>}
+                      </div>
                       <div className="flex gap-1">
                         <Button
                           variant="ghost"

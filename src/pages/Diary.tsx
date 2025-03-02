@@ -1,293 +1,435 @@
 
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { 
-  ArrowLeft, CalendarIcon, Save, Trash2, 
-  Edit, ChevronLeft, ChevronRight, Mic, Camera, Image as ImageIcon,
-  ChevronDown, ChevronUp, Search, Filter
+  ArrowLeft, 
+  Book, 
+  Search, 
+  Plus, 
+  X, 
+  Calendar as CalendarIcon, 
+  Edit, 
+  ChevronDown, 
+  ChevronUp,
+  Camera,
+  Image,
+  Volume2,
+  Smile
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
-import { format, isSameDay, parseISO, startOfMonth, endOfMonth } from "date-fns";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import VoiceToText from "@/components/VoiceToText";
 import CameraCapture from "@/components/CameraCapture";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { 
-  Collapsible, 
-  CollapsibleContent, 
-  CollapsibleTrigger 
-} from "@/components/ui/collapsible";
 
-// Mood types definition
-type MoodType = "happy" | "calm" | "sad" | "angry" | "anxious";
-type EnergyType = "high" | "medium" | "low";
-
-// Define interfaces for diary entries
 interface DiaryEntry {
   id: string;
-  date: string;
+  date: Date;
+  title: string;
   content: string;
-  mood: MoodType;
-  energy: EnergyType;
+  mood: string;
   images?: string[];
+  sticker?: string;
 }
 
-// Emoji mappings for moods and energy levels
-const moodEmojis: Record<MoodType, string> = {
-  happy: "😊",
-  calm: "😌",
-  sad: "😔",
-  angry: "😠",
-  anxious: "😰"
-};
+const MOODS = [
+  "😀 Happy",
+  "😌 Calm",
+  "😕 Confused",
+  "😢 Sad",
+  "😡 Angry",
+  "😴 Tired",
+  "🤗 Grateful",
+  "🤔 Thoughtful",
+  "😎 Confident",
+  "🥺 Emotional"
+];
 
-const energyEmojis: Record<EnergyType, string> = {
-  high: "⚡",
-  medium: "🔆",
-  low: "🔋"
+// Sticker categories and emojis
+const STICKER_CATEGORIES = [
+  { id: "faces", name: "Faces" },
+  { id: "animals", name: "Animals" },
+  { id: "food", name: "Food" },
+  { id: "activities", name: "Activities" },
+  { id: "travel", name: "Travel" },
+  { id: "objects", name: "Objects" },
+  { id: "symbols", name: "Symbols" },
+  { id: "flags", name: "Flags" },
+];
+
+const STICKERS = {
+  faces: [
+    "😀", "😃", "😄", "😁", "😆", "😅", "🤣", "😂", "🙂", "🙃", "😉", "😊", "😇", "🥰", "😍", "🤩", "😘", "😗", "😚", "😙",
+    "😋", "😛", "😜", "🤪", "😝", "🤑", "🤗", "🤭", "🤫", "🤔", "🤐", "🤨", "😐", "😑", "😶", "😏", "😒", "🙄", "😬", "🤥",
+    "😌", "😔", "😪", "🤤", "😴", "😷", "🤒", "🤕", "🤢", "🤮", "🤧", "🥵", "🥶", "🥴", "😵", "🤯", "🤠", "🥳", "😎", "🤓",
+    "🧐", "😕", "😟", "🙁", "☹️", "😮", "😯", "😲", "😳", "🥺", "😦", "😧", "😨", "😰", "😥", "😢", "😭", "😱", "😖", "😣",
+  ],
+  animals: [
+    "🐶", "🐱", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼", "🐨", "🐯", "🦁", "🐮", "🐷", "🐽", "🐸", "🐵", "🙈", "🙉", "🙊", "🐒",
+    "🐔", "🐧", "🐦", "🐤", "🐣", "🐥", "🦆", "🦢", "🦉", "🦚", "🦜", "🐺", "🐗", "🐴", "🦄", "🐝", "🐛", "🦋", "🐌", "🐞",
+    "🦗", "🦟", "🦂", "🐢", "🐍", "🦎", "🦖", "🦕", "🐙", "🦑", "🦐", "🦞", "🦀", "🐡", "🐠", "🐟", "🐬", "🐳", "🐋", "🦈",
+    "🐊", "🐅", "🐆", "🦓", "🦍", "🦧", "🐘", "🦛", "🦏", "🐪", "🐫", "🦒", "🦘", "🐃", "🐂", "🐄", "🐎", "🐖", "🐏", "🐑",
+  ],
+  food: [
+    "🍏", "🍎", "🍐", "🍊", "🍋", "🍌", "🍉", "🍇", "🍓", "🍈", "🍒", "🍑", "🥭", "🍍", "🥥", "🥝", "🍅", "🍆", "🥑", "🥦",
+    "🥬", "🥒", "🌶️", "🌽", "🥕", "🧄", "🧅", "🥔", "🍠", "🥐", "🥯", "🍞", "🥖", "🥨", "🧀", "🥚", "🍳", "🧈", "🥞", "🧇",
+    "🥓", "🥩", "🍗", "🍖", "🦴", "🌭", "🍔", "🍟", "🍕", "🥪", "🥙", "🧆", "🌮", "🌯", "🥗", "🥘", "🥫", "🍝", "🍜", "🍲",
+    "🍛", "🍣", "🍱", "🥟", "🦪", "🍤", "🍙", "🍚", "🍘", "🍥", "🥠", "🥮", "🍢", "🍡", "🍧", "🍨", "🍦", "🥧", "🧁", "🍰",
+  ],
+  activities: [
+    "⚽", "🏀", "🏈", "⚾", "🥎", "🎾", "🏐", "🏉", "🥏", "🎱", "🪀", "🏓", "🏸", "🏒", "🏑", "🥍", "🏏", "🥅", "⛳", "🪁",
+    "🏹", "🎣", "🤿", "🥊", "🥋", "🎽", "🛹", "🛼", "🛷", "⛸️", "🥌", "🎿", "⛷️", "🏂", "🪂", "🏋️", "🤼", "🤸", "🤽", "🧗",
+    "🤺", "🏄", "🚣", "🧘", "🚴", "🚵", "🎬", "🎭", "🎨", "🎪", "🎤", "🎧", "🎼", "🎹", "🥁", "🎷", "🎺", "🎸", "🎮", "🎲",
+    "🧩", "🎯", "🎳", "🪄", "🎭", "🎪", "🎨", "🧵", "🧶", "🎻", "🥇", "🥈", "🥉", "🏅", "🎖️", "🏆", "📱", "📲", "💻", "🖥️",
+  ],
+  travel: [
+    "🚗", "🚕", "🚙", "🚌", "🚎", "🏎️", "🚓", "🚑", "🚒", "🚐", "🚚", "🚛", "🚜", "🦯", "🦽", "🦼", "🛴", "🚲", "🛵", "🏍️",
+    "🛺", "🚔", "🚍", "🚘", "🚖", "🚡", "🚠", "🚟", "🚃", "🚋", "🚞", "🚝", "🚄", "🚅", "🚈", "🚂", "🚆", "🚇", "🚊", "🚉",
+    "✈️", "🛫", "🛬", "🛩️", "💺", "🛰️", "🚀", "🛸", "🚁", "🛶", "⛵", "🚤", "🛥️", "🛳️", "⛴️", "🚢", "⚓", "🚧", "⛽", "🚏",
+    "🚦", "🚥", "🗺️", "🗿", "🗽", "🗼", "🏰", "🏯", "🏟️", "🎡", "🎢", "🎠", "⛲", "⛱️", "🏖️", "🏝️", "🏜️", "🌋", "⛰️", "🏔️",
+  ],
+  objects: [
+    "⌚", "📱", "📲", "💻", "⌨️", "🖥️", "🖨️", "🖱️", "🖲️", "🕹️", "🗜️", "💽", "💾", "💿", "📀", "📼", "📷", "📸", "📹", "🎥",
+    "📽️", "🎞️", "📞", "☎️", "📟", "📠", "📺", "📻", "🎙️", "🎚️", "🎛️", "🧭", "⏱️", "⏲️", "⏰", "🕰️", "⌛", "⏳", "📡", "🔋",
+    "🔌", "💡", "🔦", "🕯️", "🪔", "🧯", "🛢️", "💸", "💵", "💴", "💶", "💷", "💰", "💳", "💎", "⚖️", "🧰", "🔧", "🔨", "⚒️",
+    "🛠️", "⛏️", "🔩", "⚙️", "🧱", "⛓️", "🧲", "🔫", "💣", "🧨", "🪓", "🔪", "🗡️", "⚔️", "🛡️", "🚬", "⚰️", "⚱️", "🏺", "🔮",
+  ],
+  symbols: [
+    "❤️", "🧡", "💛", "💚", "💙", "💜", "🖤", "🤍", "🤎", "💔", "❣️", "💕", "💞", "💓", "💗", "💖", "💘", "💝", "💟", "☮️",
+    "✝️", "☪️", "🕉️", "☸️", "✡️", "🔯", "🕎", "☯️", "☦️", "🛐", "⛎", "♈", "♉", "♊", "♋", "♌", "♍", "♎", "♏", "♐",
+    "♑", "♒", "♓", "🆔", "⚛️", "🉑", "☢️", "☣️", "📴", "📳", "🈶", "🈚", "🈸", "🈺", "🈷️", "✴️", "🆚", "💮", "🉐", "㊙️",
+    "㊗️", "🈴", "🈵", "🈹", "🈲", "🅰️", "🅱️", "🆎", "🆑", "🅾️", "🆘", "❌", "⭕", "🛑", "⛔", "📛", "🚫", "💯", "💢", "♨️",
+  ],
+  flags: [
+    "🏁", "🚩", "🎌", "🏴", "🏳️", "🏳️‍🌈", "🏳️‍⚧️", "🏴‍☠️", "🇦🇨", "🇦🇩", "🇦🇪", "🇦🇫", "🇦🇬", "🇦🇮", "🇦🇱", "🇦🇲", "🇦🇴", "🇦🇶", "🇦🇷", "🇦🇸",
+    "🇦🇹", "🇦🇺", "🇦🇼", "🇦🇽", "🇦🇿", "🇧🇦", "🇧🇧", "🇧🇩", "🇧🇪", "🇧🇫", "🇧🇬", "🇧🇭", "🇧🇮", "🇧🇯", "🇧🇱", "🇧🇲", "🇧🇳", "🇧🇴", "🇧🇶", "🇧🇷",
+    "🇧🇸", "🇧🇹", "🇧🇻", "🇧🇼", "🇧🇾", "🇧🇿", "🇨🇦", "🇨🇨", "🇨🇩", "🇨🇫", "🇨🇬", "🇨🇭", "🇨🇮", "🇨🇰", "🇨🇱", "🇨🇲", "🇨🇳", "🇨🇴", "🇨🇵", "🇨🇷",
+    "🇨🇺", "🇨🇻", "🇨🇼", "🇨🇽", "🇨🇾", "🇨🇿", "🇩🇪", "🇩🇬", "🇩🇯", "🇩🇰", "🇩🇲", "🇩🇴", "🇩🇿", "🇪🇦", "🇪🇨", "🇪🇪", "🇪🇬", "🇪🇭", "🇪🇷", "🇪🇸",
+  ],
 };
 
 const Diary = () => {
   const navigate = useNavigate();
   const [entries, setEntries] = useState<DiaryEntry[]>([]);
-  const [content, setContent] = useState("");
-  const [selectedMood, setSelectedMood] = useState<MoodType>("calm");
-  const [selectedEnergy, setSelectedEnergy] = useState<EnergyType>("medium");
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
-  const [moodStats, setMoodStats] = useState<Record<MoodType, number>>({
-    happy: 0,
-    calm: 0,
-    sad: 0,
-    anxious: 0,
-    angry: 0
-  });
-  const [energyStats, setEnergyStats] = useState<Record<EnergyType, number>>({
-    high: 0,
-    medium: 0,
-    low: 0
-  });
-  const [calendarOpen, setCalendarOpen] = useState(false);
-  const [images, setImages] = useState<string[]>([]);
-  const [showCamera, setShowCamera] = useState(false);
-  const [showMoodSelector, setShowMoodSelector] = useState(false);
-  const [showEnergySelector, setShowEnergySelector] = useState(false);
-  const [showStatsDialog, setShowStatsDialog] = useState(false);
-  const [showCalendarDialog, setShowCalendarDialog] = useState(false);
-  const [filterStartDate, setFilterStartDate] = useState<Date>(startOfMonth(new Date()));
-  const [filterEndDate, setFilterEndDate] = useState<Date>(endOfMonth(new Date()));
   const [searchTerm, setSearchTerm] = useState("");
-  const [showFilterOptions, setShowFilterOptions] = useState(false);
-  
+  const [isAddingEntry, setIsAddingEntry] = useState(false);
+  const [date, setDate] = useState<Date | undefined>(new Date());
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [mood, setMood] = useState<string>(MOODS[0]);
+  const [images, setImages] = useState<string[]>([]);
+  const [expandedEntries, setExpandedEntries] = useState<Record<string, boolean>>({});
+  const [editingEntry, setEditingEntry] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editContent, setEditContent] = useState("");
+  const [editMood, setEditMood] = useState("");
+  const [editDate, setEditDate] = useState<Date | undefined>(undefined);
+  const [editImages, setEditImages] = useState<string[]>([]);
+  const [showCamera, setShowCamera] = useState(false);
+  const [activeCaptureFor, setActiveCaptureFor] = useState<'new' | 'edit' | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const editFileInputRef = useRef<HTMLInputElement>(null);
+  const [activeCategory, setActiveCategory] = useState<string>("faces");
+  const [sticker, setSticker] = useState<string>("");
+  const [editSticker, setEditSticker] = useState<string>("");
+
   // Load entries from localStorage on component mount
   useEffect(() => {
-    const savedEntries = localStorage.getItem('diary-entries');
+    const savedEntries = localStorage.getItem("diary-entries");
     if (savedEntries) {
-      const parsedEntries = JSON.parse(savedEntries);
-      setEntries(parsedEntries);
-      calculateStats(parsedEntries);
+      // Convert string dates back to Date objects
+      setEntries(
+        JSON.parse(savedEntries).map((entry: any) => ({
+          ...entry,
+          date: new Date(entry.date)
+        }))
+      );
     }
   }, []);
 
-  // Calculate mood and energy statistics
-  const calculateStats = (entriesData: DiaryEntry[]) => {
-    const moodCounts: Record<MoodType, number> = {
-      happy: 0,
-      calm: 0,
-      sad: 0,
-      anxious: 0,
-      angry: 0
-    };
-    
-    const energyCounts: Record<EnergyType, number> = {
-      high: 0,
-      medium: 0,
-      low: 0
-    };
-    
-    entriesData.forEach(entry => {
-      moodCounts[entry.mood]++;
-      energyCounts[entry.energy]++;
-    });
-    
-    setMoodStats(moodCounts);
-    setEnergyStats(energyCounts);
-  };
+  // Save entries to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem("diary-entries", JSON.stringify(entries));
+  }, [entries]);
 
-  // Handle save entry
-  const handleSaveEntry = () => {
-    if (!content.trim()) {
-      toast.error("Entry content cannot be empty!");
+  const filteredEntries = entries
+    .filter((entry) => {
+      const searchLower = searchTerm.toLowerCase();
+      return (
+        entry.title.toLowerCase().includes(searchLower) ||
+        entry.content.toLowerCase().includes(searchLower) ||
+        entry.mood.toLowerCase().includes(searchLower)
+      );
+    })
+    .sort((a, b) => b.date.getTime() - a.date.getTime());
+
+  const handleAddEntry = () => {
+    if (!title.trim() || !content.trim() || !date) {
+      toast.error("Please fill in all required fields");
       return;
     }
-    
-    const entryDate = format(selectedDate, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-    
-    if (editingEntryId) {
-      // Update existing entry
-      const updatedEntries = entries.map(entry => 
-        entry.id === editingEntryId 
-          ? { ...entry, content, mood: selectedMood, energy: selectedEnergy, date: entryDate, images }
-          : entry
-      );
-      
-      setEntries(updatedEntries);
-      localStorage.setItem('diary-entries', JSON.stringify(updatedEntries));
-      calculateStats(updatedEntries);
-      
-      setEditingEntryId(null);
-      toast.success("Entry updated successfully!");
-    } else {
-      // Create new entry
-      const newEntry: DiaryEntry = {
-        id: Date.now().toString(),
-        date: entryDate,
-        content,
-        mood: selectedMood,
-        energy: selectedEnergy,
-        images: images.length > 0 ? images : undefined
-      };
-      
-      const updatedEntries = [newEntry, ...entries];
-      setEntries(updatedEntries);
-      localStorage.setItem('diary-entries', JSON.stringify(updatedEntries));
-      calculateStats(updatedEntries);
-      
-      toast.success("Entry saved successfully!");
-    }
-    
-    // Reset form
+
+    const newEntry: DiaryEntry = {
+      id: Date.now().toString(),
+      date: date,
+      title: title.trim(),
+      content: content.trim(),
+      mood: mood,
+      images: images.length > 0 ? [...images] : undefined,
+      sticker: sticker || undefined
+    };
+
+    // Create calendar event for the diary entry
+    const calendarEvent = {
+      id: `diary-${newEntry.id}`,
+      title: newEntry.title,
+      description: newEntry.content,
+      date: newEntry.date,
+      category: 'diary' as const,
+      sticker: newEntry.sticker || undefined
+    };
+
+    // Get existing calendar events
+    const existingEvents = JSON.parse(localStorage.getItem('calendar-events') || '[]');
+    localStorage.setItem('calendar-events', JSON.stringify([...existingEvents, calendarEvent]));
+
+    setEntries([...entries, newEntry]);
+    resetForm();
+    setIsAddingEntry(false);
+    toast.success("Diary entry added successfully");
+  };
+
+  const resetForm = () => {
+    setTitle("");
     setContent("");
-    setSelectedMood("calm");
-    setSelectedEnergy("medium");
-    setSelectedDate(new Date());
+    setMood(MOODS[0]);
+    setDate(new Date());
     setImages([]);
+    setSticker("");
   };
 
-  // Handle entry edit
-  const handleEditEntry = (entryId: string) => {
-    const entryToEdit = entries.find(entry => entry.id === entryId);
+  const handleDeleteEntry = (id: string) => {
+    setEntries(entries.filter(entry => entry.id !== id));
     
+    // Remove corresponding calendar event
+    const existingEvents = JSON.parse(localStorage.getItem('calendar-events') || '[]');
+    const updatedEvents = existingEvents.filter((event: any) => event.id !== `diary-${id}`);
+    localStorage.setItem('calendar-events', JSON.stringify(updatedEvents));
+    
+    toast.success("Entry deleted successfully");
+  };
+
+  const toggleEntryExpansion = (id: string) => {
+    setExpandedEntries(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
+
+  const handleEditEntry = (id: string) => {
+    const entryToEdit = entries.find(entry => entry.id === id);
     if (entryToEdit) {
-      setContent(entryToEdit.content);
-      setSelectedMood(entryToEdit.mood);
-      setSelectedEnergy(entryToEdit.energy);
-      setSelectedDate(parseISO(entryToEdit.date));
-      setEditingEntryId(entryId);
-      setImages(entryToEdit.images || []);
-      
-      // Scroll to top
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setEditingEntry(id);
+      setEditTitle(entryToEdit.title);
+      setEditContent(entryToEdit.content);
+      setEditMood(entryToEdit.mood);
+      setEditDate(entryToEdit.date);
+      setEditImages(entryToEdit.images || []);
+      setEditSticker(entryToEdit.sticker || "");
     }
   };
 
-  // Handle entry delete
-  const handleDeleteEntry = (entryId: string) => {
-    const updatedEntries = entries.filter(entry => entry.id !== entryId);
+  const handleUpdateEntry = (id: string) => {
+    if (!editTitle.trim() || !editContent.trim() || !editDate) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    const updatedEntries = entries.map(entry => {
+      if (entry.id === id) {
+        return {
+          ...entry,
+          title: editTitle.trim(),
+          content: editContent.trim(),
+          mood: editMood,
+          date: editDate,
+          images: editImages.length > 0 ? [...editImages] : undefined,
+          sticker: editSticker || undefined
+        };
+      }
+      return entry;
+    });
+
     setEntries(updatedEntries);
-    localStorage.setItem('diary-entries', JSON.stringify(updatedEntries));
-    calculateStats(updatedEntries);
+
+    // Update corresponding calendar event
+    const existingEvents = JSON.parse(localStorage.getItem('calendar-events') || '[]');
+    const updatedEvents = existingEvents.map((event: any) => {
+      if (event.id === `diary-${id}`) {
+        return {
+          ...event,
+          title: editTitle.trim(),
+          description: editContent.trim(),
+          date: editDate,
+          sticker: editSticker || undefined
+        };
+      }
+      return event;
+    });
     
-    if (editingEntryId === entryId) {
-      setEditingEntryId(null);
-      setContent("");
-      setSelectedMood("calm");
-      setSelectedEnergy("medium");
-      setSelectedDate(new Date());
-      setImages([]);
+    localStorage.setItem('calendar-events', JSON.stringify(updatedEvents));
+
+    setEditingEntry(null);
+    toast.success("Entry updated successfully");
+  };
+
+  const handleCancelEdit = () => {
+    setEditingEntry(null);
+  };
+
+  const handleVoiceTranscriptNew = (text: string) => {
+    setContent(prev => prev ? `${prev} ${text}` : text);
+  };
+
+  const handleVoiceTranscriptEdit = (text: string) => {
+    setEditContent(prev => prev ? `${prev} ${text}` : text);
+  };
+
+  const handleImageCapture = (imageDataUrl: string) => {
+    if (activeCaptureFor === 'new') {
+      setImages([...images, imageDataUrl]);
+    } else if (activeCaptureFor === 'edit') {
+      setEditImages([...editImages, imageDataUrl]);
     }
-    
-    toast.success("Entry deleted successfully!");
+    setActiveCaptureFor(null);
   };
 
-  // Handle day click on calendar
-  const handleDaySelect = (day: Date | undefined) => {
-    if (day) {
-      setSelectedDate(day);
-      setCalendarOpen(false);
-    }
-  };
-
-  // Calculate percentage for statistics
-  const calculatePercentage = (count: number) => {
-    const total = entries.length;
-    return total > 0 ? Math.round((count / total) * 100) : 0;
-  };
-
-  // Handle image upload
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>, type: 'new' | 'edit') => {
     if (event.target.files && event.target.files.length > 0) {
       const file = event.target.files[0];
       const reader = new FileReader();
       
       reader.onloadend = () => {
         const imageDataUrl = reader.result as string;
-        setImages([...images, imageDataUrl]);
+        if (type === 'new') {
+          setImages([...images, imageDataUrl]);
+        } else {
+          setEditImages([...editImages, imageDataUrl]);
+        }
       };
       
       reader.readAsDataURL(file);
+      
+      // Reset file input
+      event.target.value = '';
     }
   };
 
-  // Handle camera capture
-  const handleCameraCapture = (imageDataUrl: string) => {
-    setImages([...images, imageDataUrl]);
-  };
-
-  // Handle voice input for diary content
-  const handleVoiceTranscript = (text: string) => {
-    setContent(prevContent => {
-      if (prevContent.trim()) {
-        return `${prevContent} ${text}`;
-      }
-      return text;
-    });
-  };
-
-  // Remove image
-  const removeImage = (index: number) => {
-    const newImages = [...images];
-    newImages.splice(index, 1);
-    setImages(newImages);
-  };
-
-  // Filter entries based on search and date range
-  const filteredEntries = entries.filter(entry => {
-    const entryDate = parseISO(entry.date);
-    const matchesDateRange = entryDate >= filterStartDate && entryDate <= filterEndDate;
-    const matchesSearchTerm = entry.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      entry.mood.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      entry.energy.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    return matchesDateRange && matchesSearchTerm;
-  });
-
-  // Set date filter
-  const handleDateFilterChange = (dateRange: { from: Date | undefined; to: Date | undefined } | undefined) => {
-    if (dateRange?.from) setFilterStartDate(dateRange.from);
-    if (dateRange?.to) setFilterEndDate(dateRange.to);
-  };
-
-  // Handle calendar date selection in dialog
-  const handleCalendarDateSelect = (date: Date | undefined) => {
-    if (date) {
-      setSelectedDate(date);
-      setShowCalendarDialog(false);
-      // Filter to show entries for this date
-      const formattedDate = format(date, "yyyy-MM-dd");
-      setFilterStartDate(new Date(formattedDate));
-      setFilterEndDate(new Date(formattedDate + "T23:59:59"));
-      setShowFilterOptions(true);
+  const removeImage = (index: number, type: 'new' | 'edit') => {
+    if (type === 'new') {
+      const newImages = [...images];
+      newImages.splice(index, 1);
+      setImages(newImages);
+    } else {
+      const newImages = [...editImages];
+      newImages.splice(index, 1);
+      setEditImages(newImages);
     }
+  };
+
+  const handleStickerSelect = (selectedSticker: string, type: 'new' | 'edit') => {
+    if (type === 'new') {
+      setSticker(selectedSticker);
+    } else {
+      setEditSticker(selectedSticker);
+    }
+  };
+
+  const renderStickerPicker = (type: 'new' | 'edit') => {
+    return (
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="outline" className="flex items-center gap-1">
+            <Smile className="h-4 w-4" />
+            <span>Add Sticker</span>
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[300px] p-0">
+          <div className="p-2">
+            <Tabs defaultValue={activeCategory} onValueChange={setActiveCategory}>
+              <TabsList className="grid grid-cols-4 mb-2">
+                {STICKER_CATEGORIES.slice(0, 4).map(category => (
+                  <TabsTrigger key={category.id} value={category.id}>
+                    {category.name}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+              <TabsList className="grid grid-cols-4">
+                {STICKER_CATEGORIES.slice(4).map(category => (
+                  <TabsTrigger key={category.id} value={category.id}>
+                    {category.name}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+              
+              {STICKER_CATEGORIES.map(category => (
+                <TabsContent key={category.id} value={category.id} className="mt-2">
+                  <ScrollArea className="h-[200px]">
+                    <div className="grid grid-cols-8 gap-1">
+                      {STICKERS[category.id as keyof typeof STICKERS].map((sticker, index) => (
+                        <button
+                          key={index}
+                          className="text-xl p-1 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                          onClick={() => handleStickerSelect(sticker, type)}
+                        >
+                          {sticker}
+                        </button>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </TabsContent>
+              ))}
+            </Tabs>
+          </div>
+        </PopoverContent>
+      </Popover>
+    );
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-white dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800">
+      {/* Hidden input elements for file uploads */}
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        className="hidden" 
+        accept="image/*" 
+        onChange={(e) => handleFileChange(e, 'new')} 
+      />
+      <input 
+        type="file" 
+        ref={editFileInputRef} 
+        className="hidden" 
+        accept="image/*" 
+        onChange={(e) => handleFileChange(e, 'edit')} 
+      />
+
+      <CameraCapture 
+        open={showCamera} 
+        onOpenChange={setShowCamera}
+        onCapture={handleImageCapture}
+      />
+
+      {/* Navigation header */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-lg border-b border-gray-200 dark:bg-gray-900/80 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
@@ -300,471 +442,426 @@ const Diary = () => {
               >
                 <ArrowLeft className="h-5 w-5" />
               </Button>
-              <h1 className="text-xl font-semibold">Personal Diary</h1>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => setShowStatsDialog(true)}
-                className="hidden sm:flex"
-              >
-                <ChevronUp className="h-4 w-4 mr-1" />
-                Mood Stats
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => setShowCalendarDialog(true)}
-              >
-                <CalendarIcon className="h-4 w-4 mr-1" />
-                Calendar
-              </Button>
+              <div className="flex items-center">
+                <Book className="h-5 w-5 mr-2" />
+                <h1 className="text-xl font-semibold">Personal Diary</h1>
+              </div>
             </div>
           </div>
         </div>
       </nav>
 
-      <main className="pt-20 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <Card className="p-6 bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 mb-6">
-          <Collapsible>
-            <div className="flex justify-between items-center">
-              <h2 className="text-lg font-medium">
-                {editingEntryId ? "Edit Entry" : "New Entry"}
-              </h2>
-              <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="sm">
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-              </CollapsibleTrigger>
+      <main className="pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="space-y-6">
+          {/* Search and add entry controls */}
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <Input
+                placeholder="Search entries..."
+                className="pl-10"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
-            
-            <CollapsibleContent>
-              <div className="space-y-4 mt-4">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+            <Button
+              onClick={() => setIsAddingEntry(true)}
+              className="shrink-0"
+              disabled={isAddingEntry}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Entry
+            </Button>
+          </div>
+
+          {/* New entry form */}
+          {isAddingEntry && (
+            <Card className="p-6 bg-white/80 backdrop-blur-sm dark:bg-gray-800/80">
+              <h2 className="text-xl font-bold mb-4">New Diary Entry</h2>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="entry-date">Date</Label>
+                  <Popover>
                     <PopoverTrigger asChild>
                       <Button
-                        variant="outline"
-                        className="flex items-center gap-2"
+                        variant={"outline"}
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !date && "text-muted-foreground"
+                        )}
+                        id="entry-date"
                       >
-                        <CalendarIcon className="h-4 w-4" />
-                        <span>{format(selectedDate, "MMM d, yyyy")}</span>
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {date ? format(date, "PPP") : <span>Pick a date</span>}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 bg-gray-900">
+                    <PopoverContent className="w-auto p-0">
                       <Calendar
                         mode="single"
-                        selected={selectedDate}
-                        onSelect={handleDaySelect}
+                        selected={date}
+                        onSelect={setDate}
                         initialFocus
                       />
                     </PopoverContent>
                   </Popover>
                 </div>
-                
-                <VoiceToText onTranscript={handleVoiceTranscript} />
-                
-                <Textarea
-                  placeholder="Write your thoughts, feelings, and experiences for the day..."
-                  className="min-h-[200px]"
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                />
-                
-                <div className="space-y-4">
-                  <Collapsible open={showMoodSelector} onOpenChange={setShowMoodSelector}>
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">Current Mood:</span>
-                        <span className="flex items-center">
-                          <span className="text-xl mr-1">{moodEmojis[selectedMood]}</span>
-                          <span className="capitalize">{selectedMood}</span>
-                        </span>
-                      </div>
-                      <CollapsibleTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                          {showMoodSelector ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                        </Button>
-                      </CollapsibleTrigger>
-                    </div>
-                    
-                    <CollapsibleContent>
-                      <div className="grid grid-cols-3 gap-2 mt-2">
-                        {Object.entries(moodEmojis).map(([mood, emoji]) => (
-                          <Button
-                            key={mood}
-                            variant={selectedMood === mood ? "default" : "outline"}
-                            onClick={() => {
-                              setSelectedMood(mood as MoodType);
-                              setShowMoodSelector(false);
-                            }}
-                          >
-                            <span className="text-xl mr-1">{emoji}</span>
-                            <span className="capitalize">{mood}</span>
-                          </Button>
-                        ))}
-                      </div>
-                    </CollapsibleContent>
-                  </Collapsible>
-                  
-                  <Collapsible open={showEnergySelector} onOpenChange={setShowEnergySelector}>
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">Energy Level:</span>
-                        <span className="flex items-center">
-                          <span className="text-xl mr-1">{energyEmojis[selectedEnergy]}</span>
-                          <span className="capitalize">{selectedEnergy}</span>
-                        </span>
-                      </div>
-                      <CollapsibleTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                          {showEnergySelector ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                        </Button>
-                      </CollapsibleTrigger>
-                    </div>
-                    
-                    <CollapsibleContent>
-                      <div className="grid grid-cols-3 gap-2 mt-2">
-                        {Object.entries(energyEmojis).map(([energy, emoji]) => (
-                          <Button
-                            key={energy}
-                            variant={selectedEnergy === energy ? "default" : "outline"}
-                            onClick={() => {
-                              setSelectedEnergy(energy as EnergyType);
-                              setShowEnergySelector(false);
-                            }}
-                          >
-                            <span className="text-xl mr-1">{emoji}</span>
-                            <span className="capitalize">{energy}</span>
-                          </Button>
-                        ))}
-                      </div>
-                    </CollapsibleContent>
-                  </Collapsible>
+
+                <div>
+                  <Label htmlFor="entry-title">Title</Label>
+                  <Input
+                    id="entry-title"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Enter a title for your entry"
+                  />
                 </div>
-                
-                <div className="space-y-3">
-                  <label className="block text-sm font-medium">Add Images (Optional)</label>
-                  
-                  <div className="flex flex-wrap gap-2">
-                    {images.map((image, index) => (
-                      <div key={index} className="relative w-20 h-20 rounded-md overflow-hidden group">
-                        <img src={image} alt={`Entry ${index}`} className="w-full h-full object-cover" />
-                        <Button 
-                          variant="destructive" 
-                          size="icon" 
-                          className="absolute top-1 right-1 w-5 h-5 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() => removeImage(index)}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
+
+                <div>
+                  <Label htmlFor="entry-mood">Mood</Label>
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-1">
+                    {MOODS.map((moodOption) => (
+                      <button
+                        key={moodOption}
+                        type="button"
+                        className={`p-2 rounded-md text-sm text-left ${
+                          mood === moodOption
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-secondary hover:bg-secondary/80"
+                        }`}
+                        onClick={() => setMood(moodOption)}
+                      >
+                        {moodOption}
+                      </button>
                     ))}
                   </div>
-                  
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setShowCamera(true)}
-                      className="flex items-center gap-1"
-                    >
-                      <Camera className="h-4 w-4" />
-                      <span>Take Photo</span>
-                    </Button>
-                    
-                    <label>
-                      <Button 
-                        variant="outline" 
-                        className="flex items-center gap-1"
-                        asChild
-                      >
-                        <span>
-                          <ImageIcon className="h-4 w-4" />
-                          <span>Upload Image</span>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={handleImageUpload}
-                          />
-                        </span>
-                      </Button>
-                    </label>
-                  </div>
                 </div>
-                
-                <div className="flex justify-end">
-                  {editingEntryId && (
-                    <Button
-                      variant="outline"
-                      className="mr-2"
-                      onClick={() => {
-                        setEditingEntryId(null);
-                        setContent("");
-                        setSelectedMood("calm");
-                        setSelectedEnergy("medium");
-                        setSelectedDate(new Date());
-                        setImages([]);
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                  )}
-                  
-                  <Button onClick={handleSaveEntry}>
-                    <Save className="h-4 w-4 mr-2" />
-                    {editingEntryId ? "Update Entry" : "Save Entry"}
-                  </Button>
-                </div>
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
-        </Card>
-            
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-lg font-medium">Previous Entries</h2>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setShowFilterOptions(!showFilterOptions)}
-              className="flex items-center gap-1"
-            >
-              <Filter className="h-4 w-4" />
-              <span className="hidden sm:inline">Filter</span>
-            </Button>
-          </div>
-          
-          {showFilterOptions && (
-            <Card className="p-4 bg-white/50 backdrop-blur-sm dark:bg-gray-800/50">
-              <div className="space-y-4">
+
                 <div>
-                  <label className="block text-sm font-medium mb-1">Search in entries</label>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search entries..."
-                      className="pl-10"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
+                  <div className="flex justify-between items-center mb-1">
+                    <Label htmlFor="entry-content">Content</Label>
+                    <VoiceToText onTranscript={handleVoiceTranscriptNew} />
                   </div>
+                  <Textarea
+                    id="entry-content"
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    placeholder="Write about your day..."
+                    className="min-h-[150px]"
+                  />
                 </div>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-1">From</label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button variant="outline" className="w-full justify-start text-left">
-                          <CalendarIcon className="h-4 w-4 mr-2" />
-                          {format(filterStartDate, "PPP")}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0 bg-gray-900" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={filterStartDate}
-                          onSelect={(date) => date && handleDateFilterChange({
-                            from: date,
-                            to: filterEndDate
-                          })}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
+
+                {sticker && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">Selected sticker:</span>
+                    <span className="text-2xl">{sticker}</span>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => setSticker("")}
+                      className="h-6 w-6 p-0"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
                   </div>
+                )}
+
+                {images.length > 0 && (
+                  <div>
+                    <Label>Images</Label>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {images.map((image, index) => (
+                        <div key={index} className="relative w-24 h-24 rounded-md overflow-hidden group">
+                          <img 
+                            src={image} 
+                            alt={`Entry ${index}`} 
+                            className="w-full h-full object-cover" 
+                          />
+                          <Button 
+                            variant="destructive" 
+                            size="icon" 
+                            className="absolute top-1 right-1 w-6 h-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => removeImage(index, 'new')}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex flex-wrap gap-2">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setActiveCaptureFor('new');
+                      setShowCamera(true);
+                    }}
+                  >
+                    <Camera className="h-4 w-4 mr-2" />
+                    Take Photo
+                  </Button>
                   
-                  <div>
-                    <label className="block text-sm font-medium mb-1">To</label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button variant="outline" className="w-full justify-start text-left">
-                          <CalendarIcon className="h-4 w-4 mr-2" />
-                          {format(filterEndDate, "PPP")}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0 bg-gray-900" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={filterEndDate}
-                          onSelect={(date) => date && handleDateFilterChange({
-                            from: filterStartDate,
-                            to: date
-                          })}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Image className="h-4 w-4 mr-2" />
+                    Upload Image
+                  </Button>
+                  
+                  {renderStickerPicker('new')}
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      resetForm();
+                      setIsAddingEntry(false);
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button onClick={handleAddEntry}>Save Entry</Button>
                 </div>
               </div>
             </Card>
           )}
-          
-          {filteredEntries.length === 0 ? (
-            <Card className="p-6 bg-white/50 backdrop-blur-sm dark:bg-gray-800/50">
-              <p className="text-center text-muted-foreground">No entries found. Adjust your filters or create a new entry.</p>
-            </Card>
-          ) : (
-            <div className="space-y-4">
-              {filteredEntries.map(entry => (
-                <Collapsible key={entry.id}>
-                  <Card className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 overflow-hidden">
-                    <CollapsibleTrigger asChild>
-                      <div className="p-4 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 flex justify-between items-center">
-                        <div className="flex items-center gap-2">
-                          <div className="flex">
-                            <span className="text-xl" title={`Mood: ${entry.mood}`}>
-                              {moodEmojis[entry.mood]}
-                            </span>
-                            <span className="text-xl ml-1" title={`Energy: ${entry.energy}`}>
-                              {energyEmojis[entry.energy]}
-                            </span>
-                          </div>
-                          <div>
-                            <p className="font-medium truncate max-w-[200px] sm:max-w-[300px]">
-                              {entry.content.substring(0, 30)}
-                              {entry.content.length > 30 ? "..." : ""}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {format(parseISO(entry.date), "MMM d, yyyy")}
-                            </p>
-                          </div>
-                        </div>
-                        <ChevronDown className="h-4 w-4 transition-transform ui-expanded:rotate-180" />
+
+          {/* Entries list */}
+          <div className="space-y-4">
+            {filteredEntries.length === 0 ? (
+              <div className="text-center py-10">
+                <Book className="h-12 w-12 mx-auto text-gray-400 mb-3" />
+                <h3 className="text-lg font-medium">No diary entries found</h3>
+                <p className="text-gray-500 mt-2">
+                  {searchTerm
+                    ? "Try a different search term"
+                    : "Start by adding your first entry"}
+                </p>
+              </div>
+            ) : (
+              filteredEntries.map((entry) => (
+                <Card
+                  key={entry.id}
+                  className="bg-white/70 backdrop-blur-sm dark:bg-gray-800/70 hover:bg-white/90 dark:hover:bg-gray-800/90 transition-colors"
+                >
+                  {editingEntry === entry.id ? (
+                    <div className="p-6 space-y-4">
+                      <h3 className="text-lg font-bold">Edit Entry</h3>
+                      
+                      <div>
+                        <Label htmlFor={`edit-date-${entry.id}`}>Date</Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant={"outline"}
+                              className={cn(
+                                "w-full justify-start text-left font-normal",
+                                !editDate && "text-muted-foreground"
+                              )}
+                              id={`edit-date-${entry.id}`}
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {editDate ? format(editDate, "PPP") : <span>Pick a date</span>}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0">
+                            <Calendar
+                              mode="single"
+                              selected={editDate}
+                              onSelect={setEditDate}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
                       </div>
-                    </CollapsibleTrigger>
-                    
-                    <CollapsibleContent>
-                      <div className="p-4 pt-0 border-t dark:border-gray-700">
-                        <div className="flex justify-between items-start mb-2">
-                          <p className="text-sm text-muted-foreground">
-                            {format(parseISO(entry.date), "MMMM d, yyyy 'at' h:mm a")}
-                          </p>
-                          <div className="flex gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleEditEntry(entry.id)}
+
+                      <div>
+                        <Label htmlFor={`edit-title-${entry.id}`}>Title</Label>
+                        <Input
+                          id={`edit-title-${entry.id}`}
+                          value={editTitle}
+                          onChange={(e) => setEditTitle(e.target.value)}
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor={`edit-mood-${entry.id}`}>Mood</Label>
+                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-1">
+                          {MOODS.map((moodOption) => (
+                            <button
+                              key={moodOption}
+                              type="button"
+                              className={`p-2 rounded-md text-sm text-left ${
+                                editMood === moodOption
+                                  ? "bg-primary text-primary-foreground"
+                                  : "bg-secondary hover:bg-secondary/80"
+                              }`}
+                              onClick={() => setEditMood(moodOption)}
                             >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleDeleteEntry(entry.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
+                              {moodOption}
+                            </button>
+                          ))}
                         </div>
-                        
-                        <p className="whitespace-pre-wrap my-2">{entry.content}</p>
-                        
-                        {entry.images && entry.images.length > 0 && (
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between items-center mb-1">
+                          <Label htmlFor={`edit-content-${entry.id}`}>Content</Label>
+                          <VoiceToText onTranscript={handleVoiceTranscriptEdit} />
+                        </div>
+                        <Textarea
+                          id={`edit-content-${entry.id}`}
+                          value={editContent}
+                          onChange={(e) => setEditContent(e.target.value)}
+                          className="min-h-[150px]"
+                        />
+                      </div>
+
+                      {editSticker && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium">Selected sticker:</span>
+                          <span className="text-2xl">{editSticker}</span>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => setEditSticker("")}
+                            className="h-6 w-6 p-0"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
+
+                      {editImages.length > 0 && (
+                        <div>
+                          <Label>Images</Label>
                           <div className="flex flex-wrap gap-2 mt-2">
-                            {entry.images.map((image, index) => (
-                              <div key={index} className="w-20 h-20 rounded-md overflow-hidden">
+                            {editImages.map((image, index) => (
+                              <div key={index} className="relative w-24 h-24 rounded-md overflow-hidden group">
                                 <img 
                                   src={image} 
                                   alt={`Entry ${index}`} 
                                   className="w-full h-full object-cover" 
                                 />
+                                <Button 
+                                  variant="destructive" 
+                                  size="icon" 
+                                  className="absolute top-1 right-1 w-6 h-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  onClick={() => removeImage(index, 'edit')}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
                               </div>
                             ))}
                           </div>
-                        )}
+                        </div>
+                      )}
+
+                      <div className="flex flex-wrap gap-2">
+                        <Button 
+                          variant="outline" 
+                          onClick={() => {
+                            setActiveCaptureFor('edit');
+                            setShowCamera(true);
+                          }}
+                        >
+                          <Camera className="h-4 w-4 mr-2" />
+                          Take Photo
+                        </Button>
+                        
+                        <Button 
+                          variant="outline" 
+                          onClick={() => editFileInputRef.current?.click()}
+                        >
+                          <Image className="h-4 w-4 mr-2" />
+                          Upload Image
+                        </Button>
+                        
+                        {renderStickerPicker('edit')}
                       </div>
-                    </CollapsibleContent>
-                  </Card>
-                </Collapsible>
-              ))}
-            </div>
-          )}
+
+                      <div className="flex justify-end gap-2 pt-2">
+                        <Button variant="outline" onClick={handleCancelEdit}>
+                          Cancel
+                        </Button>
+                        <Button onClick={() => handleUpdateEntry(entry.id)}>
+                          Save Changes
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-6">
+                      <div className="flex justify-between items-start">
+                        <div className="flex items-center gap-2">
+                          <div>
+                            <h3 className="text-lg font-semibold">{entry.title}</h3>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                              <span>{format(entry.date, "PPP")}</span>
+                              <span className="text-xs">•</span>
+                              <span>{entry.mood}</span>
+                              {entry.sticker && <span className="text-2xl ml-1">{entry.sticker}</span>}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex flex-shrink-0 space-x-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEditEntry(entry.id)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDeleteEntry(entry.id)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => toggleEntryExpansion(entry.id)}
+                          >
+                            {expandedEntries[entry.id] ? (
+                              <ChevronUp className="h-4 w-4" />
+                            ) : (
+                              <ChevronDown className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+
+                      {expandedEntries[entry.id] && (
+                        <div className="mt-4">
+                          <p className="text-sm whitespace-pre-wrap">{entry.content}</p>
+                          
+                          {entry.images && entry.images.length > 0 && (
+                            <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                              {entry.images.map((image, index) => (
+                                <div key={index} className="rounded-md overflow-hidden h-32">
+                                  <img 
+                                    src={image} 
+                                    alt={`Entry ${index}`} 
+                                    className="w-full h-full object-cover" 
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </Card>
+              ))
+            )}
+          </div>
         </div>
       </main>
-
-      {/* Stats Dialog */}
-      <Dialog open={showStatsDialog} onOpenChange={setShowStatsDialog}>
-        <DialogContent className="bg-gray-900 text-white border-purple-500/30">
-          <DialogHeader>
-            <DialogTitle className="text-white">Mood & Energy Statistics</DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-medium mb-4">Mood Trends</h3>
-              <div className="space-y-3">
-                {Object.entries(moodStats).map(([mood, count]) => (
-                  <div key={mood} className="space-y-1">
-                    <div className="flex justify-between items-center">
-                      <span className="flex items-center">
-                        <span className="text-xl mr-2">{moodEmojis[mood as MoodType]}</span>
-                        <span className="capitalize">{mood}</span>
-                      </span>
-                      <span className="text-sm font-medium">{calculatePercentage(count)}%</span>
-                    </div>
-                    <div className="w-full bg-gray-700 rounded-full h-2">
-                      <div
-                        className="bg-gradient-to-r from-purple-600 to-pink-600 h-2 rounded-full"
-                        style={{ width: `${calculatePercentage(count)}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            
-            <div>
-              <h3 className="text-lg font-medium mb-4">Energy Levels</h3>
-              <div className="space-y-3">
-                {Object.entries(energyStats).map(([energy, count]) => (
-                  <div key={energy} className="space-y-1">
-                    <div className="flex justify-between items-center">
-                      <span className="flex items-center">
-                        <span className="text-xl mr-2">{energyEmojis[energy as EnergyType]}</span>
-                        <span className="capitalize">{energy}</span>
-                      </span>
-                      <span className="text-sm font-medium">{calculatePercentage(count)}%</span>
-                    </div>
-                    <div className="w-full bg-gray-700 rounded-full h-2">
-                      <div
-                        className="bg-gradient-to-r from-purple-600 to-pink-600 h-2 rounded-full"
-                        style={{ width: `${calculatePercentage(count)}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Calendar Dialog */}
-      <Dialog open={showCalendarDialog} onOpenChange={setShowCalendarDialog}>
-        <DialogContent className="bg-gray-900 text-white border-purple-500/30">
-          <DialogHeader>
-            <DialogTitle className="text-white">Calendar Navigation</DialogTitle>
-          </DialogHeader>
-          
-          <Calendar
-            mode="single"
-            selected={selectedDate}
-            onSelect={handleCalendarDateSelect}
-            className="rounded-md border"
-          />
-        </DialogContent>
-      </Dialog>
-
-      <CameraCapture 
-        open={showCamera} 
-        onOpenChange={setShowCamera}
-        onCapture={handleCameraCapture}
-      />
     </div>
   );
 };
