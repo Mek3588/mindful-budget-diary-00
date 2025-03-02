@@ -56,9 +56,9 @@ type ArchiveFilter = "active" | "archived" | "all";
 type Mood = "happy" | "neutral" | "sad";
 
 const moodItems = [
-  { value: "happy", label: "Happy", icon: <Smile className="h-4 w-4" /> },
-  { value: "neutral", label: "Neutral", icon: <SunMedium className="h-4 w-4" /> },
-  { value: "sad", label: "Sad", icon: <Moon className="h-4 w-4" /> },
+  { value: "happy", label: "Happy", icon: "😊", iconComponent: <Smile className="h-4 w-4" /> },
+  { value: "neutral", label: "Neutral", icon: "😐", iconComponent: <SunMedium className="h-4 w-4" /> },
+  { value: "sad", label: "Sad", icon: "😔", iconComponent: <Moon className="h-4 w-4" /> },
 ];
 
 const Diary = () => {
@@ -324,8 +324,7 @@ const Diary = () => {
                     <div key={mood.value} className="flex items-center space-x-1">
                       <RadioGroupItem value={mood.value} id={mood.value} className="peer h-4 w-4 shrink-0 rounded-full border border-primary ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" />
                       <Label htmlFor={mood.value} className="cursor-pointer peer-checked:text-primary flex items-center gap-1">
-                        {mood.icon}
-                        {mood.label}
+                        {mood.icon} {mood.label}
                       </Label>
                     </div>
                   ))}
@@ -392,8 +391,13 @@ const Diary = () => {
                                 </Badge>
                               )}
                             </div>
-                            <CardTitle className="text-base">
+                            <CardTitle className="text-base flex items-center gap-2">
                               {entry.title}
+                              <span className="text-sm">
+                                {entry.mood === "happy" && "😊"}
+                                {entry.mood === "neutral" && "😐"}
+                                {entry.mood === "sad" && "😔"}
+                              </span>
                             </CardTitle>
                             <div className="flex items-center text-xs text-muted-foreground">
                               {format(new Date(entry.date), "MMM d, yyyy")}
@@ -477,7 +481,14 @@ const Diary = () => {
                                   </Badge>
                                 )}
                               </div>
-                              <CardTitle className="text-sm">{entry.title}</CardTitle>
+                              <CardTitle className="text-sm flex items-center gap-2">
+                                {entry.title}
+                                <span className="text-xs">
+                                  {entry.mood === "happy" && "😊"}
+                                  {entry.mood === "neutral" && "😐"}
+                                  {entry.mood === "sad" && "😔"}
+                                </span>
+                              </CardTitle>
                               <div className="flex items-center text-xs text-muted-foreground">
                                 <CalendarIcon className="h-3 w-3 mr-1" />
                                 {format(new Date(entry.date), "MMM d, yyyy")}
