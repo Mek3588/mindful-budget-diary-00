@@ -1,7 +1,7 @@
-<lov-code>
+
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -50,6 +50,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { PageLayout } from "@/components/PageLayout";
 
 interface DiaryEntry {
   id: string;
@@ -180,7 +181,7 @@ const Diary = () => {
   const [sticker, setSticker] = useState<string>("");
   const [editSticker, setEditSticker] = useState<string>("");
   
-  // New state for sorting, filtering, and view options
+  // State for sorting, filtering, and view options
   const [sortOption, setSortOption] = useState<string>("newest");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [viewMode, setViewMode] = useState<"active" | "archived" | "all">("active");
@@ -301,7 +302,7 @@ const Diary = () => {
     toast.success("Entry deleted successfully");
   };
 
-  // New function to toggle archive status
+  // Function to toggle archive status
   const toggleArchiveStatus = (id: string) => {
     setEntries(entries.map(entry => 
       entry.id === id 
@@ -696,4 +697,367 @@ const Diary = () => {
                         onClick={() => setMood(moodOption)}
                       >
                         {moodOption}
-                      
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <Label htmlFor="entry-content">Content</Label>
+                    <div className="flex items-center space-x-2">
+                      <VoiceToText onTranscript={handleVoiceTranscriptNew} />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setActiveCaptureFor('new');
+                          setShowCamera(true);
+                        }}
+                        className="flex items-center gap-1"
+                      >
+                        <Camera className="h-4 w-4" />
+                        <span>Take Photo</span>
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="flex items-center gap-1"
+                      >
+                        <Image className="h-4 w-4" />
+                        <span>Add Image</span>
+                      </Button>
+                      {renderStickerPicker('new')}
+                    </div>
+                  </div>
+                  
+                  <div className="bg-white dark:bg-gray-950 rounded-lg border p-4 shadow-sm">
+                    <Textarea
+                      id="entry-content"
+                      value={content}
+                      onChange={(e) => setContent(e.target.value)}
+                      placeholder="Write your diary entry here..."
+                      className="min-h-[200px] border-none shadow-none focus-visible:ring-0 p-0 bg-transparent resize-none"
+                    />
+                    
+                    {sticker && (
+                      <div className="text-3xl mt-2">
+                        {sticker}
+                      </div>
+                    )}
+                    
+                    {images.length > 0 && (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-4">
+                        {images.map((image, index) => (
+                          <div key={index} className="relative group">
+                            <img 
+                              src={image} 
+                              alt={`Entry image ${index + 1}`} 
+                              className="w-full h-32 object-cover rounded-md"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeImage(index, 'new')}
+                              className="absolute top-1 right-1 bg-black/50 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => {
+                      setIsAddingEntry(false);
+                      resetForm();
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="button" onClick={handleAddEntry}>
+                    Save Entry
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {/* Diary entries list */}
+          <div className="space-y-4">
+            {filteredEntries.length === 0 ? (
+              <Card className="p-6 text-center text-gray-500 dark:text-gray-400">
+                <p className="mb-2">No diary entries found.</p>
+                {searchTerm || categoryFilter !== "all" || viewMode !== "active" ? (
+                  <p>Try adjusting your filters.</p>
+                ) : (
+                  <p>Click the "Add Entry" button to create your first entry.</p>
+                )}
+              </Card>
+            ) : (
+              filteredEntries.map((entry) => (
+                <Card
+                  key={entry.id}
+                  className={`overflow-hidden ${editingEntry === entry.id ? 'ring-2 ring-primary' : ''}`}
+                >
+                  {editingEntry === entry.id ? (
+                    <div className="p-6 space-y-4">
+                      <h3 className="text-lg font-semibold">Edit Entry</h3>
+                      <div>
+                        <Label htmlFor={`edit-date-${entry.id}`}>Date</Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant={"outline"}
+                              className={cn(
+                                "w-full justify-start text-left font-normal",
+                                !editDate && "text-muted-foreground"
+                              )}
+                              id={`edit-date-${entry.id}`}
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {editDate ? format(editDate, "PPP") : <span>Pick a date</span>}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0">
+                            <Calendar
+                              mode="single"
+                              selected={editDate}
+                              onSelect={setEditDate}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+
+                      <div>
+                        <Label htmlFor={`edit-title-${entry.id}`}>Title</Label>
+                        <Input
+                          id={`edit-title-${entry.id}`}
+                          value={editTitle}
+                          onChange={(e) => setEditTitle(e.target.value)}
+                          className="bg-white dark:bg-gray-950"
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor={`edit-category-${entry.id}`}>Category</Label>
+                        <Select 
+                          value={editCategory} 
+                          onValueChange={setEditCategory}
+                        >
+                          <SelectTrigger id={`edit-category-${entry.id}`} className="bg-white dark:bg-gray-950">
+                            <SelectValue placeholder="Select category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {DIARY_CATEGORIES.map((cat) => (
+                              <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label htmlFor={`edit-mood-${entry.id}`}>Mood</Label>
+                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-1">
+                          {MOODS.map((moodOption) => (
+                            <button
+                              key={moodOption}
+                              type="button"
+                              className={`p-2 rounded-md text-sm text-left ${
+                                editMood === moodOption
+                                  ? "bg-primary text-primary-foreground"
+                                  : "bg-white dark:bg-gray-950 hover:bg-secondary/80"
+                              }`}
+                              onClick={() => setEditMood(moodOption)}
+                            >
+                              {moodOption}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <Label htmlFor={`edit-content-${entry.id}`}>Content</Label>
+                          <div className="flex items-center space-x-2">
+                            <VoiceToText onTranscript={handleVoiceTranscriptEdit} />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setActiveCaptureFor('edit');
+                                setShowCamera(true);
+                              }}
+                              className="flex items-center gap-1"
+                            >
+                              <Camera className="h-4 w-4" />
+                              <span>Take Photo</span>
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => editFileInputRef.current?.click()}
+                              className="flex items-center gap-1"
+                            >
+                              <Image className="h-4 w-4" />
+                              <span>Add Image</span>
+                            </Button>
+                            {renderStickerPicker('edit')}
+                          </div>
+                        </div>
+                        
+                        <div className="bg-white dark:bg-gray-950 rounded-lg border p-4 shadow-sm">
+                          <Textarea
+                            id={`edit-content-${entry.id}`}
+                            value={editContent}
+                            onChange={(e) => setEditContent(e.target.value)}
+                            className="min-h-[200px] border-none shadow-none focus-visible:ring-0 p-0 bg-transparent resize-none"
+                          />
+                          
+                          {editSticker && (
+                            <div className="text-3xl mt-2">
+                              {editSticker}
+                            </div>
+                          )}
+                          
+                          {editImages.length > 0 && (
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-4">
+                              {editImages.map((image, index) => (
+                                <div key={index} className="relative group">
+                                  <img 
+                                    src={image} 
+                                    alt={`Entry image ${index + 1}`} 
+                                    className="w-full h-32 object-cover rounded-md"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => removeImage(index, 'edit')}
+                                    className="absolute top-1 right-1 bg-black/50 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end gap-2 mt-4">
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          onClick={handleCancelEdit}
+                        >
+                          Cancel
+                        </Button>
+                        <Button 
+                          type="button" 
+                          onClick={() => handleUpdateEntry(entry.id)}
+                        >
+                          Update Entry
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="p-4 border-b flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-semibold text-lg">{entry.title}</span>
+                          {entry.sticker && <span className="text-2xl">{entry.sticker}</span>}
+                          <span className="text-sm text-gray-500 dark:text-gray-400">
+                            {format(entry.date, "PPP")}
+                          </span>
+                          <span className="bg-primary/10 text-primary px-2 py-0.5 rounded-full text-xs">
+                            {entry.category}
+                          </span>
+                          <span className="text-sm">{entry.mood}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => toggleEntryExpansion(entry.id)}
+                            aria-label={expandedEntries[entry.id] ? "Collapse entry" : "Expand entry"}
+                          >
+                            {expandedEntries[entry.id] ? (
+                              <ChevronUp className="h-4 w-4" />
+                            ) : (
+                              <ChevronDown className="h-4 w-4" />
+                            )}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEditEntry(entry.id)}
+                            aria-label="Edit entry"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => toggleArchiveStatus(entry.id)}
+                            aria-label={entry.archived ? "Unarchive entry" : "Archive entry"}
+                          >
+                            {entry.archived ? (
+                              <ArchiveRestore className="h-4 w-4" />
+                            ) : (
+                              <Archive className="h-4 w-4" />
+                            )}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => handleDeleteEntry(entry.id)}
+                            aria-label="Delete entry"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                      {expandedEntries[entry.id] && (
+                        <CardContent className="p-4 space-y-4">
+                          <div className="whitespace-pre-wrap text-gray-700 dark:text-gray-300">
+                            {entry.content}
+                          </div>
+                          {entry.images && entry.images.length > 0 && (
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-4">
+                              {entry.images.map((image, index) => (
+                                <div key={index} className="relative">
+                                  <img 
+                                    src={image} 
+                                    alt={`Entry image ${index + 1}`} 
+                                    className="w-full h-48 object-cover rounded-md"
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </CardContent>
+                      )}
+                    </div>
+                  )}
+                </Card>
+              ))
+            )}
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default Diary;
