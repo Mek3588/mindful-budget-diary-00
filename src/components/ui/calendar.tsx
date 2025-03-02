@@ -10,7 +10,7 @@ export type CalendarProps = React.ComponentProps<typeof DayPicker> & {
   displaySticker?: (date: Date) => string | null;
 };
 
-// Extend DayContentProps to include our custom props
+// Create a custom interface that extends DayContentProps
 interface ExtendedDayContentProps extends DayContentProps {
   displaySticker?: (date: Date) => string | null;
 }
@@ -66,11 +66,11 @@ function Calendar({
       components={{
         IconLeft: () => <ChevronLeft className="h-4 w-4" />,
         IconRight: () => <ChevronRight className="h-4 w-4" />,
-        DayContent: (props: ExtendedDayContentProps) => {
+        DayContent: (dayProps: ExtendedDayContentProps) => {
           // Extract date from props to show event indicator
-          const date = props.date;
+          const date = dayProps.date;
           // Check if this date has the has_event modifier
-          const hasEvent = props.activeModifiers?.has_event || false;
+          const hasEvent = dayProps.activeModifiers?.has_event || false;
           // Get emoji sticker if it exists for this date
           const sticker = displaySticker?.(date);
           
