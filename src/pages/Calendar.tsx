@@ -691,7 +691,11 @@ const CalendarPage = () => {
         </div>
       </div>
 
-      {/* Regular event dialog for adding new events */}
+      <HelpDialog 
+        open={showHelp} 
+        onOpenChange={setShowHelp}
+      />
+
       <Dialog open={showEventDialog} onOpenChange={setShowEventDialog}>
         <DialogContent className="sm:max-w-md max-w-[95vw] overflow-hidden">
           <DialogHeader>
@@ -851,4 +855,4 @@ const CalendarPage = () => {
           
           {showDeleteConfirm ? (
             <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-md mb-4">
-              <h4 className="font-medium text-red-800 dark:
+              <h4
