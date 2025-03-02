@@ -63,11 +63,15 @@ function Calendar({
           const date = props.date;
           // Check if this date has the has_event modifier
           const hasEvent = props.activeModifiers?.has_event || false;
+          // Get emoji sticker if it exists for this date
+          const sticker = props.displaySticker?.(date);
           
           return (
             <div className="relative w-full h-full flex flex-col items-center justify-center">
               <span>{date.getDate()}</span>
-              {hasEvent && (
+              {sticker ? (
+                <span className="text-xs absolute bottom-0.5 left-1/2 transform -translate-x-1/2">{sticker}</span>
+              ) : hasEvent && (
                 <Dot className="h-2 w-2 text-purple-400 absolute bottom-0" />
               )}
             </div>
