@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -49,6 +50,8 @@ import {
   Trash2,
   Edit,
   X,
+  Archive,
+  Clock10,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -64,7 +67,10 @@ interface CalendarEvent {
   time: string; // HH:MM
   category: Category;
   sticker?: string; // Optional sticker
+  archived?: boolean; // New archived property
 }
+
+type ArchiveFilter = "active" | "archived" | "all";
 
 type Category = "personal" | "work" | "social" | "health" | "other";
 
@@ -162,6 +168,7 @@ const CalendarPage = () => {
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedCategory, setSelectedCategory] = useState<Category | "all">("all");
+  const [archiveFilter, setArchiveFilter] = useState<ArchiveFilter>("active");
   const [showEventDialog, setShowEventDialog] = useState(false);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const [eventTitle, setEventTitle] = useState("");
@@ -187,13 +194,23 @@ const CalendarPage = () => {
     localStorage.setItem("calendar-events", JSON.stringify(events));
   }, [events]);
 
-  // Filter events based on selected category
+  // Filter events based on selected category and archive filter
   const filteredEvents = useMemo(() => {
-    if (selectedCategory === "all") {
-      return events;
-    }
-    return events.filter(event => event.category === selectedCategory);
-  }, [events, selectedCategory]);
+    return events.filter(event => {
+      // First, filter by archive status
+      const matchesArchiveStatus = 
+        archiveFilter === "all" ||
+        (archiveFilter === "active" && !event.archived) ||
+        (archiveFilter === "archived" && event.archived);
+      
+      // Then filter by category
+      const matchesCategory = 
+        selectedCategory === "all" || 
+        event.category === selectedCategory;
+        
+      return matchesArchiveStatus && matchesCategory;
+    });
+  }, [events, selectedCategory, archiveFilter]);
 
   // Filter stickers based on selected category
   useEffect(() => {
@@ -303,6 +320,7 @@ const CalendarPage = () => {
         time: eventTime,
         category: eventCategory,
         sticker: eventSticker,
+        archived: false,
       };
       setEvents([...events, newEvent]);
       toast.success("Event created successfully");
@@ -322,6 +340,26 @@ const CalendarPage = () => {
       toast.success("Event deleted successfully");
       setShowEventDialog(false);
       resetEventForm();
+    }
+  };
+
+  // Archive/unarchive event
+  const toggleArchiveEvent = (eventId: string) => {
+    const updatedEvents = events.map((event) =>
+      event.id === eventId
+        ? { ...event, archived: !event.archived }
+        : event
+    );
+    setEvents(updatedEvents);
+    
+    // Determine if we're archiving or unarchiving
+    const event = events.find(e => e.id === eventId);
+    if (event) {
+      if (!event.archived) {
+        toast.success("Event archived successfully");
+      } else {
+        toast.success("Event unarchived successfully");
+      }
     }
   };
 
@@ -362,15 +400,30 @@ const CalendarPage = () => {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-xl">Calendar</CardTitle>
-              <div className="flex items-center space-x-2 flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2">
+                <Select
+                  value={archiveFilter}
+                  onValueChange={(value) => 
+                    setArchiveFilter(value as ArchiveFilter)
+                  }
+                >
+                  <SelectTrigger className="w-[130px] h-9">
+                    <SelectValue placeholder="Filter" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="archived">Archived</SelectItem>
+                    <SelectItem value="all">All</SelectItem>
+                  </SelectContent>
+                </Select>
                 <Select
                   value={selectedCategory}
                   onValueChange={(value) => 
                     setSelectedCategory(value as Category | "all")
                   }
                 >
-                  <SelectTrigger className="w-[160px]">
-                    <SelectValue placeholder="Filter by Category" />
+                  <SelectTrigger className="w-[130px] h-9">
+                    <SelectValue placeholder="Category" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Categories</SelectItem>
@@ -454,14 +507,20 @@ const CalendarPage = () => {
               ) : (
                 <div className="space-y-4">
                   {sortedEventsForSelectedDate.map((event) => (
-                    <Card key={event.id} className={`${categoryBackgroundColors[event.category]} border-none shadow-sm`}>
+                    <Card key={event.id} className={`${categoryBackgroundColors[event.category]} border-none shadow-sm ${event.archived ? "opacity-70" : ""}`}>
                       <CardHeader className="pb-2 pt-4 px-4">
                         <div className="flex justify-between items-start">
                           <div className="space-y-1">
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
                               <Badge className={`${categoryColors[event.category]}`}>
                                 {categoryDisplayNames[event.category]}
                               </Badge>
+                              {event.archived && (
+                                <Badge variant="outline" className="text-gray-500 border-gray-400">
+                                  <Archive className="h-3 w-3 mr-1" />
+                                  Archived
+                                </Badge>
+                              )}
                               {event.sticker && (
                                 <span className="text-xl">{event.sticker}</span>
                               )}
@@ -486,6 +545,10 @@ const CalendarPage = () => {
                               <DropdownMenuItem onClick={() => handleEditEvent(event)}>
                                 <Edit className="h-4 w-4 mr-2" />
                                 Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => toggleArchiveEvent(event.id)}>
+                                <Archive className="h-4 w-4 mr-2" />
+                                {event.archived ? "Unarchive" : "Archive"}
                               </DropdownMenuItem>
                               <DropdownMenuItem 
                                 onClick={() => {
@@ -550,14 +613,20 @@ const CalendarPage = () => {
                     })
                     .slice(0, 15) // Show only next 15 events
                     .map((event) => (
-                      <Card key={event.id} className="shadow-sm">
+                      <Card key={event.id} className={`shadow-sm ${event.archived ? "opacity-70" : ""}`}>
                         <CardHeader className="p-3">
                           <div className="flex justify-between items-start">
                             <div className="space-y-1">
-                              <div className="flex items-center space-x-2">
+                              <div className="flex items-center space-x-2 flex-wrap gap-2">
                                 <Badge className={`${categoryColors[event.category]}`}>
                                   {categoryDisplayNames[event.category]}
                                 </Badge>
+                                {event.archived && (
+                                  <Badge variant="outline" className="text-gray-500 border-gray-400">
+                                    <Archive className="h-3 w-3 mr-1" />
+                                    Archived
+                                  </Badge>
+                                )}
                                 {event.sticker && (
                                   <span className="text-xl">{event.sticker}</span>
                                 )}
@@ -570,14 +639,33 @@ const CalendarPage = () => {
                                 {event.time}
                               </div>
                             </div>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7"
-                              onClick={() => handleEditEvent(event)}
-                            >
-                              <Edit className="h-3 w-3" />
-                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-7 w-7">
+                                  <MoreVertical className="h-3 w-3" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handleEditEvent(event)}>
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => toggleArchiveEvent(event.id)}>
+                                  <Archive className="h-4 w-4 mr-2" />
+                                  {event.archived ? "Unarchive" : "Archive"}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  onClick={() => {
+                                    handleEditEvent(event);
+                                    setShowDeleteConfirm(true);
+                                  }}
+                                  className="text-red-600"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
                         </CardHeader>
                       </Card>
@@ -606,9 +694,9 @@ const CalendarPage = () => {
         </div>
       </div>
 
-      {/* Event Dialog */}
+      {/* Event Dialog - Improved for mobile */}
       <Dialog open={showEventDialog} onOpenChange={setShowEventDialog}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md max-w-[95vw] overflow-hidden">
           <DialogHeader>
             <DialogTitle>
               {editingEvent ? "Edit Event" : "Add New Event"}
@@ -620,145 +708,149 @@ const CalendarPage = () => {
             </DialogDescription>
           </DialogHeader>
           
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="event-date" className="text-right">
-                Date
-              </Label>
-              <div className="col-span-3">
-                <Button
-                  variant="outline"
-                  className="w-full justify-start text-left"
-                >
-                  <Calendar className="mr-2 h-4 w-4" />
-                  {format(selectedDate, "MMMM d, yyyy")}
-                </Button>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="event-time" className="text-right">
-                Time
-              </Label>
-              <Input
-                id="event-time"
-                type="time"
-                value={eventTime}
-                onChange={(e) => setEventTime(e.target.value)}
-                className="col-span-3"
-              />
-            </div>
-            
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="event-title" className="text-right">
-                Title
-              </Label>
-              <Input
-                id="event-title"
-                value={eventTitle}
-                onChange={(e) => setEventTitle(e.target.value)}
-                className="col-span-3"
-              />
-            </div>
-            
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label className="text-right">Category</Label>
-              <Select
-                value={eventCategory}
-                onValueChange={(value) => setEventCategory(value as Category)}
-              >
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Select a category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="personal">Personal</SelectItem>
-                  <SelectItem value="work">Work</SelectItem>
-                  <SelectItem value="social">Social</SelectItem>
-                  <SelectItem value="health">Health</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label className="text-right">Sticker</Label>
-              <div className="col-span-3 flex items-center gap-2">
-                <Input
-                  value={eventSticker}
-                  onChange={(e) => setEventSticker(e.target.value)}
-                  placeholder="Select or type an emoji"
-                  className="flex-1"
-                />
-                <Button 
-                  variant="outline" 
-                  type="button" 
-                  onClick={() => setShowStickerList(!showStickerList)}
-                  className="px-3"
-                >
-                  {eventSticker || "😊"}
-                </Button>
-              </div>
-            </div>
-            
-            {showStickerList && (
-              <div className="grid grid-cols-4 items-start gap-4">
-                <div className="col-span-1 text-right pt-2">
-                  <Label>Categories</Label>
-                </div>
-                <div className="col-span-3">
-                  <Select
-                    value={selectedStickerCategory}
-                    onValueChange={(value) => setSelectedStickerCategory(value as StickerCategory | "all")}
+          <ScrollArea className="max-h-[70vh]">
+            <div className="grid gap-4 py-4 px-1">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="event-date" className={isMobile ? "col-span-4" : "text-right"}>
+                  Date
+                </Label>
+                <div className={isMobile ? "col-span-4" : "col-span-3"}>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start text-left"
                   >
-                    <SelectTrigger className="mb-3">
-                      <SelectValue placeholder="Sticker category" />
+                    <Calendar className="mr-2 h-4 w-4" />
+                    {format(selectedDate, "MMMM d, yyyy")}
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="event-time" className={isMobile ? "col-span-4" : "text-right"}>
+                  Time
+                </Label>
+                <Input
+                  id="event-time"
+                  type="time"
+                  value={eventTime}
+                  onChange={(e) => setEventTime(e.target.value)}
+                  className={isMobile ? "col-span-4" : "col-span-3"}
+                />
+              </div>
+              
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="event-title" className={isMobile ? "col-span-4" : "text-right"}>
+                  Title
+                </Label>
+                <Input
+                  id="event-title"
+                  value={eventTitle}
+                  onChange={(e) => setEventTitle(e.target.value)}
+                  className={isMobile ? "col-span-4" : "col-span-3"}
+                />
+              </div>
+              
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className={isMobile ? "col-span-4" : "text-right"}>Category</Label>
+                <div className={isMobile ? "col-span-4" : "col-span-3"}>
+                  <Select
+                    value={eventCategory}
+                    onValueChange={(value) => setEventCategory(value as Category)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a category" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Stickers</SelectItem>
-                      {stickerData.map((category) => (
-                        <SelectItem key={category.category} value={category.category}>
-                          {category.label}
-                        </SelectItem>
-                      ))}
+                      <SelectItem value="personal">Personal</SelectItem>
+                      <SelectItem value="work">Work</SelectItem>
+                      <SelectItem value="social">Social</SelectItem>
+                      <SelectItem value="health">Health</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
                     </SelectContent>
                   </Select>
-                  
-                  <div className="border rounded-md p-2">
-                    <ScrollArea className="h-[200px]">
-                      <div className="grid grid-cols-8 gap-1 p-1">
-                        {availableStickers.map(sticker => (
-                          <Button
-                            key={sticker}
-                            variant="ghost"
-                            className="h-8 w-8 p-0 text-xl hover:bg-muted"
-                            onClick={() => {
-                              setEventSticker(sticker);
-                              setShowStickerList(false);
-                            }}
-                          >
-                            {sticker}
-                          </Button>
-                        ))}
-                      </div>
-                    </ScrollArea>
-                  </div>
                 </div>
               </div>
-            )}
-            
-            <div className="grid grid-cols-4 items-start gap-4">
-              <Label htmlFor="event-description" className="text-right pt-2">
-                Description
-              </Label>
-              <Textarea
-                id="event-description"
-                value={eventDescription}
-                onChange={(e) => setEventDescription(e.target.value)}
-                className="col-span-3"
-                rows={3}
-              />
+              
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className={isMobile ? "col-span-4" : "text-right"}>Sticker</Label>
+                <div className={`flex items-center gap-2 ${isMobile ? "col-span-4" : "col-span-3"}`}>
+                  <Input
+                    value={eventSticker}
+                    onChange={(e) => setEventSticker(e.target.value)}
+                    placeholder="Select or type an emoji"
+                    className="flex-1"
+                  />
+                  <Button 
+                    variant="outline" 
+                    type="button" 
+                    onClick={() => setShowStickerList(!showStickerList)}
+                    className="px-3"
+                  >
+                    {eventSticker || "😊"}
+                  </Button>
+                </div>
+              </div>
+              
+              {showStickerList && (
+                <div className="grid grid-cols-4 items-start gap-4">
+                  <div className={isMobile ? "col-span-4" : "col-span-1 text-right pt-2"}>
+                    <Label>Categories</Label>
+                  </div>
+                  <div className={isMobile ? "col-span-4" : "col-span-3"}>
+                    <Select
+                      value={selectedStickerCategory}
+                      onValueChange={(value) => setSelectedStickerCategory(value as StickerCategory | "all")}
+                    >
+                      <SelectTrigger className="mb-3">
+                        <SelectValue placeholder="Sticker category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Stickers</SelectItem>
+                        {stickerData.map((category) => (
+                          <SelectItem key={category.category} value={category.category}>
+                            {category.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    
+                    <div className="border rounded-md p-2">
+                      <ScrollArea className="h-[150px]">
+                        <div className="grid grid-cols-8 gap-1 p-1">
+                          {availableStickers.map(sticker => (
+                            <Button
+                              key={sticker}
+                              variant="ghost"
+                              className="h-8 w-8 p-0 text-xl hover:bg-muted"
+                              onClick={() => {
+                                setEventSticker(sticker);
+                                setShowStickerList(false);
+                              }}
+                            >
+                              {sticker}
+                            </Button>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              <div className="grid grid-cols-4 items-start gap-4">
+                <Label htmlFor="event-description" className={isMobile ? "col-span-4" : "text-right pt-2"}>
+                  Description
+                </Label>
+                <Textarea
+                  id="event-description"
+                  value={eventDescription}
+                  onChange={(e) => setEventDescription(e.target.value)}
+                  className={isMobile ? "col-span-4" : "col-span-3"}
+                  rows={3}
+                />
+              </div>
             </div>
-          </div>
+          </ScrollArea>
           
           {showDeleteConfirm ? (
             <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-md mb-4">
@@ -782,23 +874,32 @@ const CalendarPage = () => {
               </div>
             </div>
           ) : (
-            <DialogFooter>
+            <DialogFooter className="flex flex-col sm:flex-row sm:justify-between sm:space-x-2">
               {editingEvent && (
                 <Button 
                   variant="outline" 
-                  className="mr-auto"
+                  className="mb-2 sm:mb-0 sm:mr-auto"
                   onClick={() => setShowDeleteConfirm(true)}
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
                   Delete
                 </Button>
               )}
-              <Button variant="outline" onClick={() => setShowEventDialog(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleSaveEvent}>
-                {editingEvent ? "Update Event" : "Create Event"}
-              </Button>
+              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 w-full sm:w-auto">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowEventDialog(false)}
+                  className="w-full sm:w-auto"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleSaveEvent}
+                  className="w-full sm:w-auto"
+                >
+                  {editingEvent ? "Update Event" : "Create Event"}
+                </Button>
+              </div>
             </DialogFooter>
           )}
         </DialogContent>

@@ -53,7 +53,7 @@ function Calendar({
         day: cn(
           buttonVariants({ variant: "ghost" }),
           "font-normal text-gray-100 aria-selected:opacity-100 hover:bg-gradient-to-br hover:from-purple-800/30 hover:to-pink-800/30 hover:text-white transition-all duration-200",
-          isMobile ? "h-8 w-8 p-0 text-xs" : "h-8 w-8 sm:h-10 sm:w-10 p-0 text-sm"
+          isMobile ? "h-8 w-8 p-0 text-xs" : "h-8 w-8 sm:h-10 sm:w-10 p-0 text-sm" 
         ),
         day_selected:
           "bg-gradient-to-br from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 hover:text-white focus:from-purple-700 focus:to-pink-700 focus:text-white shadow-lg shadow-purple-500/20",
