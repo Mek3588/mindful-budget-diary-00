@@ -1,513 +1,463 @@
 
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar } from "@/components/ui/calendar";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
   DialogTrigger,
-  DialogDescription,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import {
-  ArrowLeft,
-  Clipboard,
-  PlusCircle,
-  Calendar as CalendarIcon,
-  Clock,
-  Pill,
-  Heart,
-  FileText,
-  Stethoscope,
-  Trash,
-  CalendarCheck,
-  BellRing,
-  Pencil,
-  Camera,
-  Image,
-  ChevronDown,
-  ChevronUp,
-  CheckCircle2,
-  X
-} from "lucide-react";
-import { format, addDays, isAfter } from "date-fns";
-import { useToast } from "@/hooks/use-toast";
-import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import CameraCapture from "@/components/CameraCapture";
-import { PageLayout } from "@/components/PageLayout";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import {
+  Heart,
+  Plus,
+  Weight,
+  Activity,
+  Pill,
+  Stethoscope,
+  MoreVertical,
+  Edit,
+  Trash2,
+  CalendarDays,
+  Clock,
+  Archive,
+  Filter,
+  HelpCircle,
+} from "lucide-react";
+import { toast } from "sonner";
+import { useMobile } from "@/hooks/use-mobile";
+import { Badge } from "@/components/ui/badge";
+import { PageLayout } from "@/components/PageLayout";
+import HelpDialog from "@/components/HelpDialog";
 
-type RecordType = "appointment" | "medication" | "vital" | "note";
+// Define types
+type RecordType = "vitals" | "medication" | "appointment" | "note";
+type ArchiveFilter = "active" | "archived" | "all";
 
 interface MedicalRecord {
   id: string;
   type: RecordType;
-  title: string;
-  description: string;
-  date: Date;
+  date: string;
   time?: string;
-  reminder: boolean;
-  reminderDays: number;
-  completed: boolean;
-  category?: string;
-  dosage?: string;
-  frequency?: string;
-  doctor?: string;
-  location?: string;
-  value?: string;
-  unit?: string;
-  photos?: string[];
-  isExpanded?: boolean;
-  reminderShown?: boolean;
+  title: string;
+  description?: string;
+  values?: { [key: string]: string | number };
+  archived?: boolean;
 }
 
-// New interface for reminders
-interface Reminder {
-  id: string;
-  recordId: string;
-  title: string;
-  date: Date;
-  time?: string;
-  dismissed: boolean;
-}
-
-const generateId = () => {
-  return Date.now().toString(36) + Math.random().toString(36).substring(2);
+// Record type display information
+const recordTypeInfo = {
+  vitals: {
+    label: "Vitals & Metrics",
+    icon: <Activity className="h-5 w-5" />,
+    color: "text-blue-500",
+    bgColor: "bg-blue-100",
+  },
+  medication: {
+    label: "Medications",
+    icon: <Pill className="h-5 w-5" />,
+    color: "text-purple-500",
+    bgColor: "bg-purple-100",
+  },
+  appointment: {
+    label: "Appointments",
+    icon: <Stethoscope className="h-5 w-5" />,
+    color: "text-green-500",
+    bgColor: "bg-green-100",
+  },
+  note: {
+    label: "Medical Notes",
+    icon: <Heart className="h-5 w-5" />,
+    color: "text-red-500",
+    bgColor: "bg-red-100",
+  },
 };
 
-const Medical = () => {
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const [records, setRecords] = useState<MedicalRecord[]>(() => {
-    const savedRecords = localStorage.getItem("medical-records");
-    return savedRecords ? JSON.parse(savedRecords).map((record: MedicalRecord) => ({
-      ...record, 
-      date: new Date(record.date),
-      isExpanded: false
-    })) : [];
+const MedicalPage = () => {
+  const isMobile = useMobile();
+  const [records, setRecords] = useState<MedicalRecord[]>([]);
+  const [recordType, setRecordType] = useState<RecordType>("vitals");
+  const [recordTitle, setRecordTitle] = useState("");
+  const [recordDescription, setRecordDescription] = useState("");
+  const [recordDate, setRecordDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [recordTime, setRecordTime] = useState(format(new Date(), "HH:mm"));
+  const [vitalValues, setVitalValues] = useState<{[key: string]: string}>({
+    weight: "",
+    bloodPressure: "",
+    heartRate: "",
+    temperature: "",
+    bloodSugar: "",
   });
-  
-  // New state for reminders
-  const [reminders, setReminders] = useState<Reminder[]>(() => {
-    const savedReminders = localStorage.getItem("medical-reminders");
-    return savedReminders ? JSON.parse(savedReminders).map((reminder: Reminder) => ({
-      ...reminder,
-      date: new Date(reminder.date)
-    })) : [];
+  const [medicationValues, setMedicationValues] = useState<{[key: string]: string}>({
+    name: "",
+    dosage: "",
+    frequency: "",
+    startDate: format(new Date(), "yyyy-MM-dd"),
+    endDate: "",
   });
-  
-  // New state for showing reminders dialog
-  const [showRemindersDialog, setShowRemindersDialog] = useState(false);
-  
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [isAddingRecord, setIsAddingRecord] = useState(false);
+  const [appointmentValues, setAppointmentValues] = useState<{[key: string]: string}>({
+    doctor: "",
+    location: "",
+    reason: "",
+  });
+  const [showRecordDialog, setShowRecordDialog] = useState(false);
   const [editingRecord, setEditingRecord] = useState<MedicalRecord | null>(null);
-  const [cameraOpen, setCameraOpen] = useState(false);
-  const [editingRecordForPhoto, setEditingRecordForPhoto] = useState<string | null>(null);
-  
-  const [newRecord, setNewRecord] = useState<Partial<MedicalRecord>>({
-    type: "appointment",
-    title: "",
-    description: "",
-    date: new Date(),
-    time: "",
-    reminder: true,
-    reminderDays: 1,
-    completed: false,
-    photos: []
-  });
-  
-  const [selectedTab, setSelectedTab] = useState<string>("upcoming");
-  
-  // Count active reminders
-  const activeRemindersCount = reminders.filter(r => !r.dismissed).length;
-  
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [activeTab, setActiveTab] = useState<RecordType | "all">("all");
+  const [selectedRecordType, setSelectedRecordType] = useState<RecordType | "all">("all");
+  const [archiveFilter, setArchiveFilter] = useState<ArchiveFilter>("active");
+  const [showHelp, setShowHelp] = useState(false);
+
+  // Load records from localStorage on component mount
   useEffect(() => {
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    
-    // Check for new reminders
-    records.forEach(record => {
-      if (record.reminder && !record.completed && !record.reminderShown) {
-        const recordDate = new Date(record.date);
-        const reminderDate = addDays(recordDate, -record.reminderDays);
-        reminderDate.setHours(0, 0, 0, 0);
-        
-        if (!isAfter(reminderDate, now)) {
-          // Instead of showing toast, add to reminders list
-          const reminderExists = reminders.some(r => r.recordId === record.id && !r.dismissed);
-          
-          if (!reminderExists) {
-            const newReminder: Reminder = {
-              id: generateId(),
-              recordId: record.id,
-              title: record.title,
-              date: new Date(record.date),
-              time: record.time,
-              dismissed: false
-            };
-            
-            setReminders(prev => [...prev, newReminder]);
-            updateRecord(record.id, { reminderShown: true });
-            
-            // Only show a single toast notification that reminders are available
-            if (activeRemindersCount === 0) {
-              toast({
-                title: "Medical Reminders Available",
-                description: "You have new medical reminders to review.",
-                action: (
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => setShowRemindersDialog(true)}
-                  >
-                    View
-                  </Button>
-                ),
-              });
-            }
-          }
-        }
-      }
-    });
-  }, [records]);
-  
-  // Save reminders to localStorage
-  useEffect(() => {
-    localStorage.setItem("medical-reminders", JSON.stringify(reminders));
-  }, [reminders]);
-  
+    const savedRecords = localStorage.getItem("medical-records");
+    if (savedRecords) {
+      setRecords(JSON.parse(savedRecords));
+    }
+  }, []);
+
+  // Save records to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem("medical-records", JSON.stringify(records));
   }, [records]);
-  
-  const filteredRecords = records.filter(record => {
-    const recordDate = new Date(record.date);
-    
-    if (selectedTab === "upcoming") {
-      return recordDate >= new Date(new Date().setHours(0, 0, 0, 0)) && !record.completed;
-    } else if (selectedTab === "completed") {
-      return record.completed;
-    } else if (selectedTab === "all") {
-      return true;
-    } else {
-      return recordDate.getDate() === selectedDate.getDate() &&
-             recordDate.getMonth() === selectedDate.getMonth() &&
-             recordDate.getFullYear() === selectedDate.getFullYear();
-    }
-  });
-  
-  const datesWithRecords = records.map(record => new Date(record.date));
-  
-  const updateRecord = (id: string, updates: Partial<MedicalRecord>) => {
-    const updatedRecords = records.map(record => 
-      record.id === id ? { ...record, ...updates } : record
-    );
-    setRecords(updatedRecords);
-  };
-  
-  // Handle reminder dismissal
-  const dismissReminder = (id: string) => {
-    setReminders(reminders.map(reminder => 
-      reminder.id === id ? { ...reminder, dismissed: true } : reminder
-    ));
-  };
-  
-  // Dismiss all reminders
-  const dismissAllReminders = () => {
-    setReminders(reminders.map(reminder => ({ ...reminder, dismissed: true })));
-    setShowRemindersDialog(false);
-  };
-  
-  // Get record from reminder
-  const getRecordFromReminder = (recordId: string) => {
-    return records.find(record => record.id === recordId);
-  };
-  
-  const handleAddRecord = () => {
-    if (!newRecord.title) {
-      toast({
-        title: "Required Field Missing",
-        description: "Please enter a title for your record.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    const recordToAdd: MedicalRecord = {
-      id: generateId(),
-      type: newRecord.type as RecordType,
-      title: newRecord.title!,
-      description: newRecord.description || "",
-      date: newRecord.date || new Date(),
-      time: newRecord.time,
-      reminder: newRecord.reminder || false,
-      reminderDays: newRecord.reminderDays || 1,
-      completed: false,
-      category: newRecord.category,
-      dosage: newRecord.dosage,
-      frequency: newRecord.frequency,
-      doctor: newRecord.doctor,
-      location: newRecord.location,
-      value: newRecord.value,
-      unit: newRecord.unit,
-      photos: newRecord.photos || [],
-      isExpanded: false,
-      reminderShown: false
-    };
-    
-    if (editingRecord) {
-      setRecords(records.map(r => r.id === editingRecord.id ? {...recordToAdd, id: editingRecord.id} : r));
-      setEditingRecord(null);
-      toast({
-        title: "Success",
-        description: "Record updated successfully",
-      });
-    } else {
-      setRecords([...records, recordToAdd]);
-      toast({
-        title: "Success",
-        description: "Record added successfully",
-      });
-    }
-    
-    setNewRecord({
-      type: "appointment",
-      title: "",
-      description: "",
-      date: new Date(),
-      time: "",
-      reminder: true,
-      reminderDays: 1,
-      completed: false,
-      photos: []
+
+  // Filter records based on type and archive status
+  const filteredRecords = useMemo(() => {
+    return records.filter(record => {
+      const matchesType = selectedRecordType === "all" || record.type === selectedRecordType;
+      const matchesArchiveStatus = 
+        archiveFilter === "all" ||
+        (archiveFilter === "active" && !record.archived) ||
+        (archiveFilter === "archived" && record.archived);
+      
+      return matchesType && matchesArchiveStatus;
     });
-    setIsAddingRecord(false);
-  };
-  
-  const handleDeleteRecord = (id: string) => {
-    setRecords(records.filter(record => record.id !== id));
-    // Also delete any reminders for this record
-    setReminders(reminders.filter(reminder => reminder.recordId !== id));
-    toast({
-      title: "Success",
-      description: "Record deleted",
-    });
-  };
-  
-  const handleToggleCompletion = (id: string) => {
-    setRecords(records.map(record => 
-      record.id === id ? { ...record, completed: !record.completed } : record
-    ));
-    
-    const record = records.find(r => r.id === id);
-    if (record) {
-      // If marked as completed, dismiss any reminders
-      if (!record.completed) {
-        setReminders(reminders.map(reminder => 
-          reminder.recordId === id ? { ...reminder, dismissed: true } : reminder
-        ));
+  }, [records, selectedRecordType, archiveFilter]);
+
+  // Sort records by date (newest first)
+  const sortedRecords = useMemo(() => {
+    return [...filteredRecords].sort((a, b) => {
+      // Compare dates first
+      const dateComparison = new Date(b.date).getTime() - new Date(a.date).getTime();
+      if (dateComparison !== 0) return dateComparison;
+      
+      // If dates are the same, compare times
+      if (a.time && b.time) {
+        return a.time.localeCompare(b.time);
       }
       
-      toast({
-        title: "Status Changed",
-        description: record.completed ? "Record marked as incomplete" : "Record marked as complete",
-      });
+      return 0;
+    });
+  }, [filteredRecords]);
+
+  const resetForm = () => {
+    setRecordType("vitals");
+    setRecordTitle("");
+    setRecordDescription("");
+    setRecordDate(format(new Date(), "yyyy-MM-dd"));
+    setRecordTime(format(new Date(), "HH:mm"));
+    setVitalValues({
+      weight: "",
+      bloodPressure: "",
+      heartRate: "",
+      temperature: "",
+      bloodSugar: "",
+    });
+    setMedicationValues({
+      name: "",
+      dosage: "",
+      frequency: "",
+      startDate: format(new Date(), "yyyy-MM-dd"),
+      endDate: "",
+    });
+    setAppointmentValues({
+      doctor: "",
+      location: "",
+      reason: "",
+    });
+    setEditingRecord(null);
+    setShowDeleteConfirm(false);
+  };
+
+  const handleSaveRecord = () => {
+    if (!recordTitle.trim()) {
+      toast.error("Title is required");
+      return;
+    }
+
+    let values = {};
+    switch (recordType) {
+      case "vitals":
+        values = vitalValues;
+        break;
+      case "medication":
+        values = medicationValues;
+        break;
+      case "appointment":
+        values = appointmentValues;
+        break;
+      default:
+        values = {};
+    }
+
+    if (editingRecord) {
+      const updatedRecords = records.map(record => 
+        record.id === editingRecord.id 
+          ? {
+              ...record,
+              type: recordType,
+              title: recordTitle,
+              description: recordDescription,
+              date: recordDate,
+              time: recordTime,
+              values: values,
+            }
+          : record
+      );
+      setRecords(updatedRecords);
+      toast.success("Record updated successfully");
+    } else {
+      const newRecord: MedicalRecord = {
+        id: Date.now().toString(),
+        type: recordType,
+        title: recordTitle,
+        description: recordDescription,
+        date: recordDate,
+        time: recordTime,
+        values: values,
+        archived: false,
+      };
+      setRecords([...records, newRecord]);
+      toast.success("Record added successfully");
+    }
+
+    setShowRecordDialog(false);
+    resetForm();
+  };
+
+  const handleDeleteRecord = () => {
+    if (editingRecord) {
+      const updatedRecords = records.filter(record => record.id !== editingRecord.id);
+      setRecords(updatedRecords);
+      toast.success("Record deleted successfully");
+      setShowRecordDialog(false);
+      resetForm();
     }
   };
-  
-  const handleToggleExpansion = (id: string) => {
-    setRecords(records.map(record => 
-      record.id === id ? { ...record, isExpanded: !record.isExpanded } : record
-    ));
-  };
-  
+
   const handleEditRecord = (record: MedicalRecord) => {
     setEditingRecord(record);
-    setNewRecord({
-      ...record,
-      date: new Date(record.date),
-    });
-    setIsAddingRecord(true);
-  };
-  
-  const handleAddPhoto = (recordId: string, photoUrl: string) => {
-    setRecords(records.map(record => {
-      if (record.id === recordId) {
-        return {
-          ...record,
-          photos: [...(record.photos || []), photoUrl]
-        };
+    setRecordType(record.type);
+    setRecordTitle(record.title);
+    setRecordDescription(record.description || "");
+    setRecordDate(record.date);
+    setRecordTime(record.time || format(new Date(), "HH:mm"));
+    
+    if (record.values) {
+      switch (record.type) {
+        case "vitals":
+          setVitalValues(record.values as {[key: string]: string});
+          break;
+        case "medication":
+          setMedicationValues(record.values as {[key: string]: string});
+          break;
+        case "appointment":
+          setAppointmentValues(record.values as {[key: string]: string});
+          break;
       }
-      return record;
-    }));
-    
-    toast({
-      title: "Success",
-      description: "Photo added to record",
-    });
-  };
-  
-  const handleCameraCapture = (imageDataUrl: string) => {
-    if (editingRecordForPhoto) {
-      handleAddPhoto(editingRecordForPhoto, imageDataUrl);
-      setEditingRecordForPhoto(null);
-    } else if (isAddingRecord) {
-      setNewRecord({
-        ...newRecord,
-        photos: [...(newRecord.photos || []), imageDataUrl]
-      });
     }
-  };
-  
-  const getRecordIcon = (type: RecordType) => {
-    switch (type) {
-      case "appointment":
-        return <CalendarCheck className="h-5 w-5 text-blue-500" />;
-      case "medication":
-        return <Pill className="h-5 w-5 text-green-500" />;
-      case "vital":
-        return <Heart className="h-5 w-5 text-red-500" />;
-      case "note":
-        return <FileText className="h-5 w-5 text-purple-500" />;
-      default:
-        return <Clipboard className="h-5 w-5" />;
-    }
-  };
-  
-  const renderPhotos = (photos: string[] = []) => {
-    if (photos.length === 0) return null;
     
-    return (
-      <div className="mt-2 grid grid-cols-3 gap-1">
-        {photos.map((photo, index) => (
-          <div key={index} className="relative aspect-square">
-            <img 
-              src={photo} 
-              alt={`Medical record photo ${index + 1}`} 
-              className="w-full h-full object-cover rounded"
-            />
-          </div>
-        ))}
-      </div>
+    setShowRecordDialog(true);
+  };
+
+  const toggleArchiveRecord = (recordId: string) => {
+    const updatedRecords = records.map((record) =>
+      record.id === recordId
+        ? { ...record, archived: !record.archived }
+        : record
     );
+    setRecords(updatedRecords);
+    
+    const record = records.find(r => r.id === recordId);
+    if (record) {
+      if (!record.archived) {
+        toast.success("Record archived successfully");
+      } else {
+        toast.success("Record unarchived successfully");
+      }
+    }
   };
-  
-  const renderTypeSpecificFields = () => {
-    switch (newRecord.type) {
-      case "appointment":
+
+  const renderFormFields = () => {
+    switch (recordType) {
+      case "vitals":
         return (
           <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="doctor">Doctor/Provider</Label>
+                <Label htmlFor="weight">Weight (kg)</Label>
                 <Input
-                  id="doctor"
-                  placeholder="Dr. Smith"
-                  value={newRecord.doctor || ""}
-                  onChange={(e) => setNewRecord({ ...newRecord, doctor: e.target.value })}
+                  id="weight"
+                  value={vitalValues.weight}
+                  onChange={(e) => setVitalValues({...vitalValues, weight: e.target.value})}
+                  placeholder="e.g., 70"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="location">Location</Label>
+                <Label htmlFor="blood-pressure">Blood Pressure (mmHg)</Label>
                 <Input
-                  id="location"
-                  placeholder="123 Medical Center"
-                  value={newRecord.location || ""}
-                  onChange={(e) => setNewRecord({ ...newRecord, location: e.target.value })}
+                  id="blood-pressure"
+                  value={vitalValues.bloodPressure}
+                  onChange={(e) => setVitalValues({...vitalValues, bloodPressure: e.target.value})}
+                  placeholder="e.g., 120/80"
                 />
               </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="heart-rate">Heart Rate (bpm)</Label>
+                <Input
+                  id="heart-rate"
+                  value={vitalValues.heartRate}
+                  onChange={(e) => setVitalValues({...vitalValues, heartRate: e.target.value})}
+                  placeholder="e.g., 72"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="temperature">Temperature (°C)</Label>
+                <Input
+                  id="temperature"
+                  value={vitalValues.temperature}
+                  onChange={(e) => setVitalValues({...vitalValues, temperature: e.target.value})}
+                  placeholder="e.g., 36.8"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="blood-sugar">Blood Sugar (mg/dL)</Label>
+              <Input
+                id="blood-sugar"
+                value={vitalValues.bloodSugar}
+                onChange={(e) => setVitalValues({...vitalValues, bloodSugar: e.target.value})}
+                placeholder="e.g., 90"
+              />
             </div>
           </div>
         );
       case "medication":
         return (
           <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="medication-name">Medication Name</Label>
+              <Input
+                id="medication-name"
+                value={medicationValues.name}
+                onChange={(e) => setMedicationValues({...medicationValues, name: e.target.value})}
+                placeholder="e.g., Aspirin"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="dosage">Dosage</Label>
                 <Input
                   id="dosage"
-                  placeholder="50mg"
-                  value={newRecord.dosage || ""}
-                  onChange={(e) => setNewRecord({ ...newRecord, dosage: e.target.value })}
+                  value={medicationValues.dosage}
+                  onChange={(e) => setMedicationValues({...medicationValues, dosage: e.target.value})}
+                  placeholder="e.g., 100mg"
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="frequency">Frequency</Label>
-                <Select
-                  value={newRecord.frequency || ""}
-                  onValueChange={(value) => setNewRecord({ ...newRecord, frequency: value })}
-                >
-                  <SelectTrigger id="frequency">
-                    <SelectValue placeholder="Select frequency" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="once">Once</SelectItem>
-                    <SelectItem value="daily">Daily</SelectItem>
-                    <SelectItem value="twice-daily">Twice Daily</SelectItem>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                    <SelectItem value="as-needed">As Needed</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Input
+                  id="frequency"
+                  value={medicationValues.frequency}
+                  onChange={(e) => setMedicationValues({...medicationValues, frequency: e.target.value})}
+                  placeholder="e.g., Once daily"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="start-date">Start Date</Label>
+                <Input
+                  id="start-date"
+                  type="date"
+                  value={medicationValues.startDate}
+                  onChange={(e) => setMedicationValues({...medicationValues, startDate: e.target.value})}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="end-date">End Date (optional)</Label>
+                <Input
+                  id="end-date"
+                  type="date"
+                  value={medicationValues.endDate}
+                  onChange={(e) => setMedicationValues({...medicationValues, endDate: e.target.value})}
+                />
               </div>
             </div>
           </div>
         );
-      case "vital":
+      case "appointment":
         return (
           <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="value">Value</Label>
-                <Input
-                  id="value"
-                  placeholder="120"
-                  value={newRecord.value || ""}
-                  onChange={(e) => setNewRecord({ ...newRecord, value: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="unit">Unit</Label>
-                <Select
-                  value={newRecord.unit || ""}
-                  onValueChange={(value) => setNewRecord({ ...newRecord, unit: value })}
-                >
-                  <SelectTrigger id="unit">
-                    <SelectValue placeholder="Select unit" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="mmHg">mmHg (Blood Pressure)</SelectItem>
-                    <SelectItem value="bpm">BPM (Heart Rate)</SelectItem>
-                    <SelectItem value="mg/dL">mg/dL (Blood Sugar)</SelectItem>
-                    <SelectItem value="kg">kg (Weight)</SelectItem>
-                    <SelectItem value="cm">cm (Height)</SelectItem>
-                    <SelectItem value="°C">°C (Temperature)</SelectItem>
-                    <SelectItem value="°F">°F (Temperature)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="doctor">Doctor/Provider</Label>
+              <Input
+                id="doctor"
+                value={appointmentValues.doctor}
+                onChange={(e) => setAppointmentValues({...appointmentValues, doctor: e.target.value})}
+                placeholder="e.g., Dr. Smith"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="location">Location</Label>
+              <Input
+                id="location"
+                value={appointmentValues.location}
+                onChange={(e) => setAppointmentValues({...appointmentValues, location: e.target.value})}
+                placeholder="e.g., City Hospital"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="appointment-reason">Reason for Visit</Label>
+              <Input
+                id="appointment-reason"
+                value={appointmentValues.reason}
+                onChange={(e) => setAppointmentValues({...appointmentValues, reason: e.target.value})}
+                placeholder="e.g., Annual checkup"
+              />
             </div>
           </div>
         );
@@ -515,625 +465,385 @@ const Medical = () => {
         return null;
     }
   };
-  
-  return (
-    <PageLayout title="Medical Records & Reminders" icon={<Stethoscope className="h-5 w-5 mr-2" />} pageType="medical">
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-1">
-            <Card className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50 h-full">
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <CalendarIcon className="h-5 w-5 mr-2 text-purple-500" />
-                    Medical Calendar
-                  </div>
-                  
-                  {/* Reminders indicator */}
-                  {activeRemindersCount > 0 && (
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="flex items-center gap-1" 
-                      onClick={() => setShowRemindersDialog(true)}
-                    >
-                      <BellRing className="h-4 w-4 text-amber-500" />
-                      <span className="bg-amber-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
-                        {activeRemindersCount}
-                      </span>
-                    </Button>
-                  )}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Calendar
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={(date) => date && setSelectedDate(date)}
-                  className="rounded-md"
-                />
-                
-                <div className="mt-6">
-                  <Button 
-                    className="w-full" 
-                    onClick={() => {
-                      setNewRecord({
-                        ...newRecord,
-                        date: selectedDate,
-                      });
-                      setIsAddingRecord(true);
-                    }}
-                  >
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Add New Record
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
 
-          <div className="lg:col-span-2">
-            <Card className="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>
-                    {selectedTab === "date" 
-                      ? `Records for ${format(selectedDate, "MMMM d, yyyy")}` 
-                      : selectedTab === "upcoming" 
-                        ? "Upcoming Records & Reminders"
-                        : selectedTab === "completed"
-                          ? "Completed Records"
-                          : "All Medical Records"}
-                  </CardTitle>
-                  <Button 
-                    onClick={() => {
-                      setNewRecord({
-                        ...newRecord,
-                        type: "appointment",
-                        date: selectedDate,
-                      });
-                      setIsAddingRecord(true);
-                    }}
-                  >
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Add Record
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="block md:hidden w-full">
-                    <Select
-                      value={selectedTab}
-                      onValueChange={setSelectedTab}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select view" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="date">By Date</SelectItem>
-                        <SelectItem value="upcoming">Upcoming</SelectItem>
-                        <SelectItem value="completed">Completed</SelectItem>
-                        <SelectItem value="all">All Records</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  {/* Reminders button for mobile */}
-                  {activeRemindersCount > 0 && (
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="flex items-center gap-1 md:hidden ml-2 flex-shrink-0" 
-                      onClick={() => setShowRemindersDialog(true)}
-                    >
-                      <BellRing className="h-4 w-4 text-amber-500" />
-                      <span className="bg-amber-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
-                        {activeRemindersCount}
-                      </span>
-                    </Button>
-                  )}
-                </div>
-                
-                <div className="hidden md:block">
-                  <Tabs 
-                    defaultValue="upcoming" 
-                    value={selectedTab} 
-                    onValueChange={setSelectedTab}
-                    className="mb-6"
-                  >
-                    <TabsList className="grid grid-cols-4">
-                      <TabsTrigger value="date">By Date</TabsTrigger>
-                      <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
-                      <TabsTrigger value="completed">Completed</TabsTrigger>
-                      <TabsTrigger value="all">All Records</TabsTrigger>
-                    </TabsList>
-                  </Tabs>
-                </div>
-                
-                {filteredRecords.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Clipboard className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">No records found</h3>
-                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                      {selectedTab === "date" 
-                        ? `There are no medical records for ${format(selectedDate, "MMMM d, yyyy")}.` 
-                        : selectedTab === "upcoming"
-                          ? "You don't have any upcoming appointments or medications."
-                          : selectedTab === "completed"
-                            ? "You don't have any completed medical records."
-                            : "Start by adding your first medical record."}
-                    </p>
-                    <Button 
-                      className="mt-4" 
-                      onClick={() => {
-                        setNewRecord({
-                          ...newRecord,
-                          date: selectedDate,
-                        });
-                        setIsAddingRecord(true);
-                      }}
-                    >
-                      <PlusCircle className="mr-2 h-4 w-4" />
-                      Add New Record
-                    </Button>
-                  </div>
-                ) : (
-                  <ScrollArea className="h-[500px] pr-1 overflow-visible">
-                    <div className="space-y-4 pr-1">
-                      {filteredRecords.map((record) => (
-                        <Collapsible 
-                          key={record.id}
-                          open={record.isExpanded} 
-                          onOpenChange={() => handleToggleExpansion(record.id)}
-                          className={`p-3 sm:p-4 rounded-lg border ${
-                            record.completed 
-                              ? "bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700" 
-                              : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 shadow-sm"
-                          } w-full overflow-visible`}
-                        >
-                          <CollapsibleTrigger asChild>
-                            <div className="flex items-start justify-between cursor-pointer w-full overflow-visible">
-                              <div className="flex items-start space-x-3 flex-1 min-w-0">
-                                <div className="pt-1 flex-shrink-0">
-                                  {getRecordIcon(record.type)}
-                                </div>
-                                <div className="min-w-0">
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    <h3 className={`font-medium ${record.completed ? "line-through text-gray-500 dark:text-gray-400" : ""} truncate`}>
-                                      {record.title}
-                                    </h3>
-                                    <Badge variant={
-                                      record.type === "appointment" ? "default" :
-                                      record.type === "medication" ? "secondary" :
-                                      record.type === "vital" ? "destructive" : "outline"
-                                    }>
-                                      {record.type.charAt(0).toUpperCase() + record.type.slice(1)}
-                                    </Badge>
-                                    {record.reminder && !record.completed && 
-                                     reminders.some(r => r.recordId === record.id && !r.dismissed) && (
-                                      <Badge variant="outline" className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 border-blue-300 dark:border-blue-700">
-                                        <BellRing className="h-3 w-3 mr-1" />
-                                        Reminder
-                                      </Badge>
-                                    )}
-                                  </div>
-                                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 truncate">
-                                    {format(new Date(record.date), "MMMM d, yyyy")}
-                                    {record.time && ` at ${record.time}`}
-                                  </p>
-                                </div>
-                              </div>
-                              
-                              <div className="flex items-center space-x-1 flex-shrink-0 ml-2">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleToggleCompletion(record.id);
-                                  }}
-                                  title={record.completed ? "Mark as Incomplete" : "Mark as Complete"}
-                                  className="flex-shrink-0"
-                                >
-                                  <CheckCircle2 className={`h-5 w-5 ${record.completed ? 'text-green-500 fill-green-500' : 'text-gray-300'}`} />
-                                </Button>
-                                {record.isExpanded ? 
-                                  <ChevronUp className="h-4 w-4 text-gray-500" /> : 
-                                  <ChevronDown className="h-4 w-4 text-gray-500" />
-                                }
-                              </div>
-                            </div>
-                          </CollapsibleTrigger>
-                          
-                          <CollapsibleContent className="mt-4 space-y-3">
-                            {record.description && (
-                              <p className="text-sm">{record.description}</p>
-                            )}
-                            
-                            {record.type === "appointment" && (record.doctor || record.location) && (
-                              <div className="text-sm text-gray-600 dark:text-gray-400">
-                                {record.doctor && <p>Doctor: {record.doctor}</p>}
-                                {record.location && <p>Location: {record.location}</p>}
-                              </div>
-                            )}
-                            
-                            {record.type === "medication" && (record.dosage || record.frequency) && (
-                              <div className="text-sm text-gray-600 dark:text-gray-400">
-                                {record.dosage && <p>Dosage: {record.dosage}</p>}
-                                {record.frequency && <p>Frequency: {
-                                  record.frequency === "once" ? "Once" :
-                                  record.frequency === "daily" ? "Daily" :
-                                  record.frequency === "twice-daily" ? "Twice Daily" :
-                                  record.frequency === "weekly" ? "Weekly" :
-                                  record.frequency === "monthly" ? "Monthly" :
-                                  record.frequency === "as-needed" ? "As Needed" : record.frequency
-                                }</p>}
-                              </div>
-                            )}
-                            
-                            {record.type === "vital" && (record.value || record.unit) && (
-                              <div className="text-sm text-gray-600 dark:text-gray-400">
-                                <p>Value: {record.value}{record.unit && ` ${record.unit}`}</p>
-                              </div>
-                            )}
-                            
-                            {record.reminder && !record.completed && (
-                              <div className="text-sm text-blue-600 dark:text-blue-400 flex items-center">
-                                <BellRing className="h-4 w-4 mr-1" />
-                                <span>
-                                  Reminder: {record.reminderDays === 0 
-                                    ? "Same day" 
-                                    : record.reminderDays === 1 
-                                      ? "1 day before" 
-                                      : `${record.reminderDays} days before`}
-                                </span>
-                              </div>
-                            )}
-                            
-                            {record.photos && record.photos.length > 0 && (
-                              <div>
-                                <h4 className="text-sm font-medium mb-1">Photos</h4>
-                                {renderPhotos(record.photos)}
-                              </div>
-                            )}
-                            
-                            <div className="flex gap-2">
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => {
-                                  setEditingRecordForPhoto(record.id);
-                                  setCameraOpen(true);
-                                }}
-                              >
-                                <Camera className="h-4 w-4 mr-1" /> Take Photo
-                              </Button>
-                            </div>
-                            
-                            <div className="flex space-x-2 pt-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleEditRecord(record)}
-                                title="Edit Record"
-                              >
-                                <Pencil className="h-4 w-4 mr-1" /> Edit
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDeleteRecord(record.id)}
-                                title="Delete Record"
-                              >
-                                <Trash className="h-4 w-4 mr-1" /> Delete
-                              </Button>
-                            </div>
-                          </CollapsibleContent>
-                        </Collapsible>
-                      ))}
-                    </div>
-                  </ScrollArea>
+  const renderRecordCard = (record: MedicalRecord) => {
+    const typeInfo = recordTypeInfo[record.type];
+    
+    return (
+      <Card key={record.id} className={`${record.archived ? "opacity-70" : ""}`}>
+        <CardHeader className="pb-2">
+          <div className="flex justify-between items-start">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Badge className={typeInfo.color}>
+                  <span className="flex items-center gap-1">
+                    {typeInfo.icon}
+                    <span>{typeInfo.label}</span>
+                  </span>
+                </Badge>
+                {record.archived && (
+                  <Badge variant="outline" className="text-gray-500 border-gray-400">
+                    <Archive className="h-3 w-3 mr-1" />
+                    Archived
+                  </Badge>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+              <CardTitle className="text-lg">{record.title}</CardTitle>
+              <div className="flex items-center text-sm text-muted-foreground">
+                <CalendarDays className="h-4 w-4 mr-1" />
+                {format(new Date(record.date), "MMM d, yyyy")}
+                {record.time && (
+                  <>
+                    <Clock className="h-4 w-4 ml-2 mr-1" />
+                    {record.time}
+                  </>
+                )}
+              </div>
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Options</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => handleEditRecord(record)}>
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => toggleArchiveRecord(record.id)}>
+                  <Archive className="h-4 w-4 mr-2" />
+                  {record.archived ? "Unarchive" : "Archive"}
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => {
+                    handleEditRecord(record);
+                    setShowDeleteConfirm(true);
+                  }}
+                  className="text-destructive"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {record.description && <p className="text-sm text-muted-foreground mb-4">{record.description}</p>}
+          
+          {record.type === "vitals" && record.values && (
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+              {record.values.weight && (
+                <div className="flex items-center">
+                  <Weight className="h-4 w-4 mr-2 text-blue-500" />
+                  <span className="font-medium">Weight:</span>
+                  <span className="ml-2">{record.values.weight} kg</span>
+                </div>
+              )}
+              {record.values.bloodPressure && (
+                <div className="flex items-center">
+                  <Activity className="h-4 w-4 mr-2 text-red-500" />
+                  <span className="font-medium">BP:</span>
+                  <span className="ml-2">{record.values.bloodPressure} mmHg</span>
+                </div>
+              )}
+              {record.values.heartRate && (
+                <div className="flex items-center">
+                  <Heart className="h-4 w-4 mr-2 text-red-500" />
+                  <span className="font-medium">HR:</span>
+                  <span className="ml-2">{record.values.heartRate} bpm</span>
+                </div>
+              )}
+              {record.values.temperature && (
+                <div className="flex items-center">
+                  <Activity className="h-4 w-4 mr-2 text-orange-500" />
+                  <span className="font-medium">Temp:</span>
+                  <span className="ml-2">{record.values.temperature} °C</span>
+                </div>
+              )}
+              {record.values.bloodSugar && (
+                <div className="flex items-center">
+                  <Activity className="h-4 w-4 mr-2 text-purple-500" />
+                  <span className="font-medium">Blood Sugar:</span>
+                  <span className="ml-2">{record.values.bloodSugar} mg/dL</span>
+                </div>
+              )}
+            </div>
+          )}
+          
+          {record.type === "medication" && record.values && (
+            <div className="space-y-1 text-sm">
+              <div className="flex">
+                <span className="font-medium w-24">Dosage:</span>
+                <span>{record.values.dosage}</span>
+              </div>
+              <div className="flex">
+                <span className="font-medium w-24">Frequency:</span>
+                <span>{record.values.frequency}</span>
+              </div>
+              <div className="flex">
+                <span className="font-medium w-24">Start Date:</span>
+                <span>{format(new Date(record.values.startDate), "MMM d, yyyy")}</span>
+              </div>
+              {record.values.endDate && (
+                <div className="flex">
+                  <span className="font-medium w-24">End Date:</span>
+                  <span>{format(new Date(record.values.endDate), "MMM d, yyyy")}</span>
+                </div>
+              )}
+            </div>
+          )}
+          
+          {record.type === "appointment" && record.values && (
+            <div className="space-y-1 text-sm">
+              <div className="flex">
+                <span className="font-medium w-24">Doctor:</span>
+                <span>{record.values.doctor}</span>
+              </div>
+              <div className="flex">
+                <span className="font-medium w-24">Location:</span>
+                <span>{record.values.location}</span>
+              </div>
+              {record.values.reason && (
+                <div className="flex">
+                  <span className="font-medium w-24">Reason:</span>
+                  <span>{record.values.reason}</span>
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
+
+  return (
+    <PageLayout
+      title="Medical Records"
+      icon={<Heart className="h-5 w-5 text-white" />}
+      pageType="medical"
+    >
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex flex-col space-y-2">
+            <h2 className="text-2xl font-bold">Personal Health Tracker</h2>
+            <p className="text-muted-foreground">
+              Track and manage your health records, medications, and medical appointments.
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button onClick={() => {
+              resetForm();
+              setShowRecordDialog(true);
+            }}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Record
+            </Button>
+            <Button 
+              variant="outline" 
+              size="icon"
+              onClick={() => setShowHelp(true)}
+            >
+              <HelpCircle className="h-4 w-4" />
+            </Button>
           </div>
         </div>
+
+        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+          <Tabs 
+            defaultValue="all" 
+            value={activeTab} 
+            onValueChange={(value) => {
+              setActiveTab(value as RecordType | "all");
+              setSelectedRecordType(value as RecordType | "all");
+            }}
+            className="w-full sm:w-auto"
+          >
+            <TabsList className="w-full grid-cols-5">
+              <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="vitals">Vitals</TabsTrigger>
+              <TabsTrigger value="medication">Meds</TabsTrigger>
+              <TabsTrigger value="appointment">Appts</TabsTrigger>
+              <TabsTrigger value="note">Notes</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          
+          <div className="flex flex-wrap gap-2 items-center w-full sm:w-auto">
+            <span className="text-sm font-medium mr-2">View:</span>
+            <Button 
+              variant={archiveFilter === "active" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setArchiveFilter("active")}
+              className="h-8"
+            >
+              Active
+            </Button>
+            <Button 
+              variant={archiveFilter === "archived" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setArchiveFilter("archived")}
+              className="h-8"
+            >
+              Archived
+            </Button>
+            <Button 
+              variant={archiveFilter === "all" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setArchiveFilter("all")}
+              className="h-8"
+            >
+              All
+            </Button>
+          </div>
+        </div>
+
+        {sortedRecords.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {sortedRecords.map((record) => renderRecordCard(record))}
+          </div>
+        ) : (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <Heart className="h-12 w-12 mb-4 text-muted-foreground" />
+              <h3 className="text-xl font-medium mb-2">No Records Found</h3>
+              <p className="text-muted-foreground text-center max-w-md mb-6">
+                {archiveFilter === "archived" 
+                  ? "You don't have any archived medical records." 
+                  : "Start tracking your health by adding medical records, vitals, medications, or appointments."}
+              </p>
+              <Button onClick={() => {
+                resetForm();
+                setShowRecordDialog(true);
+              }}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Record
+              </Button>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
-      {/* Reminders Dialog */}
-      <Dialog open={showRemindersDialog} onOpenChange={setShowRemindersDialog}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center">
-              <BellRing className="h-5 w-5 mr-2 text-amber-500" />
-              Medical Reminders
-            </DialogTitle>
-            <DialogDescription>
-              Your upcoming medical reminders and appointments
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            {reminders.filter(r => !r.dismissed).length === 0 ? (
-              <div className="text-center py-6">
-                <BellRing className="mx-auto h-10 w-10 text-gray-400 mb-3" />
-                <p className="text-gray-500">No active reminders</p>
-              </div>
-            ) : (
-              <ScrollArea className="h-[300px] pr-2">
-                <div className="space-y-3">
-                  {reminders
-                    .filter(r => !r.dismissed)
-                    .map(reminder => {
-                      const record = getRecordFromReminder(reminder.recordId);
-                      if (!record) return null;
-                      
-                      return (
-                        <div 
-                          key={reminder.id}
-                          className="flex items-start justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
-                        >
-                          <div className="flex items-start space-x-3">
-                            <div className="pt-1">
-                              {record && getRecordIcon(record.type)}
-                            </div>
-                            <div>
-                              <h3 className="font-medium">{reminder.title}</h3>
-                              <p className="text-sm text-gray-500 dark:text-gray-400">
-                                {format(new Date(reminder.date), "MMMM d, yyyy")}
-                                {reminder.time && ` at ${reminder.time}`}
-                              </p>
-                              {record && record.type === "appointment" && (
-                                <p className="text-xs text-gray-500 mt-1">
-                                  {record.doctor && `Dr. ${record.doctor}`}
-                                  {record.doctor && record.location && ` • `}
-                                  {record.location}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                          
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => dismissReminder(reminder.id)}
-                            title="Dismiss reminder"
-                            className="flex-shrink-0"
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      );
-                    })}
-                </div>
-              </ScrollArea>
-            )}
-          </div>
-          
-          <DialogFooter className="flex justify-between sm:justify-between">
-            <Button
-              variant="outline"
-              onClick={() => setShowRemindersDialog(false)}
-            >
-              Close
-            </Button>
-            {reminders.filter(r => !r.dismissed).length > 0 && (
-              <Button
-                variant="default"
-                onClick={dismissAllReminders}
-              >
-                Dismiss All
-              </Button>
-            )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <CameraCapture 
-        open={cameraOpen} 
-        onOpenChange={setCameraOpen} 
-        onCapture={handleCameraCapture} 
-      />
-
-      <Dialog open={isAddingRecord} onOpenChange={(open) => {
-        setIsAddingRecord(open);
-        if (!open) {
-          setEditingRecord(null);
-          setNewRecord({
-            type: "appointment",
-            title: "",
-            description: "",
-            date: new Date(),
-            time: "",
-            reminder: true,
-            reminderDays: 1,
-            completed: false,
-            photos: []
-          });
-        }
-      }}>
-        <DialogContent className="sm:max-w-[600px]">
+      <Dialog open={showRecordDialog} onOpenChange={setShowRecordDialog}>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>
-              {editingRecord ? "Edit Medical Record" : "Add New Medical Record"}
+              {editingRecord ? "Edit Medical Record" : "Add Medical Record"}
             </DialogTitle>
             <DialogDescription>
-              Fill in the details below to {editingRecord ? "update your" : "create a new"} medical record.
+              {editingRecord 
+                ? "Update your medical record information." 
+                : "Enter the details of your medical record."}
             </DialogDescription>
           </DialogHeader>
-          
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="record-type">Record Type</Label>
-              <Select
-                value={newRecord.type}
-                onValueChange={(value) => setNewRecord({ ...newRecord, type: value as RecordType })}
+              <Select 
+                value={recordType} 
+                onValueChange={(value) => setRecordType(value as RecordType)}
               >
-                <SelectTrigger id="record-type">
+                <SelectTrigger>
                   <SelectValue placeholder="Select record type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="appointment">
-                    <div className="flex items-center">
-                      <CalendarCheck className="h-4 w-4 mr-2 text-blue-500" />
-                      Appointment
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="medication">
-                    <div className="flex items-center">
-                      <Pill className="h-4 w-4 mr-2 text-green-500" />
-                      Medication
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="vital">
-                    <div className="flex items-center">
-                      <Heart className="h-4 w-4 mr-2 text-red-500" />
-                      Vital Sign
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="note">
-                    <div className="flex items-center">
-                      <FileText className="h-4 w-4 mr-2 text-purple-500" />
-                      Medical Note
-                    </div>
-                  </SelectItem>
+                  <SelectItem value="vitals">Vitals & Metrics</SelectItem>
+                  <SelectItem value="medication">Medication</SelectItem>
+                  <SelectItem value="appointment">Appointment</SelectItem>
+                  <SelectItem value="note">Medical Note</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            
             <div className="space-y-2">
-              <Label htmlFor="title">Title*</Label>
+              <Label htmlFor="record-title">Title</Label>
               <Input
-                id="title"
-                placeholder="Enter title"
-                value={newRecord.title || ""}
-                onChange={(e) => setNewRecord({ ...newRecord, title: e.target.value })}
+                id="record-title"
+                value={recordTitle}
+                onChange={(e) => setRecordTitle(e.target.value)}
+                placeholder="Enter a title for this record"
               />
             </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="date">Date</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      id="date"
-                      variant={"outline"}
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !newRecord.date && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {newRecord.date ? format(new Date(newRecord.date), "PPP") : <span>Pick a date</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 z-50" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={newRecord.date}
-                      onSelect={(date) => {
-                        if (date) {
-                          setNewRecord({ ...newRecord, date });
-                        }
-                      }}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="time">Time (Optional)</Label>
+                <Label htmlFor="record-date">Date</Label>
                 <Input
-                  id="time"
+                  id="record-date"
+                  type="date"
+                  value={recordDate}
+                  onChange={(e) => setRecordDate(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="record-time">Time (optional)</Label>
+                <Input
+                  id="record-time"
                   type="time"
-                  value={newRecord.time || ""}
-                  onChange={(e) => setNewRecord({ ...newRecord, time: e.target.value })}
+                  value={recordTime}
+                  onChange={(e) => setRecordTime(e.target.value)}
                 />
               </div>
             </div>
             
+            {renderFormFields()}
+            
             <div className="space-y-2">
-              <Label htmlFor="description">Description (Optional)</Label>
+              <Label htmlFor="record-description">Notes (optional)</Label>
               <Textarea
-                id="description"
-                placeholder="Add details about this record"
-                value={newRecord.description || ""}
-                onChange={(e) => setNewRecord({ ...newRecord, description: e.target.value })}
+                id="record-description"
+                value={recordDescription}
+                onChange={(e) => setRecordDescription(e.target.value)}
+                placeholder="Add any additional notes or information"
                 rows={3}
               />
             </div>
-            
-            {renderTypeSpecificFields()}
-            
-            {newRecord.photos && newRecord.photos.length > 0 && (
-              <div className="space-y-2">
-                <Label>Photos</Label>
-                {renderPhotos(newRecord.photos)}
-              </div>
-            )}
-            
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => setCameraOpen(true)}
-              className="mt-2"
-            >
-              <Camera className="h-4 w-4 mr-1" /> Take Photo
-            </Button>
-            
-            <div className="flex items-center space-x-2 pt-4">
-              <Switch
-                id="reminder"
-                checked={newRecord.reminder}
-                onCheckedChange={(checked) => setNewRecord({ ...newRecord, reminder: checked })}
-              />
-              <Label htmlFor="reminder">Set Reminder</Label>
-            </div>
-            
-            {newRecord.reminder && (
-              <div className="pl-8 space-y-2">
-                <Label htmlFor="reminderDays">Remind me this many days before:</Label>
-                <Select
-                  value={newRecord.reminderDays?.toString() || "1"}
-                  onValueChange={(value) => setNewRecord({ ...newRecord, reminderDays: parseInt(value) })}
-                >
-                  <SelectTrigger id="reminderDays" className="w-full">
-                    <SelectValue placeholder="Select days" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="0">Same day</SelectItem>
-                    <SelectItem value="1">1 day before</SelectItem>
-                    <SelectItem value="2">2 days before</SelectItem>
-                    <SelectItem value="3">3 days before</SelectItem>
-                    <SelectItem value="7">1 week before</SelectItem>
-                    <SelectItem value="14">2 weeks before</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
           </div>
           
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setIsAddingRecord(false);
-                setEditingRecord(null);
-              }}
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleAddRecord}>
-              {editingRecord ? "Update Record" : "Add Record"}
-            </Button>
-          </DialogFooter>
+          {showDeleteConfirm ? (
+            <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-md">
+              <h4 className="font-medium text-red-800 dark:text-red-200 mb-2">Confirm Deletion</h4>
+              <p className="text-red-700 dark:text-red-300 text-sm mb-4">
+                Are you sure you want to delete this record? This action cannot be undone.
+              </p>
+              <div className="flex justify-end space-x-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowDeleteConfirm(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteRecord}
+                >
+                  Delete Record
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <DialogFooter>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowRecordDialog(false);
+                  resetForm();
+                }}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleSaveRecord}>
+                {editingRecord ? "Update Record" : "Save Record"}
+              </Button>
+            </DialogFooter>
+          )}
         </DialogContent>
       </Dialog>
+      
+      {/* Help Dialog with proper props */}
+      {showHelp && <HelpDialog open={showHelp} onOpenChange={setShowHelp} />}
     </PageLayout>
   );
 };
 
-export default Medical;
+export default MedicalPage;

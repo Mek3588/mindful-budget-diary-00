@@ -1,204 +1,142 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+
+import React, { useState } from "react";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Link } from "react-router-dom";
+import { BookOpen, CreditCard, FileText, Calendar, Target, Heart, Lock, Settings, Info, HelpCircle } from "lucide-react";
 import { ModeToggle } from "@/components/ModeToggle";
-import { useToast } from "@/hooks/use-toast";
-import {
-  BookOpen,
-  BarChart,
-  BookmarkCheck,
-  Calendar,
-  CalendarDays,
-  ShieldCheck,
-  Settings,
-  Cog,
-  FileText,
-  DollarSign,
-  Pencil,
-  Lock,
-  Target,
-  Stethoscope
-} from "lucide-react";
+import { useTheme } from "@/contexts/ThemeContext";
+import HelpDialog from "@/components/HelpDialog";
+
+const DashboardCard = ({ title, description, icon, path, color }: { 
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  path: string;
+  color: string;
+}) => {
+  const { currentTheme } = useTheme();
+  const isDark = currentTheme.type === 'masculine';
+  
+  return (
+    <Card className="overflow-hidden">
+      <div className={`h-2 ${color}`}></div>
+      <CardHeader className="space-y-1">
+        <CardTitle className="flex items-center">
+          <span className={`inline-flex p-1.5 mr-2 rounded-full ${color} bg-opacity-20`}>
+            {icon}
+          </span>
+          {title}
+        </CardTitle>
+        <CardDescription>{description}</CardDescription>
+      </CardHeader>
+      <CardFooter>
+        <Button asChild variant="outline" className="w-full">
+          <Link to={path}>Open {title}</Link>
+        </Button>
+      </CardFooter>
+    </Card>
+  );
+};
 
 const Index = () => {
-  const navigate = useNavigate();
-  const { toast } = useToast();
+  const [showHelp, setShowHelp] = useState(false);
+  
+  const dashboardItems = [
+    {
+      title: "Diary",
+      description: "Record your daily thoughts and experiences",
+      icon: <BookOpen className="h-4 w-4" />,
+      path: "/diary",
+      color: "bg-purple-500",
+    },
+    {
+      title: "Budget",
+      description: "Track your finances and spending",
+      icon: <CreditCard className="h-4 w-4" />,
+      path: "/budget",
+      color: "bg-emerald-500",
+    },
+    {
+      title: "Notes",
+      description: "Keep track of important information",
+      icon: <FileText className="h-4 w-4" />,
+      path: "/notes",
+      color: "bg-blue-500",
+    },
+    {
+      title: "Calendar",
+      description: "Manage your schedule and appointments",
+      icon: <Calendar className="h-4 w-4" />,
+      path: "/calendar",
+      color: "bg-orange-500",
+    },
+    {
+      title: "Goals",
+      description: "Set and track your personal goals",
+      icon: <Target className="h-4 w-4" />,
+      path: "/goals",
+      color: "bg-pink-500",
+    },
+    {
+      title: "Medical",
+      description: "Track health metrics and medications",
+      icon: <Heart className="h-4 w-4" />,
+      path: "/medical",
+      color: "bg-red-500",
+    },
+    {
+      title: "Security",
+      description: "Manage your privacy and security settings",
+      icon: <Lock className="h-4 w-4" />,
+      path: "/security",
+      color: "bg-indigo-500",
+    },
+    {
+      title: "Settings",
+      description: "Customize your LifeOS experience",
+      icon: <Settings className="h-4 w-4" />,
+      path: "/settings",
+      color: "bg-gray-500",
+    },
+  ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:via-purple-950 dark:to-gray-950">
-      <main className="container mx-auto py-6 px-4 space-y-8">
-        <div className="relative flex items-center justify-between">
-          <h1 className="text-3xl font-bold tracking-tight sm:text-center sm:text-4xl">
-            My Personal Journal
-          </h1>
-          <div className="flex items-center gap-4">
-            <ModeToggle />
-          </div>
+    <div className="container px-4 mx-auto py-10">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <div>
+          <h1 className="text-3xl font-bold mb-1">Welcome to LifeOS</h1>
+          <p className="text-muted-foreground max-w-xl">
+            Your personal dashboard for managing all aspects of your daily life
+          </p>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm hover:shadow-lg transition-all duration-200 hover:scale-[1.01]">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center">
-                <BookOpen className="h-5 w-5 mr-2 text-blue-500" />
-                Diary
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-600 dark:text-gray-300">
-                Record your thoughts and feelings in your personal diary.
-              </p>
-            </CardContent>
-            <CardFooter>
-              <Button onClick={() => navigate("/diary")} className="w-full">
-                <Pencil className="h-4 w-4 mr-2" />
-                Open Diary
-              </Button>
-            </CardFooter>
-          </Card>
-
-          <Card className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm hover:shadow-lg transition-all duration-200 hover:scale-[1.01]">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center">
-                <BarChart className="h-5 w-5 mr-2 text-green-500" />
-                Budget
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-600 dark:text-gray-300">
-                Track your income and expenses to manage your finances.
-              </p>
-            </CardContent>
-            <CardFooter>
-              <Button onClick={() => navigate("/budget")} className="w-full">
-                <DollarSign className="h-4 w-4 mr-2" />
-                Open Budget
-              </Button>
-            </CardFooter>
-          </Card>
-
-          <Card className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm hover:shadow-lg transition-all duration-200 hover:scale-[1.01]">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center">
-                <BookmarkCheck className="h-5 w-5 mr-2 text-purple-500" />
-                Notes
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-600 dark:text-gray-300">
-                Keep track of important information in organized notes.
-              </p>
-            </CardContent>
-            <CardFooter>
-              <Button onClick={() => navigate("/notes")} className="w-full">
-                <FileText className="h-4 w-4 mr-2" />
-                Open Notes
-              </Button>
-            </CardFooter>
-          </Card>
-
-          <Card className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm hover:shadow-lg transition-all duration-200 hover:scale-[1.01]">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center">
-                <Calendar className="h-5 w-5 mr-2 text-red-500" />
-                Calendar
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-600 dark:text-gray-300">
-                Plan and organize your schedule with a personal calendar.
-              </p>
-            </CardContent>
-            <CardFooter>
-              <Button onClick={() => navigate("/calendar")} className="w-full">
-                <CalendarDays className="h-4 w-4 mr-2" />
-                Open Calendar
-              </Button>
-            </CardFooter>
-          </Card>
-          
-          <Card className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm hover:shadow-lg transition-all duration-200 hover:scale-[1.01]">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center">
-                <Target className="h-5 w-5 mr-2 text-green-500" />
-                Goals
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-600 dark:text-gray-300">
-                Set and track your personal goals and achievements.
-              </p>
-            </CardContent>
-            <CardFooter>
-              <Button onClick={() => navigate("/goals")} className="w-full">
-                <Target className="h-4 w-4 mr-2" />
-                Open Goals
-              </Button>
-            </CardFooter>
-          </Card>
-          
-          <Card className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm hover:shadow-lg transition-all duration-200 hover:scale-[1.01]">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center">
-                <Stethoscope className="h-5 w-5 mr-2 text-blue-500" />
-                Medical Records
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-600 dark:text-gray-300">
-                Track appointments, medications, and health information.
-              </p>
-            </CardContent>
-            <CardFooter>
-              <Button onClick={() => navigate("/medical")} className="w-full">
-                <Stethoscope className="h-4 w-4 mr-2" />
-                Open Medical Records
-              </Button>
-            </CardFooter>
-          </Card>
-
-          <Card className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm hover:shadow-lg transition-all duration-200 hover:scale-[1.01]">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center">
-                <ShieldCheck className="h-5 w-5 mr-2 text-violet-500" />
-                Security
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-600 dark:text-gray-300">
-                Protect your journal with PIN security settings.
-              </p>
-            </CardContent>
-            <CardFooter>
-              <Button onClick={() => navigate("/security")} className="w-full">
-                <Lock className="h-4 w-4 mr-2" />
-                Open Security
-              </Button>
-            </CardFooter>
-          </Card>
-
-          <Card className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm hover:shadow-lg transition-all duration-200 hover:scale-[1.01]">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center">
-                <Settings className="h-5 w-5 mr-2 text-gray-500" />
-                Settings
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-600 dark:text-gray-300">
-                Customize your journal appearance and preferences.
-              </p>
-            </CardContent>
-            <CardFooter>
-              <Button onClick={() => navigate("/settings")} className="w-full">
-                <Cog className="h-4 w-4 mr-2" />
-                Open Settings
-              </Button>
-            </CardFooter>
-          </Card>
+        <div className="flex items-center gap-3">
+          <Button 
+            variant="outline" 
+            size="icon"
+            onClick={() => setShowHelp(true)}
+          >
+            <HelpCircle className="h-5 w-5" />
+          </Button>
+          <ModeToggle />
         </div>
-      </main>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {dashboardItems.map((item) => (
+          <DashboardCard
+            key={item.title}
+            title={item.title}
+            description={item.description}
+            icon={item.icon}
+            path={item.path}
+            color={item.color}
+          />
+        ))}
+      </div>
+      
+      {/* Help Dialog with proper props */}
+      {showHelp && <HelpDialog open={showHelp} onOpenChange={setShowHelp} />}
     </div>
   );
 };

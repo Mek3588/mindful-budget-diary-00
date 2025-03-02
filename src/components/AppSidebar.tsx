@@ -132,7 +132,7 @@ export const AppSidebar = () => {
         </div>
       </div>
       
-      {/* Help Dialog with custom state control */}
+      {/* Help Dialog with proper props */}
       {showHelp && <HelpDialog open={showHelp} onOpenChange={setShowHelp} />}
     </>
   );
