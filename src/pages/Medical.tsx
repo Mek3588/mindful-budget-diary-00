@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -54,7 +53,7 @@ import {
   Archive,
   Filter,
   HelpCircle,
-  ArrowsUpDown,
+  ArrowUpDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useMobile } from "@/hooks/use-mobile";
@@ -63,7 +62,6 @@ import { PageLayout } from "@/components/PageLayout";
 import HelpDialog from "@/components/HelpDialog";
 import { Switch } from "@/components/ui/switch";
 
-// Define types
 type RecordType = "vitals" | "medication" | "appointment" | "note";
 type ArchiveFilter = "active" | "archived" | "all";
 type UnitSystem = "metric" | "imperial";
@@ -79,7 +77,6 @@ interface MedicalRecord {
   archived?: boolean;
 }
 
-// Record type display information
 const recordTypeInfo = {
   vitals: {
     label: "Vitals & Metrics",
@@ -107,17 +104,14 @@ const recordTypeInfo = {
   },
 };
 
-// Measurement conversion functions
 const convertWeight = (value: string, toImperial: boolean): string => {
   if (!value || value.trim() === "") return "";
   const numValue = parseFloat(value);
   if (isNaN(numValue)) return value;
   
   if (toImperial) {
-    // kg to lbs
     return (numValue * 2.20462).toFixed(1);
   } else {
-    // lbs to kg
     return (numValue / 2.20462).toFixed(1);
   }
 };
@@ -128,10 +122,8 @@ const convertTemperature = (value: string, toImperial: boolean): string => {
   if (isNaN(numValue)) return value;
   
   if (toImperial) {
-    // Celsius to Fahrenheit
     return ((numValue * 9/5) + 32).toFixed(1);
   } else {
-    // Fahrenheit to Celsius
     return ((numValue - 32) * 5/9).toFixed(1);
   }
 };
@@ -172,7 +164,6 @@ const MedicalPage = () => {
   const [showHelp, setShowHelp] = useState(false);
   const [unitSystem, setUnitSystem] = useState<UnitSystem>("metric");
 
-  // Load records from localStorage on component mount
   useEffect(() => {
     const savedRecords = localStorage.getItem("medical-records");
     if (savedRecords) {
@@ -185,17 +176,14 @@ const MedicalPage = () => {
     }
   }, []);
 
-  // Save records to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem("medical-records", JSON.stringify(records));
   }, [records]);
   
-  // Save unit system preference
   useEffect(() => {
     localStorage.setItem("medical-unit-system", unitSystem);
   }, [unitSystem]);
 
-  // Filter records based on type and archive status
   const filteredRecords = useMemo(() => {
     return records.filter(record => {
       const matchesType = selectedRecordType === "all" || record.type === selectedRecordType;
@@ -208,14 +196,11 @@ const MedicalPage = () => {
     });
   }, [records, selectedRecordType, archiveFilter]);
 
-  // Sort records by date (newest first)
   const sortedRecords = useMemo(() => {
     return [...filteredRecords].sort((a, b) => {
-      // Compare dates first
       const dateComparison = new Date(b.date).getTime() - new Date(a.date).getTime();
       if (dateComparison !== 0) return dateComparison;
       
-      // If dates are the same, compare times
       if (a.time && b.time) {
         return a.time.localeCompare(b.time);
       }
@@ -519,7 +504,6 @@ const MedicalPage = () => {
   };
 
   const renderRecordCard = (record: MedicalRecord) => {
-    // Ensure record type exists and is valid before accessing typeInfo
     if (!record.type || !recordTypeInfo[record.type]) {
       console.error("Invalid record type:", record.type);
       return null;
@@ -710,7 +694,7 @@ const MedicalPage = () => {
                 checked={unitSystem === "imperial"}
                 onCheckedChange={toggleUnitSystem}
               />
-              <ArrowsUpDown className="h-4 w-4 text-muted-foreground" />
+              <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
             </div>
             <Button onClick={() => {
               resetForm();
