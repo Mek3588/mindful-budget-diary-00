@@ -25,7 +25,8 @@ const VoiceToText = ({ onTranscript, placeholder = "Speak now..." }: VoiceToText
   const [isInitializing, setIsInitializing] = useState(false);
   const recognitionRef = useRef<any>(null);
   const finalTranscriptRef = useRef<string>("");
-
+  const processedResultsRef = useRef<Set<string>>(new Set());
+  
   // Initialize the speech recognition on component mount
   useEffect(() => {
     // Check if browser supports the Web Speech API
@@ -47,28 +48,38 @@ const VoiceToText = ({ onTranscript, placeholder = "Speak now..." }: VoiceToText
     // Set up recognition event handlers
     recognitionRef.current.onresult = (event: any) => {
       let interimTranscript = '';
-      let finalTranscript = '';
+      let currentFinalTranscript = '';
       
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const transcript = event.results[i][0].transcript;
         if (event.results[i].isFinal) {
-          finalTranscript += transcript;
+          // Create a unique ID for this result
+          const resultId = `${i}:${transcript}`;
+          
+          // Only process this final result if we haven't seen it before
+          if (!processedResultsRef.current.has(resultId)) {
+            currentFinalTranscript += transcript;
+            processedResultsRef.current.add(resultId);
+            
+            // Pass to parent component
+            if (currentFinalTranscript.trim()) {
+              console.log("Sending to parent:", currentFinalTranscript);
+              onTranscript(currentFinalTranscript.trim());
+            }
+          }
         } else {
           interimTranscript += transcript;
         }
       }
       
       // Update the transcript state with the current recognition results
-      const currentTranscript = finalTranscript || interimTranscript;
-      console.log("Transcript updated:", currentTranscript);
-      setTranscript(currentTranscript);
+      // Either the interim results, or the accumulation of final results
+      const displayTranscript = interimTranscript || finalTranscriptRef.current + currentFinalTranscript;
+      setTranscript(displayTranscript);
       
-      // If we have a final result, pass it to the parent component
-      // Only pass new transcripts to avoid duplicates
-      if (finalTranscript && finalTranscript !== finalTranscriptRef.current) {
-        console.log("Final transcript:", finalTranscript);
-        finalTranscriptRef.current = finalTranscript;
-        onTranscript(finalTranscript);
+      // Update our ref with the new final transcript
+      if (currentFinalTranscript) {
+        finalTranscriptRef.current += currentFinalTranscript;
       }
     };
     
@@ -149,18 +160,26 @@ const VoiceToText = ({ onTranscript, placeholder = "Speak now..." }: VoiceToText
         recognitionRef.current.stop();
         setIsListening(false);
         
-        // Reset finalTranscriptRef when stopping
-        finalTranscriptRef.current = "";
-        
-        if (transcript) {
-          onTranscript(transcript);
+        // Pass any remaining transcript to parent
+        if (transcript.trim() && transcript.trim() !== finalTranscriptRef.current.trim()) {
+          const remainingText = transcript.trim().replace(finalTranscriptRef.current.trim(), '').trim();
+          if (remainingText) {
+            onTranscript(remainingText);
+          }
         }
+        
+        // Reset state for next time
+        setTranscript("");
+        finalTranscriptRef.current = "";
+        processedResultsRef.current.clear();
       } catch (error) {
         console.error('Error stopping speech recognition', error);
       }
     } else {
       // Start listening - first check/request microphone permission
       setTranscript("");
+      finalTranscriptRef.current = "";
+      processedResultsRef.current.clear();
       
       const hasPermission = await requestMicrophonePermission();
       if (!hasPermission) {
