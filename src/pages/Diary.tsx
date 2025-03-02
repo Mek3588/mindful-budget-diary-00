@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { format, parse, isSameDay } from "date-fns";
 import {
-  Calendar,
+  Calendar as CalendarIcon,
   Plus,
   MoreVertical,
   Trash2,
@@ -28,6 +29,17 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useMobile } from "@/hooks/use-mobile";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 // Define types
 interface DiaryEntry {
@@ -272,7 +284,7 @@ const Diary = () => {
                     variant="outline"
                     className="w-full md:w-auto flex items-center gap-2"
                   >
-                    <Calendar className="h-4 w-4" />
+                    <CalendarIcon className="h-4 w-4" />
                     {format(selectedDate, "PPP")}
                   </Button>
                 </div>
@@ -280,22 +292,21 @@ const Diary = () => {
                 <Popover open={openCalendar} onOpenChange={setOpenCalendar}>
                   <PopoverTrigger asChild>
                     <Button
-                      variant={"outline"}
+                      variant="outline"
                       className={cn(
                         "w-[300px] justify-start text-left font-normal",
                         !selectedDate && "text-muted-foreground"
                       )}
                     >
-                      <Calendar className="mr-2 h-4 w-4" />
+                      <CalendarIcon className="mr-2 h-4 w-4" />
                       {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start" side="bottom">
-                    {/* @ts-expect-error */}
                     <Calendar
                       mode="single"
                       selected={selectedDate}
-                      onSelect={setSelectedDate}
+                      onSelect={(date) => date && setSelectedDate(date)}
                       disabled={(date) =>
                         date > new Date()
                       }
@@ -468,7 +479,7 @@ const Diary = () => {
                               </div>
                               <CardTitle className="text-sm">{entry.title}</CardTitle>
                               <div className="flex items-center text-xs text-muted-foreground">
-                                <Calendar className="h-3 w-3 mr-1" />
+                                <CalendarIcon className="h-3 w-3 mr-1" />
                                 {format(new Date(entry.date), "MMM d, yyyy")}
                               </div>
                             </div>
