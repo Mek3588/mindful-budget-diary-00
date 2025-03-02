@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -345,6 +344,16 @@ const CalendarPage = () => {
     );
   }, [filteredEvents, selectedDate]);
 
+  // Fix for the sorting error - make sure time exists before comparing
+  const sortedEventsForSelectedDate = useMemo(() => {
+    return [...eventsForSelectedDate].sort((a, b) => {
+      // Handle case where time might be undefined
+      if (!a.time) return -1;
+      if (!b.time) return 1;
+      return a.time.localeCompare(b.time);
+    });
+  }, [eventsForSelectedDate]);
+
   return (
     <div className="container px-4 mx-auto py-6">
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
@@ -444,65 +453,63 @@ const CalendarPage = () => {
                 </p>
               ) : (
                 <div className="space-y-4">
-                  {eventsForSelectedDate
-                    .sort((a, b) => a.time.localeCompare(b.time))
-                    .map((event) => (
-                      <Card key={event.id} className={`${categoryBackgroundColors[event.category]} border-none shadow-sm`}>
-                        <CardHeader className="pb-2 pt-4 px-4">
-                          <div className="flex justify-between items-start">
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-2">
-                                <Badge className={`${categoryColors[event.category]}`}>
-                                  {categoryDisplayNames[event.category]}
-                                </Badge>
-                                {event.sticker && (
-                                  <span className="text-xl">{event.sticker}</span>
-                                )}
-                              </div>
-                              <CardTitle className={`text-base ${categoryTextColors[event.category]}`}>
-                                {event.title}
-                              </CardTitle>
-                              <div className="flex items-center text-xs text-muted-foreground">
-                                <Clock className="h-3 w-3 mr-1" />
-                                {event.time}
-                              </div>
+                  {sortedEventsForSelectedDate.map((event) => (
+                    <Card key={event.id} className={`${categoryBackgroundColors[event.category]} border-none shadow-sm`}>
+                      <CardHeader className="pb-2 pt-4 px-4">
+                        <div className="flex justify-between items-start">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <Badge className={`${categoryColors[event.category]}`}>
+                                {categoryDisplayNames[event.category]}
+                              </Badge>
+                              {event.sticker && (
+                                <span className="text-xl">{event.sticker}</span>
+                              )}
                             </div>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                  <MoreVertical className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => handleEditEvent(event)}>
-                                  <Edit className="h-4 w-4 mr-2" />
-                                  Edit
-                                </DropdownMenuItem>
-                                <DropdownMenuItem 
-                                  onClick={() => {
-                                    handleEditEvent(event);
-                                    setShowDeleteConfirm(true);
-                                  }}
-                                  className="text-red-600"
-                                >
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                            <CardTitle className={`text-base ${categoryTextColors[event.category]}`}>
+                              {event.title}
+                            </CardTitle>
+                            <div className="flex items-center text-xs text-muted-foreground">
+                              <Clock className="h-3 w-3 mr-1" />
+                              {event.time}
+                            </div>
                           </div>
-                        </CardHeader>
-                        {event.description && (
-                          <CardContent className="pb-4 pt-0 px-4">
-                            <p className={`text-sm ${categoryTextColors[event.category]}`}>
-                              {event.description}
-                            </p>
-                          </CardContent>
-                        )}
-                      </Card>
-                    ))}
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => handleEditEvent(event)}>
+                                <Edit className="h-4 w-4 mr-2" />
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => {
+                                  handleEditEvent(event);
+                                  setShowDeleteConfirm(true);
+                                }}
+                                className="text-red-600"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </CardHeader>
+                      {event.description && (
+                        <CardContent className="pb-4 pt-0 px-4">
+                          <p className={`text-sm ${categoryTextColors[event.category]}`}>
+                            {event.description}
+                          </p>
+                        </CardContent>
+                      )}
+                    </Card>
+                  ))}
                 </div>
               )}
             </CardContent>
@@ -535,6 +542,10 @@ const CalendarPage = () => {
                       // Sort by date, then by time
                       const dateCompare = new Date(a.date).getTime() - new Date(b.date).getTime();
                       if (dateCompare !== 0) return dateCompare;
+                      
+                      // Handle case where time might be undefined
+                      if (!a.time) return -1;
+                      if (!b.time) return 1;
                       return a.time.localeCompare(b.time);
                     })
                     .slice(0, 15) // Show only next 15 events
