@@ -247,6 +247,10 @@ const Calendar = () => {
   };
 
   const handleAddEvent = () => {
+    setNewEvent({
+      ...newEvent,
+      date: selectedDate 
+    });
     setShowAddEventDialog(true);
   };
 
@@ -308,6 +312,7 @@ const Calendar = () => {
     setEvents(updatedEvents);
     localStorage.setItem('calendar-events', JSON.stringify(updatedEvents));
     toast.success("Event deleted successfully!");
+    setShowEventDetailsDialog(false);
   };
 
   const handleAddSticker = (date: Date) => {
@@ -392,6 +397,8 @@ const Calendar = () => {
     
     return false;
   });
+
+  const stickersForDate = stickers.filter(sticker => isSameDay(sticker.date, stickerDate));
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-white dark:from-gray-900 dark:to-gray-800">
@@ -786,8 +793,3 @@ const Calendar = () => {
                 Memo
               </label>
               <Textarea
-                id="memo"
-                value={stickerMemo}
-                onChange={(e) => setStickerMemo(e.target.value)}
-                placeholder="What's special about this day?"
-                className="col-span-3 bg-
