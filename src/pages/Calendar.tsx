@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
@@ -232,18 +231,14 @@ const Calendar = () => {
     setSelectedDate(date);
     setSelectedTab("date");
     
+    // Only show event details or stickers if they exist
     if (eventsOnDate.length > 0) {
       setSelectedEvent(eventsOnDate[0]);
       setShowEventDetailsDialog(true);
     } else if (stickersOnDate.length > 0) {
       displayStickersForDate(date);
-    } else {
-      setNewEvent({
-        ...newEvent,
-        date: date
-      });
-      setShowAddEventDialog(true);
     }
+    // Removed the automatic opening of add event dialog
   };
 
   const displayStickersForDate = (date: Date) => {
@@ -795,100 +790,4 @@ const Calendar = () => {
                 value={stickerMemo}
                 onChange={(e) => setStickerMemo(e.target.value)}
                 placeholder="What's special about this day?"
-                className="col-span-3 bg-gray-800 border-gray-700 text-white"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <label htmlFor="mood" className="text-right text-white">
-                Mood
-              </label>
-              <Select
-                value={stickerMood}
-                onValueChange={(value) => setStickerMood(value as 'happy' | 'neutral' | 'sad')}
-              >
-                <SelectTrigger className="col-span-3 bg-gray-800 border-gray-700 text-white">
-                  <SelectValue placeholder="Select a mood" />
-                </SelectTrigger>
-                <SelectContent className="bg-gray-900 border-gray-700 text-white">
-                  <SelectItem value="happy" className="text-white">
-                    <div className="flex items-center">
-                      <span className="mr-2">{MoodEmojis.happy}</span>
-                      <span>Happy</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="neutral" className="text-white">
-                    <div className="flex items-center">
-                      <span className="mr-2">{MoodEmojis.neutral}</span>
-                      <span>Neutral</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="sad" className="text-white">
-                    <div className="flex items-center">
-                      <span className="mr-2">{MoodEmojis.sad}</span>
-                      <span>Sad</span>
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button onClick={handleSaveSticker}>Save Sticker</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={showStickerListDialog} onOpenChange={setShowStickerListDialog}>
-        <DialogContent className="sm:max-w-[425px] bg-gray-900 text-white border border-gray-700 overflow-y-auto max-h-[90vh]">
-          <DialogHeader>
-            <DialogTitle className="text-white">Stickers</DialogTitle>
-            <DialogDescription className="text-gray-300">
-              {stickers.some(s => isSameDay(s.date, stickerDate)) 
-                ? `Stickers for ${format(stickerDate, "MMMM d, yyyy")}` 
-                : "All stickers"}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
-              {stickers
-                .filter(sticker => stickerDate ? isSameDay(sticker.date, stickerDate) : true)
-                .map((sticker) => (
-                  <div key={sticker.id} className="flex items-center justify-between p-3 border border-gray-700 rounded-md">
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl">{sticker.emoji}</span>
-                      <div>
-                        <div className="text-sm">{format(new Date(sticker.date), "MMM d, yyyy")}</div>
-                        {sticker.memo && <div className="text-xs text-gray-400">{sticker.memo}</div>}
-                        {sticker.mood && (
-                          <div className="text-xs flex items-center mt-1">
-                            <span className="mr-1">{MoodEmojis[sticker.mood]}</span>
-                            <span className="capitalize">{sticker.mood}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <Button variant="ghost" size="icon" onClick={() => handleDeleteSticker(sticker.id)}>
-                      <Trash className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-              {stickers.filter(sticker => stickerDate ? isSameDay(sticker.date, stickerDate) : true).length === 0 && (
-                <p className="text-sm text-gray-400">No stickers found.</p>
-              )}
-            </div>
-            <Button 
-              onClick={() => {
-                handleAddSticker(stickerDate || new Date());
-                setShowStickerListDialog(false);
-              }}
-            >
-              Add New Sticker
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-};
-
-export default Calendar;
+                className="col-span-3 bg-
