@@ -1,4 +1,4 @@
-<lov-code>
+
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -106,7 +106,7 @@ const stickerData: StickerData[] = [
   {
     category: "nature",
     label: "Nature",
-    stickers: ["🌱", "🌲", "🌳", "🌴", "🌵", "🌿", "☘️", "🍀", "🍁", "🍂", "🍃", "🌺", "🌸", "🌼", "🌻", "🌞", "🌝", "🌛", "🌜", "🌚", "⭐", "🌟", "��", "☀️", "🌤️", "⛅", "🌥️", "☁️", "🌨️", "⛈️"]
+    stickers: ["🌱", "🌲", "🌳", "🌴", "🌵", "🌿", "☘️", "🍀", "🍁", "🍂", "🍃", "🌺", "🌸", "🌼", "🌻", "🌞", "🌝", "🌛", "🌜", "🌚", "⭐", "🌟", "💫", "☀️", "🌤️", "⛅", "🌥️", "☁️", "🌨️", "⛈️"]
   },
   {
     category: "weather",
@@ -846,4 +846,240 @@ const CalendarPage = () => {
               <h4 className="font-medium text-red-800 dark:text-red-200 mb-2">Confirm Deletion</h4>
               <p className="text-red-700 dark:text-red-300 text-sm mb-4">
                 Are you sure you want to delete this event? This action cannot be undone.
-              </p
+              </p>
+              <div className="flex justify-end space-x-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowDeleteConfirm(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteEvent}
+                >
+                  Delete Event
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <DialogFooter>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => {
+                  setShowEventDialog(false);
+                  resetEventForm();
+                }}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" onClick={handleSaveEvent}>
+                {editingEvent ? "Update Event" : "Save Event"}
+              </Button>
+            </DialogFooter>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit dialog for editing events from the list */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="sm:max-w-md max-w-[95vw] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>
+              Edit Event
+            </DialogTitle>
+            <DialogDescription>
+              Make changes to your event here.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <ScrollArea className="max-h-[70vh]">
+            <div className="grid gap-4 py-4 px-1">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-event-date" className={isMobile ? "col-span-4" : "text-right"}>
+                  Date
+                </Label>
+                <div className={isMobile ? "col-span-4" : "col-span-3"}>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start text-left"
+                  >
+                    <Calendar className="mr-2 h-4 w-4" />
+                    {format(selectedDate, "MMMM d, yyyy")}
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-event-time" className={isMobile ? "col-span-4" : "text-right"}>
+                  Time
+                </Label>
+                <Input
+                  id="edit-event-time"
+                  type="time"
+                  value={eventTime}
+                  onChange={(e) => setEventTime(e.target.value)}
+                  className={isMobile ? "col-span-4" : "col-span-3"}
+                />
+              </div>
+              
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-event-title" className={isMobile ? "col-span-4" : "text-right"}>
+                  Title
+                </Label>
+                <Input
+                  id="edit-event-title"
+                  value={eventTitle}
+                  onChange={(e) => setEventTitle(e.target.value)}
+                  className={isMobile ? "col-span-4" : "col-span-3"}
+                />
+              </div>
+              
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className={isMobile ? "col-span-4" : "text-right"}>Category</Label>
+                <div className={isMobile ? "col-span-4" : "col-span-3"}>
+                  <Select
+                    value={eventCategory}
+                    onValueChange={(value) => setEventCategory(value as Category)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="personal">Personal</SelectItem>
+                      <SelectItem value="work">Work</SelectItem>
+                      <SelectItem value="social">Social</SelectItem>
+                      <SelectItem value="health">Health</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className={isMobile ? "col-span-4" : "text-right"}>Sticker</Label>
+                <div className={`flex items-center gap-2 ${isMobile ? "col-span-4" : "col-span-3"}`}>
+                  <Input
+                    value={eventSticker}
+                    onChange={(e) => setEventSticker(e.target.value)}
+                    placeholder="Select or type an emoji"
+                    className="flex-1"
+                  />
+                  <Button 
+                    variant="outline" 
+                    type="button" 
+                    onClick={() => setShowStickerList(!showStickerList)}
+                    className="px-3"
+                  >
+                    {eventSticker || "😊"}
+                  </Button>
+                </div>
+              </div>
+              
+              {showStickerList && (
+                <div className="grid grid-cols-4 items-start gap-4">
+                  <div className={isMobile ? "col-span-4" : "col-span-1 text-right pt-2"}>
+                    <Label>Categories</Label>
+                  </div>
+                  <div className={isMobile ? "col-span-4" : "col-span-3"}>
+                    <Select
+                      value={selectedStickerCategory}
+                      onValueChange={(value) => setSelectedStickerCategory(value as StickerCategory | "all")}
+                    >
+                      <SelectTrigger className="mb-3">
+                        <SelectValue placeholder="Sticker category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Stickers</SelectItem>
+                        {stickerData.map((category) => (
+                          <SelectItem key={category.category} value={category.category}>
+                            {category.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    
+                    <div className="border rounded-md p-2">
+                      <ScrollArea className="h-[150px]">
+                        <div className="grid grid-cols-8 gap-1 p-1">
+                          {availableStickers.map(sticker => (
+                            <Button
+                              key={sticker}
+                              variant="ghost"
+                              className="h-8 w-8 p-0 text-xl hover:bg-muted"
+                              onClick={() => {
+                                setEventSticker(sticker);
+                                setShowStickerList(false);
+                              }}
+                            >
+                              {sticker}
+                            </Button>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              <div className="grid grid-cols-4 items-start gap-4">
+                <Label htmlFor="edit-event-description" className={isMobile ? "col-span-4" : "text-right pt-2"}>
+                  Description
+                </Label>
+                <Textarea
+                  id="edit-event-description"
+                  value={eventDescription}
+                  onChange={(e) => setEventDescription(e.target.value)}
+                  className={isMobile ? "col-span-4" : "col-span-3"}
+                  rows={3}
+                />
+              </div>
+            </div>
+          </ScrollArea>
+          
+          {showDeleteConfirm ? (
+            <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-md mb-4">
+              <h4 className="font-medium text-red-800 dark:text-red-200 mb-2">Confirm Deletion</h4>
+              <p className="text-red-700 dark:text-red-300 text-sm mb-4">
+                Are you sure you want to delete this event? This action cannot be undone.
+              </p>
+              <div className="flex justify-end space-x-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowDeleteConfirm(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteEvent}
+                >
+                  Delete Event
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <DialogFooter>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => {
+                  setShowEditDialog(false);
+                  resetEventForm();
+                }}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" onClick={handleSaveEvent}>
+                Update Event
+              </Button>
+            </DialogFooter>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
+export default CalendarPage;
