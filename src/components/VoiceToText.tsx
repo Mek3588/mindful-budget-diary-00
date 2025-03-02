@@ -24,6 +24,7 @@ const VoiceToText = ({ onTranscript, placeholder = "Speak now..." }: VoiceToText
   const [permissionError, setPermissionError] = useState(false);
   const [isInitializing, setIsInitializing] = useState(false);
   const recognitionRef = useRef<any>(null);
+  const finalTranscriptRef = useRef<string>("");
 
   // Initialize the speech recognition on component mount
   useEffect(() => {
@@ -63,8 +64,10 @@ const VoiceToText = ({ onTranscript, placeholder = "Speak now..." }: VoiceToText
       setTranscript(currentTranscript);
       
       // If we have a final result, pass it to the parent component
-      if (finalTranscript) {
+      // Only pass new transcripts to avoid duplicates
+      if (finalTranscript && finalTranscript !== finalTranscriptRef.current) {
         console.log("Final transcript:", finalTranscript);
+        finalTranscriptRef.current = finalTranscript;
         onTranscript(finalTranscript);
       }
     };
@@ -145,6 +148,9 @@ const VoiceToText = ({ onTranscript, placeholder = "Speak now..." }: VoiceToText
         console.log("Stopping recognition...");
         recognitionRef.current.stop();
         setIsListening(false);
+        
+        // Reset finalTranscriptRef when stopping
+        finalTranscriptRef.current = "";
         
         if (transcript) {
           onTranscript(transcript);

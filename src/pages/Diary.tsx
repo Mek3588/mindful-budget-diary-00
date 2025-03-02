@@ -1,4 +1,4 @@
-
+<lov-code>
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -30,6 +30,13 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import VoiceToText from "@/components/VoiceToText";
 import CameraCapture from "@/components/CameraCapture";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface DiaryEntry {
   id: string;
@@ -39,6 +46,7 @@ interface DiaryEntry {
   mood: string;
   images?: string[];
   sticker?: string;
+  category?: string;
 }
 
 const MOODS = [
@@ -52,6 +60,20 @@ const MOODS = [
   "🤔 Thoughtful",
   "😎 Confident",
   "🥺 Emotional"
+];
+
+// Diary categories
+const DIARY_CATEGORIES = [
+  "Personal",
+  "Family",
+  "Work",
+  "Travel",
+  "Dreams",
+  "Health",
+  "Fitness",
+  "Food",
+  "Hobbies",
+  "Goals"
 ];
 
 // Sticker categories and emojis
@@ -126,6 +148,7 @@ const Diary = () => {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [mood, setMood] = useState<string>(MOODS[0]);
+  const [category, setCategory] = useState<string>("Personal");
   const [images, setImages] = useState<string[]>([]);
   const [expandedEntries, setExpandedEntries] = useState<Record<string, boolean>>({});
   const [editingEntry, setEditingEntry] = useState<string | null>(null);
@@ -133,6 +156,7 @@ const Diary = () => {
   const [editContent, setEditContent] = useState("");
   const [editMood, setEditMood] = useState("");
   const [editDate, setEditDate] = useState<Date | undefined>(undefined);
+  const [editCategory, setEditCategory] = useState<string>("Personal");
   const [editImages, setEditImages] = useState<string[]>([]);
   const [showCamera, setShowCamera] = useState(false);
   const [activeCaptureFor, setActiveCaptureFor] = useState<'new' | 'edit' | null>(null);
@@ -163,11 +187,14 @@ const Diary = () => {
 
   const filteredEntries = entries
     .filter((entry) => {
+      if (!searchTerm) return true;
+      
       const searchLower = searchTerm.toLowerCase();
       return (
         entry.title.toLowerCase().includes(searchLower) ||
         entry.content.toLowerCase().includes(searchLower) ||
-        entry.mood.toLowerCase().includes(searchLower)
+        entry.mood.toLowerCase().includes(searchLower) ||
+        (entry.category || '').toLowerCase().includes(searchLower)
       );
     })
     .sort((a, b) => b.date.getTime() - a.date.getTime());
@@ -185,7 +212,8 @@ const Diary = () => {
       content: content.trim(),
       mood: mood,
       images: images.length > 0 ? [...images] : undefined,
-      sticker: sticker || undefined
+      sticker: sticker || undefined,
+      category: category
     };
 
     // Create calendar event for the diary entry
@@ -195,7 +223,8 @@ const Diary = () => {
       description: newEntry.content,
       date: newEntry.date,
       category: 'diary' as const,
-      sticker: newEntry.sticker || undefined
+      sticker: newEntry.sticker || undefined,
+      diaryCategory: newEntry.category
     };
 
     // Get existing calendar events
@@ -212,6 +241,7 @@ const Diary = () => {
     setTitle("");
     setContent("");
     setMood(MOODS[0]);
+    setCategory("Personal");
     setDate(new Date());
     setImages([]);
     setSticker("");
@@ -243,6 +273,7 @@ const Diary = () => {
       setEditContent(entryToEdit.content);
       setEditMood(entryToEdit.mood);
       setEditDate(entryToEdit.date);
+      setEditCategory(entryToEdit.category || "Personal");
       setEditImages(entryToEdit.images || []);
       setEditSticker(entryToEdit.sticker || "");
     }
@@ -263,7 +294,8 @@ const Diary = () => {
           mood: editMood,
           date: editDate,
           images: editImages.length > 0 ? [...editImages] : undefined,
-          sticker: editSticker || undefined
+          sticker: editSticker || undefined,
+          category: editCategory
         };
       }
       return entry;
@@ -280,7 +312,8 @@ const Diary = () => {
           title: editTitle.trim(),
           description: editContent.trim(),
           date: editDate,
-          sticker: editSticker || undefined
+          sticker: editSticker || undefined,
+          diaryCategory: editCategory
         };
       }
       return event;
@@ -517,6 +550,23 @@ const Diary = () => {
                 </div>
 
                 <div>
+                  <Label htmlFor="entry-category">Category</Label>
+                  <Select 
+                    value={category} 
+                    onValueChange={setCategory}
+                  >
+                    <SelectTrigger id="entry-category">
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {DIARY_CATEGORIES.map((cat) => (
+                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
                   <Label htmlFor="entry-mood">Mood</Label>
                   <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-1">
                     {MOODS.map((moodOption) => (
@@ -668,202 +718,4 @@ const Diary = () => {
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0">
-                            <Calendar
-                              mode="single"
-                              selected={editDate}
-                              onSelect={setEditDate}
-                              initialFocus
-                            />
-                          </PopoverContent>
-                        </Popover>
-                      </div>
-
-                      <div>
-                        <Label htmlFor={`edit-title-${entry.id}`}>Title</Label>
-                        <Input
-                          id={`edit-title-${entry.id}`}
-                          value={editTitle}
-                          onChange={(e) => setEditTitle(e.target.value)}
-                        />
-                      </div>
-
-                      <div>
-                        <Label htmlFor={`edit-mood-${entry.id}`}>Mood</Label>
-                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-1">
-                          {MOODS.map((moodOption) => (
-                            <button
-                              key={moodOption}
-                              type="button"
-                              className={`p-2 rounded-md text-sm text-left ${
-                                editMood === moodOption
-                                  ? "bg-primary text-primary-foreground"
-                                  : "bg-secondary hover:bg-secondary/80"
-                              }`}
-                              onClick={() => setEditMood(moodOption)}
-                            >
-                              {moodOption}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div>
-                        <div className="flex justify-between items-center mb-1">
-                          <Label htmlFor={`edit-content-${entry.id}`}>Content</Label>
-                          <VoiceToText onTranscript={handleVoiceTranscriptEdit} />
-                        </div>
-                        <Textarea
-                          id={`edit-content-${entry.id}`}
-                          value={editContent}
-                          onChange={(e) => setEditContent(e.target.value)}
-                          className="min-h-[150px]"
-                        />
-                      </div>
-
-                      {editSticker && (
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium">Selected sticker:</span>
-                          <span className="text-2xl">{editSticker}</span>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => setEditSticker("")}
-                            className="h-6 w-6 p-0"
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      )}
-
-                      {editImages.length > 0 && (
-                        <div>
-                          <Label>Images</Label>
-                          <div className="flex flex-wrap gap-2 mt-2">
-                            {editImages.map((image, index) => (
-                              <div key={index} className="relative w-24 h-24 rounded-md overflow-hidden group">
-                                <img 
-                                  src={image} 
-                                  alt={`Entry ${index}`} 
-                                  className="w-full h-full object-cover" 
-                                />
-                                <Button 
-                                  variant="destructive" 
-                                  size="icon" 
-                                  className="absolute top-1 right-1 w-6 h-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                                  onClick={() => removeImage(index, 'edit')}
-                                >
-                                  <X className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="flex flex-wrap gap-2">
-                        <Button 
-                          variant="outline" 
-                          onClick={() => {
-                            setActiveCaptureFor('edit');
-                            setShowCamera(true);
-                          }}
-                        >
-                          <Camera className="h-4 w-4 mr-2" />
-                          Take Photo
-                        </Button>
-                        
-                        <Button 
-                          variant="outline" 
-                          onClick={() => editFileInputRef.current?.click()}
-                        >
-                          <Image className="h-4 w-4 mr-2" />
-                          Upload Image
-                        </Button>
-                        
-                        {renderStickerPicker('edit')}
-                      </div>
-
-                      <div className="flex justify-end gap-2 pt-2">
-                        <Button variant="outline" onClick={handleCancelEdit}>
-                          Cancel
-                        </Button>
-                        <Button onClick={() => handleUpdateEntry(entry.id)}>
-                          Save Changes
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="p-6">
-                      <div className="flex justify-between items-start">
-                        <div className="flex items-center gap-2">
-                          <div>
-                            <h3 className="text-lg font-semibold">{entry.title}</h3>
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                              <span>{format(entry.date, "PPP")}</span>
-                              <span className="text-xs">•</span>
-                              <span>{entry.mood}</span>
-                              {entry.sticker && <span className="text-2xl ml-1">{entry.sticker}</span>}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex flex-shrink-0 space-x-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleEditEntry(entry.id)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDeleteEntry(entry.id)}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => toggleEntryExpansion(entry.id)}
-                          >
-                            {expandedEntries[entry.id] ? (
-                              <ChevronUp className="h-4 w-4" />
-                            ) : (
-                              <ChevronDown className="h-4 w-4" />
-                            )}
-                          </Button>
-                        </div>
-                      </div>
-
-                      {expandedEntries[entry.id] && (
-                        <div className="mt-4">
-                          <p className="text-sm whitespace-pre-wrap">{entry.content}</p>
-                          
-                          {entry.images && entry.images.length > 0 && (
-                            <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                              {entry.images.map((image, index) => (
-                                <div key={index} className="rounded-md overflow-hidden h-32">
-                                  <img 
-                                    src={image} 
-                                    alt={`Entry ${index}`} 
-                                    className="w-full h-full object-cover" 
-                                  />
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </Card>
-              ))
-            )}
-          </div>
-        </div>
-      </main>
-    </div>
-  );
-};
-
-export default Diary;
+                            <

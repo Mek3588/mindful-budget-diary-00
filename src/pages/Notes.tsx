@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -13,6 +12,14 @@ import CameraCapture from "@/components/CameraCapture";
 import { PopoverContent, Popover, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 
 interface Note {
   id: string;
@@ -22,9 +29,22 @@ interface Note {
   updatedAt?: Date;
   images?: string[];
   sticker?: string;
+  category?: string;
 }
 
-// Sticker categories and emojis
+const NOTE_CATEGORIES = [
+  "Personal",
+  "Work",
+  "Study",
+  "Ideas",
+  "To-Do",
+  "Meeting",
+  "Travel",
+  "Health",
+  "Finance",
+  "Other"
+];
+
 const STICKER_CATEGORIES = [
   { id: "faces", name: "Faces" },
   { id: "animals", name: "Animals" },
@@ -56,7 +76,7 @@ const STICKERS = {
     "🍛", "🍣", "🍱", "🥟", "🦪", "🍤", "🍙", "🍚", "🍘", "🍥", "🥠", "🥮", "🍢", "🍡", "🍧", "🍨", "🍦", "🥧", "🧁", "🍰",
   ],
   activities: [
-    "⚽", "🏀", "🏈", "⚾", "🥎", "🎾", "🏐", "🏉", "🥏", "🎱", "🪀", "🏓", "🏸", "🏒", "🏑", "🥍", "🏏", "🥅", "⛳", "🪁",
+    "⚽", "🏀", "🏈", "⚾", "🥎", "🎾", "🏐", "🏉", "🥏", "🎱", "🪀", "����", "🏸", "🏒", "🏑", "🥍", "🏏", "🥅", "⛳", "🪁",
     "🏹", "🎣", "🤿", "🥊", "🥋", "🎽", "🛹", "🛼", "🛷", "⛸️", "🥌", "🎿", "⛷️", "🏂", "🪂", "🏋️", "🤼", "🤸", "🤽", "🧗",
     "🤺", "🏄", "🚣", "🧘", "🚴", "🚵", "🎬", "🎭", "🎨", "🎪", "🎤", "🎧", "🎼", "🎹", "🥁", "🎷", "🎺", "🎸", "🎮", "🎲",
     "🧩", "🎯", "🎳", "🪄", "🎭", "🎪", "🎨", "🧵", "🧶", "🎻", "🥇", "🥈", "🥉", "🏅", "🎖️", "🏆", "📱", "📲", "💻", "🖥️",
@@ -90,17 +110,16 @@ const STICKERS = {
 const Notes = () => {
   const navigate = useNavigate();
   const [notes, setNotes] = useState<Note[]>([]);
-  const [newNote, setNewNote] = useState({ title: "", content: "", sticker: "" });
+  const [newNote, setNewNote] = useState({ title: "", content: "", sticker: "", category: "Personal" });
   const [isWriting, setIsWriting] = useState(false);
   const [editingNote, setEditingNote] = useState<string | null>(null);
-  const [editedNote, setEditedNote] = useState({ title: "", content: "", sticker: "" });
+  const [editedNote, setEditedNote] = useState({ title: "", content: "", sticker: "", category: "Personal" });
   const [images, setImages] = useState<string[]>([]);
   const [editImages, setEditImages] = useState<string[]>([]);
   const [showCamera, setShowCamera] = useState(false);
   const [activeForCamera, setActiveForCamera] = useState<'new' | 'edit' | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>("faces");
 
-  // Load notes from localStorage on component mount
   useEffect(() => {
     const savedNotes = localStorage.getItem('quick-notes');
     if (savedNotes) {
@@ -112,7 +131,6 @@ const Notes = () => {
     }
   }, []);
 
-  // Save notes to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem('quick-notes', JSON.stringify(notes));
   }, [notes]);
@@ -131,25 +149,25 @@ const Notes = () => {
       date: now,
       updatedAt: now,
       images: images.length > 0 ? [...images] : undefined,
-      sticker: newNote.sticker || undefined
+      sticker: newNote.sticker || undefined,
+      category: newNote.category
     };
 
-    // Create calendar event for the note
     const calendarEvent = {
       id: `note-${note.id}`,
       title: note.title,
       description: note.content,
       date: note.date,
       category: 'notes' as const,
-      sticker: note.sticker || undefined
+      sticker: note.sticker || undefined,
+      noteCategory: note.category
     };
 
-    // Get existing calendar events
     const existingEvents = JSON.parse(localStorage.getItem('calendar-events') || '[]');
     localStorage.setItem('calendar-events', JSON.stringify([...existingEvents, calendarEvent]));
 
     setNotes([note, ...notes]);
-    setNewNote({ title: "", content: "", sticker: "" });
+    setNewNote({ title: "", content: "", sticker: "", category: "Personal" });
     setIsWriting(false);
     setImages([]);
     toast.success("Note saved successfully!");
@@ -158,7 +176,6 @@ const Notes = () => {
   const handleDeleteNote = (id: string) => {
     setNotes(notes.filter(note => note.id !== id));
     
-    // Remove corresponding calendar event
     const existingEvents = JSON.parse(localStorage.getItem('calendar-events') || '[]');
     const updatedEvents = existingEvents.filter((event: any) => event.id !== `note-${id}`);
     localStorage.setItem('calendar-events', JSON.stringify(updatedEvents));
@@ -173,7 +190,8 @@ const Notes = () => {
       setEditedNote({
         title: noteToEdit.title,
         content: noteToEdit.content,
-        sticker: noteToEdit.sticker || ""
+        sticker: noteToEdit.sticker || "",
+        category: noteToEdit.category || "Personal"
       });
       setEditImages(noteToEdit.images || []);
     }
@@ -187,7 +205,6 @@ const Notes = () => {
 
     const now = new Date();
     
-    // Update note in notes array
     const updatedNotes = notes.map(note => 
       note.id === id 
         ? { 
@@ -196,14 +213,14 @@ const Notes = () => {
             content: editedNote.content, 
             updatedAt: now,
             images: editImages.length > 0 ? [...editImages] : undefined,
-            sticker: editedNote.sticker || undefined
+            sticker: editedNote.sticker || undefined,
+            category: editedNote.category
           }
         : note
     );
     
     setNotes(updatedNotes);
 
-    // Update calendar event
     const existingEvents = JSON.parse(localStorage.getItem('calendar-events') || '[]');
     const updatedEvents = existingEvents.map((event: any) => 
       event.id === `note-${id}`
@@ -211,7 +228,8 @@ const Notes = () => {
             ...event, 
             title: editedNote.title, 
             description: editedNote.content,
-            sticker: editedNote.sticker || undefined
+            sticker: editedNote.sticker || undefined,
+            noteCategory: editedNote.category
           }
         : event
     );
@@ -374,6 +392,23 @@ const Notes = () => {
                   onChange={(e) => setNewNote({ ...newNote, title: e.target.value })}
                 />
                 
+                <div>
+                  <Label htmlFor="note-category">Category</Label>
+                  <Select 
+                    value={newNote.category} 
+                    onValueChange={(value) => setNewNote({ ...newNote, category: value })}
+                  >
+                    <SelectTrigger id="note-category">
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {NOTE_CATEGORIES.map((category) => (
+                        <SelectItem key={category} value={category}>{category}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
                 <VoiceToText onTranscript={handleVoiceTranscriptNew} />
                 
                 <Textarea
@@ -458,7 +493,7 @@ const Notes = () => {
                 <div className="flex justify-end gap-2">
                   <Button variant="outline" onClick={() => {
                     setIsWriting(false);
-                    setNewNote({ title: "", content: "", sticker: "" });
+                    setNewNote({ title: "", content: "", sticker: "", category: "Personal" });
                     setImages([]);
                   }}>
                     Cancel
@@ -487,6 +522,23 @@ const Notes = () => {
                       value={editedNote.title}
                       onChange={(e) => setEditedNote({ ...editedNote, title: e.target.value })}
                     />
+                    
+                    <div>
+                      <Label htmlFor={`edit-category-${note.id}`}>Category</Label>
+                      <Select 
+                        value={editedNote.category} 
+                        onValueChange={(value) => setEditedNote({ ...editedNote, category: value })}
+                      >
+                        <SelectTrigger id={`edit-category-${note.id}`}>
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {NOTE_CATEGORIES.map((category) => (
+                            <SelectItem key={category} value={category}>{category}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                     
                     <VoiceToText onTranscript={handleVoiceTranscriptEdit} />
                     
@@ -602,6 +654,11 @@ const Notes = () => {
                           <X className="h-4 w-4" />
                         </Button>
                       </div>
+                    </div>
+                    <div className="mb-2">
+                      <span className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded-md">
+                        {note.category || "Personal"}
+                      </span>
                     </div>
                     <p className="text-sm text-gray-600 dark:text-gray-300 whitespace-pre-wrap">
                       {note.content}
