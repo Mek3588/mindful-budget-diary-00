@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -600,4 +601,258 @@ const Diary = () => {
                     Active
                   </Button>
                   <Button
-                    variant={archiveFilter === "archived" ? "default"
+                    variant={archiveFilter === "archived" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setArchiveFilter("archived")}
+                    className="h-8"
+                  >
+                    Archived
+                  </Button>
+                  <Button
+                    variant={archiveFilter === "all" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setArchiveFilter("all")}
+                    className="h-8"
+                  >
+                    All
+                  </Button>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-sm mr-2">Sort by:</span>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" className="h-8">
+                        <Filter className="h-3 w-3 mr-2" />
+                        {sortOption === "newest" && "Newest"}
+                        {sortOption === "oldest" && "Oldest"}
+                        {sortOption === "title" && "Title"}
+                        {sortOption === "mood" && "Mood"}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>Sort Options</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => setSortOption("newest")}>
+                        <Clock className="h-4 w-4 mr-2" />
+                        Newest First
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setSortOption("oldest")}>
+                        <Clock className="h-4 w-4 mr-2" />
+                        Oldest First
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setSortOption("title")}>
+                        <Clock className="h-4 w-4 mr-2" />
+                        Title
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setSortOption("mood")}>
+                        <Smile className="h-4 w-4 mr-2" />
+                        Mood
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </div>
+              
+              {isAddingEntry ? (
+                renderEditForm()
+              ) : sortedEntries.length === 0 ? (
+                <div className="flex flex-col items-center justify-center bg-muted/40 rounded-lg py-10 my-6">
+                  <div className="text-4xl mb-4">📔</div>
+                  <h3 className="text-xl font-medium">No entries yet</h3>
+                  <p className="text-muted-foreground mt-2 mb-4 text-center">
+                    Start writing your thoughts and feelings to track your daily experiences.
+                  </p>
+                  <Button onClick={handleAddEntry}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Your First Entry
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4 mt-4">
+                  {sortedEntries.map((entry) => (
+                    <Card key={entry.id}>
+                      <CardHeader className="p-4">
+                        <div className="flex justify-between items-start">
+                          <div className="space-y-1">
+                            <CardTitle className="text-xl">{entry.title}</CardTitle>
+                            <div className="flex items-center space-x-2">
+                              <div className="text-sm text-muted-foreground">
+                                {format(new Date(entry.date), "PPP")}
+                              </div>
+                              <Badge variant="outline" className="font-normal">
+                                {entry.mood === "happy" && "😊"}
+                                {entry.mood === "neutral" && "😐"}
+                                {entry.mood === "sad" && "😔"}
+                                {" "}
+                                {entry.mood}
+                              </Badge>
+                              {entry.archived && (
+                                <Badge variant="secondary" className="font-normal">
+                                  Archived
+                                </Badge>
+                              )}
+                            </div>
+                            {entry.stickers && entry.stickers.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {entry.stickers.map((sticker, index) => (
+                                  <span key={index} className="text-lg">{sticker}</span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => handleEditEntry(entry)}>
+                                <Edit className="h-4 w-4 mr-2" />
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => toggleArchiveEntry(entry.id)}>
+                                <Archive className="h-4 w-4 mr-2" />
+                                {entry.archived ? "Unarchive" : "Archive"}
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="text-destructive focus:text-destructive"
+                                onClick={() => {
+                                  setEditingEntry(entry);
+                                  setShowDeleteConfirm(true);
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="p-4 pt-0">
+                        <div className="whitespace-pre-wrap">
+                          {entry.content.split(/\n\n!\[Captured Image\]\(.*\)/)[0]}
+                        </div>
+                        {entry.content.includes("![Captured Image]") && (
+                          <div className="mt-4 border rounded-md overflow-hidden">
+                            <img
+                              src={entry.content.match(/\n\n!\[Captured Image\]\((.*)\)/)?.[1]}
+                              alt="Entry"
+                              className="max-h-64 w-full object-contain"
+                            />
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+        
+        <div className="md:col-span-5 lg:col-span-4 space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Calendar</CardTitle>
+              <CardDescription>View your entries by date</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={(day) => day && setSelectedDate(day)}
+                className="rounded-md border"
+                displaySticker={(date) => {
+                  // Find entries for this date and return mood emoji if found
+                  const entriesForDate = entries.filter(entry => 
+                    isSameDay(new Date(entry.date), date)
+                  );
+                  if (entriesForDate.length > 0) {
+                    const entry = entriesForDate[0];
+                    if (entry.mood === "happy") return "😊";
+                    if (entry.mood === "neutral") return "😐";
+                    if (entry.mood === "sad") return "😔";
+                  }
+                  return null;
+                }}
+              />
+            </CardContent>
+            <CardFooter>
+              <div className="w-full">
+                <h3 className="font-medium mb-2">
+                  Entries for {format(selectedDate, "PPP")}
+                </h3>
+                {entriesForSelectedDate.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No entries for this date</p>
+                ) : (
+                  <div className="space-y-2">
+                    {entriesForSelectedDate.map((entry) => (
+                      <div
+                        key={entry.id}
+                        className="flex items-start justify-between border rounded-md p-2 cursor-pointer hover:bg-accent/50"
+                        onClick={() => handleEditEntry(entry)}
+                      >
+                        <div>
+                          <div className="font-medium">{entry.title}</div>
+                          <div className="text-xs flex items-center gap-1">
+                            {entry.mood === "happy" && "😊"}
+                            {entry.mood === "neutral" && "😐"}
+                            {entry.mood === "sad" && "😔"}
+                            {entry.archived && <span className="text-muted-foreground ml-1">(Archived)</span>}
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditEntry(entry);
+                          }}
+                        >
+                          <Edit className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </CardFooter>
+          </Card>
+        </div>
+      </div>
+      
+      {/* Camera capture dialog */}
+      {showCamera && (
+        <CameraCapture
+          open={showCamera}
+          onOpenChange={setShowCamera}
+          onCapture={handleImageCapture}
+        />
+      )}
+      
+      {/* Delete confirmation dialog */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 bg-background/80 flex items-center justify-center">
+          <div className="bg-card p-6 rounded-lg shadow-lg max-w-md w-full">
+            <h3 className="text-lg font-semibold mb-2">Delete Entry</h3>
+            <p className="mb-4">Are you sure you want to delete this entry? This action cannot be undone.</p>
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setShowDeleteConfirm(false)}>
+                Cancel
+              </Button>
+              <Button variant="destructive" onClick={handleDeleteEntry}>
+                Delete
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default Diary;
