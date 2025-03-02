@@ -26,6 +26,7 @@ const VoiceToText = ({ onTranscript, placeholder = "Speak now..." }: VoiceToText
   const recognitionRef = useRef<any>(null);
   const finalTranscriptRef = useRef<string>("");
   const processedResultsRef = useRef<Set<string>>(new Set());
+  const listenerActiveRef = useRef<boolean>(false);
   
   // Initialize the speech recognition on component mount
   useEffect(() => {
@@ -50,20 +51,24 @@ const VoiceToText = ({ onTranscript, placeholder = "Speak now..." }: VoiceToText
       let interimTranscript = '';
       let currentFinalTranscript = '';
       
+      // Track which final results we've seen in this callback
+      const seenResultsThisCallback = new Set<string>();
+      
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const transcript = event.results[i][0].transcript;
         if (event.results[i].isFinal) {
-          // Create a unique ID for this result
-          const resultId = `${i}:${transcript}`;
+          // Create a unique ID for this result using both index and content
+          const resultId = `${i}:${transcript.trim()}`;
           
           // Only process this final result if we haven't seen it before
-          if (!processedResultsRef.current.has(resultId)) {
+          if (!processedResultsRef.current.has(resultId) && !seenResultsThisCallback.has(resultId)) {
             currentFinalTranscript += transcript;
             processedResultsRef.current.add(resultId);
+            seenResultsThisCallback.add(resultId);
             
-            // Pass to parent component
-            if (currentFinalTranscript.trim()) {
-              console.log("Sending to parent:", currentFinalTranscript);
+            // Pass to parent component if there's content and we're still supposed to be listening
+            if (currentFinalTranscript.trim() && listenerActiveRef.current) {
+              console.log("Sending to parent:", currentFinalTranscript.trim());
               onTranscript(currentFinalTranscript.trim());
             }
           }
@@ -73,7 +78,6 @@ const VoiceToText = ({ onTranscript, placeholder = "Speak now..." }: VoiceToText
       }
       
       // Update the transcript state with the current recognition results
-      // Either the interim results, or the accumulation of final results
       const displayTranscript = interimTranscript || finalTranscriptRef.current + currentFinalTranscript;
       setTranscript(displayTranscript);
       
@@ -100,20 +104,30 @@ const VoiceToText = ({ onTranscript, placeholder = "Speak now..." }: VoiceToText
         toast.error(`Speech recognition error: ${event.error}`);
       }
       
-      setIsListening(false);
+      if (event.error !== 'aborted') {
+        setIsListening(false);
+        listenerActiveRef.current = false;
+      }
     };
     
     recognitionRef.current.onend = () => {
       console.log("Recognition ended, isListening:", isListening);
       
       // Only try to restart if we're still supposed to be listening
-      if (isListening) {
+      // Use the ref to check the latest value
+      if (listenerActiveRef.current) {
         try {
-          recognitionRef.current.start();
-          console.log("Restarted recognition");
+          // Small delay to prevent rapid reconnections
+          setTimeout(() => {
+            if (listenerActiveRef.current) {
+              recognitionRef.current.start();
+              console.log("Restarted recognition");
+            }
+          }, 300);
         } catch (e) {
           console.error('Error restarting speech recognition', e);
           setIsListening(false);
+          listenerActiveRef.current = false;
           toast.error("Failed to restart speech recognition");
         }
       }
@@ -122,13 +136,19 @@ const VoiceToText = ({ onTranscript, placeholder = "Speak now..." }: VoiceToText
     return () => {
       if (recognitionRef.current) {
         try {
+          listenerActiveRef.current = false;
           recognitionRef.current.stop();
         } catch (e) {
           console.error('Error stopping speech recognition', e);
         }
       }
     };
-  }, [isListening, onTranscript]);
+  }, [onTranscript]);
+
+  // Update listener ref when isListening changes
+  useEffect(() => {
+    listenerActiveRef.current = isListening;
+  }, [isListening]);
 
   // Request microphone permission
   const requestMicrophonePermission = async () => {
@@ -157,6 +177,7 @@ const VoiceToText = ({ onTranscript, placeholder = "Speak now..." }: VoiceToText
       // Stop listening
       try {
         console.log("Stopping recognition...");
+        listenerActiveRef.current = false;
         recognitionRef.current.stop();
         setIsListening(false);
         
@@ -188,11 +209,14 @@ const VoiceToText = ({ onTranscript, placeholder = "Speak now..." }: VoiceToText
       
       try {
         console.log("Starting recognition...");
+        // Set the ref first to ensure consistent state
+        listenerActiveRef.current = true;
         recognitionRef.current.start();
         setIsListening(true);
         toast.success("Voice input started. Speak now...");
       } catch (error) {
         console.error('Error starting speech recognition', error);
+        listenerActiveRef.current = false;
         toast.error("Could not start speech recognition. Please try again.");
       }
     }
