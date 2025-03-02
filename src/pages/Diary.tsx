@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -718,3 +719,243 @@ const Diary = () => {
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0">
                             <Calendar
+                              mode="single"
+                              selected={editDate}
+                              onSelect={setEditDate}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+
+                      <div>
+                        <Label htmlFor={`edit-title-${entry.id}`}>Title</Label>
+                        <Input
+                          id={`edit-title-${entry.id}`}
+                          value={editTitle}
+                          onChange={(e) => setEditTitle(e.target.value)}
+                          placeholder="Enter a title for your entry"
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor={`edit-category-${entry.id}`}>Category</Label>
+                        <Select 
+                          value={editCategory} 
+                          onValueChange={setEditCategory}
+                        >
+                          <SelectTrigger id={`edit-category-${entry.id}`}>
+                            <SelectValue placeholder="Select category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {DIARY_CATEGORIES.map((cat) => (
+                              <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label htmlFor={`edit-mood-${entry.id}`}>Mood</Label>
+                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-1">
+                          {MOODS.map((moodOption) => (
+                            <button
+                              key={moodOption}
+                              type="button"
+                              className={`p-2 rounded-md text-sm text-left ${
+                                editMood === moodOption
+                                  ? "bg-primary text-primary-foreground"
+                                  : "bg-secondary hover:bg-secondary/80"
+                              }`}
+                              onClick={() => setEditMood(moodOption)}
+                            >
+                              {moodOption}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between items-center mb-1">
+                          <Label htmlFor={`edit-content-${entry.id}`}>Content</Label>
+                          <VoiceToText onTranscript={handleVoiceTranscriptEdit} />
+                        </div>
+                        <Textarea
+                          id={`edit-content-${entry.id}`}
+                          value={editContent}
+                          onChange={(e) => setEditContent(e.target.value)}
+                          placeholder="Write about your day..."
+                          className="min-h-[150px]"
+                        />
+                      </div>
+
+                      {editSticker && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium">Selected sticker:</span>
+                          <span className="text-2xl">{editSticker}</span>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => setEditSticker("")}
+                            className="h-6 w-6 p-0"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
+
+                      {editImages.length > 0 && (
+                        <div>
+                          <Label>Images</Label>
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {editImages.map((image, index) => (
+                              <div key={index} className="relative w-24 h-24 rounded-md overflow-hidden group">
+                                <img 
+                                  src={image} 
+                                  alt={`Entry ${index}`} 
+                                  className="w-full h-full object-cover" 
+                                />
+                                <Button 
+                                  variant="destructive" 
+                                  size="icon" 
+                                  className="absolute top-1 right-1 w-6 h-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  onClick={() => removeImage(index, 'edit')}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex flex-wrap gap-2">
+                        <Button 
+                          variant="outline" 
+                          onClick={() => {
+                            setActiveCaptureFor('edit');
+                            setShowCamera(true);
+                          }}
+                        >
+                          <Camera className="h-4 w-4 mr-2" />
+                          Take Photo
+                        </Button>
+                        
+                        <Button 
+                          variant="outline" 
+                          onClick={() => editFileInputRef.current?.click()}
+                        >
+                          <Image className="h-4 w-4 mr-2" />
+                          Upload Image
+                        </Button>
+                        
+                        {renderStickerPicker('edit')}
+                      </div>
+
+                      <div className="flex justify-end gap-2 pt-2">
+                        <Button
+                          variant="outline"
+                          onClick={handleCancelEdit}
+                        >
+                          Cancel
+                        </Button>
+                        <Button onClick={() => handleUpdateEntry(entry.id)}>
+                          Update Entry
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-6">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-lg sm:text-xl font-bold">
+                              {entry.title}
+                            </h3>
+                            {entry.sticker && <span className="text-2xl">{entry.sticker}</span>}
+                          </div>
+                          <div className="text-sm text-muted-foreground mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+                            <span>{format(entry.date, "PPP")}</span>
+                            <span>•</span>
+                            <span>{entry.mood}</span>
+                            {entry.category && (
+                              <>
+                                <span>•</span>
+                                <span className="bg-secondary/50 px-2 py-0.5 rounded-full text-xs">
+                                  {entry.category}
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEditEntry(entry.id)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => toggleEntryExpansion(entry.id)}
+                          >
+                            {expandedEntries[entry.id] ? (
+                              <ChevronUp className="h-4 w-4" />
+                            ) : (
+                              <ChevronDown className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+
+                      {expandedEntries[entry.id] && (
+                        <div className="mt-4 space-y-4">
+                          <div className="prose prose-sm dark:prose-invert max-w-none">
+                            {entry.content.split('\n').map((paragraph, idx) => (
+                              <p key={idx}>{paragraph}</p>
+                            ))}
+                          </div>
+
+                          {entry.images && entry.images.length > 0 && (
+                            <div>
+                              <h4 className="text-sm font-medium mb-2">Images</h4>
+                              <div className="flex flex-wrap gap-2">
+                                {entry.images.map((image, index) => (
+                                  <div key={index} className="w-20 h-20 sm:w-24 sm:h-24 rounded-md overflow-hidden">
+                                    <img 
+                                      src={image} 
+                                      alt={`Entry ${index}`} 
+                                      className="w-full h-full object-cover" 
+                                    />
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="pt-2 flex justify-end">
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDeleteEntry(entry.id)}
+                            >
+                              Delete Entry
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </Card>
+              ))
+            )}
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default Diary;
