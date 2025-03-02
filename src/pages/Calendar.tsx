@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -58,7 +57,6 @@ import { Badge } from "@/components/ui/badge";
 import { useMobile } from "@/hooks/use-mobile";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
-// Define types
 interface CalendarEvent {
   id: string;
   title: string;
@@ -74,10 +72,8 @@ type ArchiveFilter = "active" | "archived" | "all";
 
 type Category = "personal" | "work" | "social" | "health" | "other";
 
-// Sticker categories
 type StickerCategory = "emotions" | "activities" | "food" | "travel" | "nature" | "weather" | "animals" | "objects";
 
-// Define stickers grouped by category
 interface StickerData {
   category: StickerCategory;
   stickers: string[];
@@ -108,7 +104,7 @@ const stickerData: StickerData[] = [
   {
     category: "nature",
     label: "Nature",
-    stickers: ["🌱", "🌲", "🌳", "🌴", "🌵", "🌿", "☘️", "🍀", "🍁", "🍂", "🍃", "🌺", "🌸", "🌼", "🌻", "🌞", "🌝", "🌛", "🌜", "🌚", "⭐", "🌟", "✨", "☀️", "🌤️", "⛅", "🌥️", "☁️", "🌨️", "⛈️"]
+    stickers: ["🌱", "🌲", "🌳", "🌴", "🌵", "🌿", "☘️", "🍀", "🍁", "🍂", "🍃", "🌺", "🌸", "🌼", "🌻", "🌞", "🌝", "🌛", "🌜", "🌚", "⭐", "🌟", "��", "☀️", "🌤️", "⛅", "🌥️", "☁️", "🌨️", "⛈️"]
   },
   {
     category: "weather",
@@ -127,7 +123,6 @@ const stickerData: StickerData[] = [
   }
 ];
 
-// Flatten all stickers for backwards compatibility
 const allStickers = stickerData.flatMap(category => category.stickers);
 
 const categoryColors: Record<Category, string> = {
@@ -181,7 +176,6 @@ const CalendarPage = () => {
   const [showStickerList, setShowStickerList] = useState(false);
   const [selectedStickerCategory, setSelectedStickerCategory] = useState<StickerCategory | "all">("all");
 
-  // Load events from localStorage on component mount
   useEffect(() => {
     const savedEvents = localStorage.getItem("calendar-events");
     if (savedEvents) {
@@ -189,21 +183,17 @@ const CalendarPage = () => {
     }
   }, []);
 
-  // Save events to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem("calendar-events", JSON.stringify(events));
   }, [events]);
 
-  // Filter events based on selected category and archive filter
   const filteredEvents = useMemo(() => {
     return events.filter(event => {
-      // First, filter by archive status
       const matchesArchiveStatus = 
         archiveFilter === "all" ||
         (archiveFilter === "active" && !event.archived) ||
         (archiveFilter === "archived" && event.archived);
       
-      // Then filter by category
       const matchesCategory = 
         selectedCategory === "all" || 
         event.category === selectedCategory;
@@ -212,7 +202,6 @@ const CalendarPage = () => {
     });
   }, [events, selectedCategory, archiveFilter]);
 
-  // Filter stickers based on selected category
   useEffect(() => {
     if (selectedStickerCategory === "all") {
       setAvailableStickers(allStickers);
@@ -224,21 +213,17 @@ const CalendarPage = () => {
     }
   }, [selectedStickerCategory]);
 
-  // Check if a specific date has events
   const hasEventsOnDate = (date: Date) => {
     return filteredEvents.some((event) =>
       isSameDay(date, new Date(event.date))
     );
   };
 
-  // Get sticker for a specific date (only show one sticker per day - the last sticker added)
   const getStickerForDate = (date: Date): string | null => {
-    // Get all events for this date
     const dateEvents = filteredEvents.filter((event) =>
       isSameDay(date, new Date(event.date))
     );
     
-    // If there are events with stickers, return the last one's sticker
     const eventsWithStickers = dateEvents.filter(event => event.sticker && event.sticker.trim());
     if (eventsWithStickers.length > 0) {
       return eventsWithStickers[eventsWithStickers.length - 1].sticker || null;
@@ -247,32 +232,27 @@ const CalendarPage = () => {
     return null;
   };
 
-  // Go to today's date
   const goToToday = () => {
     const today = new Date();
     setSelectedDate(today);
     setCurrentMonth(today);
   };
 
-  // Handle day click in calendar
   const handleDayClick = (day: Date | undefined) => {
     if (day) {
       setSelectedDate(day);
       
-      // Get events for the selected day
       const dateEvents = filteredEvents.filter((event) =>
         isSameDay(day, new Date(event.date))
       );
       
       if (dateEvents.length === 0) {
-        // If no events, open dialog to create new event
         resetEventForm();
         setShowEventDialog(true);
       }
     }
   };
 
-  // Reset event form
   const resetEventForm = () => {
     setEventTitle("");
     setEventDescription("");
@@ -284,18 +264,15 @@ const CalendarPage = () => {
     setSelectedStickerCategory("all");
   };
 
-  // Add or update event
   const handleSaveEvent = () => {
     if (!eventTitle.trim()) {
       toast.error("Event title is required");
       return;
     }
 
-    // Format date for storage
     const eventDate = format(selectedDate, "yyyy-MM-dd");
 
     if (editingEvent) {
-      // Update existing event
       const updatedEvents = events.map((event) =>
         event.id === editingEvent.id
           ? {
@@ -311,7 +288,6 @@ const CalendarPage = () => {
       setEvents(updatedEvents);
       toast.success("Event updated successfully");
     } else {
-      // Create new event
       const newEvent: CalendarEvent = {
         id: Date.now().toString(),
         title: eventTitle,
@@ -330,7 +306,6 @@ const CalendarPage = () => {
     resetEventForm();
   };
 
-  // Delete event
   const handleDeleteEvent = () => {
     if (editingEvent) {
       const updatedEvents = events.filter(
@@ -343,7 +318,6 @@ const CalendarPage = () => {
     }
   };
 
-  // Archive/unarchive event
   const toggleArchiveEvent = (eventId: string) => {
     const updatedEvents = events.map((event) =>
       event.id === eventId
@@ -352,7 +326,6 @@ const CalendarPage = () => {
     );
     setEvents(updatedEvents);
     
-    // Determine if we're archiving or unarchiving
     const event = events.find(e => e.id === eventId);
     if (event) {
       if (!event.archived) {
@@ -363,7 +336,6 @@ const CalendarPage = () => {
     }
   };
 
-  // Edit event
   const handleEditEvent = (event: CalendarEvent) => {
     setEditingEvent(event);
     setEventTitle(event.title);
@@ -375,17 +347,14 @@ const CalendarPage = () => {
     setShowEventDialog(true);
   };
 
-  // Get events for selected date
   const eventsForSelectedDate = useMemo(() => {
     return filteredEvents.filter((event) =>
       isSameDay(selectedDate, new Date(event.date))
     );
   }, [filteredEvents, selectedDate]);
 
-  // Fix for the sorting error - make sure time exists before comparing
   const sortedEventsForSelectedDate = useMemo(() => {
     return [...eventsForSelectedDate].sort((a, b) => {
-      // Handle case where time might be undefined
       if (!a.time) return -1;
       if (!b.time) return 1;
       return a.time.localeCompare(b.time);
@@ -395,45 +364,11 @@ const CalendarPage = () => {
   return (
     <div className="container px-4 mx-auto py-6">
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-        {/* Calendar column */}
         <div className="md:col-span-7 lg:col-span-8 space-y-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-xl">Calendar</CardTitle>
               <div className="flex flex-wrap gap-2">
-                <Select
-                  value={archiveFilter}
-                  onValueChange={(value) => 
-                    setArchiveFilter(value as ArchiveFilter)
-                  }
-                >
-                  <SelectTrigger className="w-[130px] h-9">
-                    <SelectValue placeholder="Filter" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="archived">Archived</SelectItem>
-                    <SelectItem value="all">All</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select
-                  value={selectedCategory}
-                  onValueChange={(value) => 
-                    setSelectedCategory(value as Category | "all")
-                  }
-                >
-                  <SelectTrigger className="w-[130px] h-9">
-                    <SelectValue placeholder="Category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Categories</SelectItem>
-                    <SelectItem value="personal">Personal</SelectItem>
-                    <SelectItem value="work">Work</SelectItem>
-                    <SelectItem value="social">Social</SelectItem>
-                    <SelectItem value="health">Health</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
                 <Button 
                   variant="outline"
                   size="sm"
@@ -470,10 +405,61 @@ const CalendarPage = () => {
                 }}
                 displaySticker={getStickerForDate}
               />
+              
+              <div className="flex flex-col sm:flex-row gap-4 mt-4 items-start sm:items-center">
+                <div className="flex flex-wrap gap-2 items-center">
+                  <span className="text-sm font-medium mr-2">View:</span>
+                  <Button 
+                    variant={archiveFilter === "active" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setArchiveFilter("active")}
+                    className="h-8"
+                  >
+                    Active
+                  </Button>
+                  <Button 
+                    variant={archiveFilter === "archived" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setArchiveFilter("archived")}
+                    className="h-8"
+                  >
+                    Archived
+                  </Button>
+                  <Button 
+                    variant={archiveFilter === "all" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setArchiveFilter("all")}
+                    className="h-8"
+                  >
+                    All
+                  </Button>
+                </div>
+                
+                <div className="flex items-center">
+                  <span className="text-sm font-medium mr-2">Category:</span>
+                  <Select
+                    value={selectedCategory}
+                    onValueChange={(value) => 
+                      setSelectedCategory(value as Category | "all")
+                    }
+                  >
+                    <SelectTrigger className="w-[150px] h-8">
+                      <SelectValue placeholder="Category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Categories</SelectItem>
+                      <SelectItem value="personal">Personal</SelectItem>
+                      <SelectItem value="work">Work</SelectItem>
+                      <SelectItem value="social">Social</SelectItem>
+                      <SelectItem value="health">Health</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </CardContent>
           </Card>
           
-          {/* Today's Events */}
           <Card>
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
@@ -579,7 +565,6 @@ const CalendarPage = () => {
           </Card>
         </div>
 
-        {/* Upcoming events column */}
         <div className="md:col-span-5 lg:col-span-4 space-y-4">
           <Card className="h-full">
             <CardHeader>
@@ -595,29 +580,25 @@ const CalendarPage = () => {
                     .filter((event) => {
                       const eventDate = new Date(event.date);
                       const today = new Date();
-                      // Ignore hours, minutes and seconds when comparing
                       today.setHours(0, 0, 0, 0);
                       
-                      // Event is in the future or today
                       return eventDate >= today;
                     })
                     .sort((a, b) => {
-                      // Sort by date, then by time
                       const dateCompare = new Date(a.date).getTime() - new Date(b.date).getTime();
                       if (dateCompare !== 0) return dateCompare;
                       
-                      // Handle case where time might be undefined
                       if (!a.time) return -1;
                       if (!b.time) return 1;
                       return a.time.localeCompare(b.time);
                     })
-                    .slice(0, 15) // Show only next 15 events
+                    .slice(0, 15)
                     .map((event) => (
                       <Card key={event.id} className={`shadow-sm ${event.archived ? "opacity-70" : ""}`}>
                         <CardHeader className="p-3">
                           <div className="flex justify-between items-start">
                             <div className="space-y-1">
-                              <div className="flex items-center space-x-2 flex-wrap gap-2">
+                              <div className="flex items-center space-x-2 flex-wrap">
                                 <Badge className={`${categoryColors[event.category]}`}>
                                   {categoryDisplayNames[event.category]}
                                 </Badge>
@@ -694,7 +675,6 @@ const CalendarPage = () => {
         </div>
       </div>
 
-      {/* Event Dialog - Improved for mobile */}
       <Dialog open={showEventDialog} onOpenChange={setShowEventDialog}>
         <DialogContent className="sm:max-w-md max-w-[95vw] overflow-hidden">
           <DialogHeader>
