@@ -1,3 +1,4 @@
+<lov-code>
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -56,6 +57,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { useMobile } from "@/hooks/use-mobile";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import HelpDialog from "@/components/HelpDialog";
 
 interface CalendarEvent {
   id: string;
@@ -175,6 +177,8 @@ const CalendarPage = () => {
   const [availableStickers, setAvailableStickers] = useState(allStickers);
   const [showStickerList, setShowStickerList] = useState(false);
   const [selectedStickerCategory, setSelectedStickerCategory] = useState<StickerCategory | "all">("all");
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editEventId, setEditEventId] = useState<string | null>(null);
 
   useEffect(() => {
     const savedEvents = localStorage.getItem("calendar-events");
@@ -303,6 +307,7 @@ const CalendarPage = () => {
     }
 
     setShowEventDialog(false);
+    setShowEditDialog(false);
     resetEventForm();
   };
 
@@ -314,6 +319,7 @@ const CalendarPage = () => {
       setEvents(updatedEvents);
       toast.success("Event deleted successfully");
       setShowEventDialog(false);
+      setShowEditDialog(false);
       resetEventForm();
     }
   };
@@ -344,7 +350,8 @@ const CalendarPage = () => {
     setEventCategory(event.category);
     setEventSticker(event.sticker || "");
     setSelectedDate(new Date(event.date));
-    setShowEventDialog(true);
+    setEditEventId(event.id);
+    setShowEditDialog(true);
   };
 
   const eventsForSelectedDate = useMemo(() => {
@@ -387,6 +394,7 @@ const CalendarPage = () => {
                   <Plus className="h-4 w-4 mr-1" />
                   Add Event
                 </Button>
+                <HelpDialog />
               </div>
             </CardHeader>
             <CardContent>
@@ -675,6 +683,7 @@ const CalendarPage = () => {
         </div>
       </div>
 
+      {/* Regular event dialog for adding new events */}
       <Dialog open={showEventDialog} onOpenChange={setShowEventDialog}>
         <DialogContent className="sm:max-w-md max-w-[95vw] overflow-hidden">
           <DialogHeader>
@@ -837,55 +846,4 @@ const CalendarPage = () => {
               <h4 className="font-medium text-red-800 dark:text-red-200 mb-2">Confirm Deletion</h4>
               <p className="text-red-700 dark:text-red-300 text-sm mb-4">
                 Are you sure you want to delete this event? This action cannot be undone.
-              </p>
-              <div className="flex justify-end space-x-2">
-                <Button 
-                  variant="outline" 
-                  onClick={() => setShowDeleteConfirm(false)}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  variant="destructive" 
-                  onClick={handleDeleteEvent}
-                >
-                  Delete Event
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <DialogFooter className="flex flex-col sm:flex-row sm:justify-between sm:space-x-2">
-              {editingEvent && (
-                <Button 
-                  variant="outline" 
-                  className="mb-2 sm:mb-0 sm:mr-auto"
-                  onClick={() => setShowDeleteConfirm(true)}
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete
-                </Button>
-              )}
-              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 w-full sm:w-auto">
-                <Button 
-                  variant="outline" 
-                  onClick={() => setShowEventDialog(false)}
-                  className="w-full sm:w-auto"
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={handleSaveEvent}
-                  className="w-full sm:w-auto"
-                >
-                  {editingEvent ? "Update Event" : "Create Event"}
-                </Button>
-              </div>
-            </DialogFooter>
-          )}
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-};
-
-export default CalendarPage;
+              </p

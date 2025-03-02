@@ -152,6 +152,15 @@ const HelpDialog = () => {
                 </p>
               </div>
               <div>
+                <h4 className="font-medium">Stickers & Emojis</h4>
+                <p>
+                  Personalize your diary entries with stickers and emojis to visually
+                  represent your feelings or add fun elements to your entries. Access the
+                  sticker selector when creating or editing an entry to browse through
+                  various categories of emojis.
+                </p>
+              </div>
+              <div>
                 <h4 className="font-medium">Privacy</h4>
                 <p>
                   Your diary entries are stored locally on your device for
@@ -261,6 +270,30 @@ const HelpDialog = () => {
                 <p>
                   Switch between month, week, and day views to see your schedule
                   at different levels of detail.
+                </p>
+              </div>
+              <div>
+                <h4 className="font-medium">Event Editing</h4>
+                <p>
+                  Edit your events by clicking on them in the calendar view or from the
+                  upcoming events list. You can modify all details including title, 
+                  description, date, time, category, and add stickers to your events.
+                </p>
+              </div>
+              <div>
+                <h4 className="font-medium">Stickers & Visual Indicators</h4>
+                <p>
+                  Add stickers to your events to make them visually distinctive on your
+                  calendar. Event categories are color-coded to help you quickly identify
+                  different types of events.
+                </p>
+              </div>
+              <div>
+                <h4 className="font-medium">Archiving Events</h4>
+                <p>
+                  Keep your calendar clean by archiving past events you want to keep
+                  for reference but don't need to see regularly. Use the view filters
+                  to toggle between active, archived, or all events.
                 </p>
               </div>
               <div>
