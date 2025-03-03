@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -93,7 +92,7 @@ const STICKERS = {
     "🌱", "🌲", "🌳", "🌴", "🌵", "🌾", "🌿", "☘️", "🍀", "🍁", "🍂", "🍃", "🍄",
     "🌰", "🦠", "🌹", "🥀", "🌺", "🌻", "🌼", "🌷", "💐", "🌸", "💮", "🏵️", "🌞", 
     "🌝", "🌛", "🌜", "🌚", "🌕", "🌖", "🌗", "🌘", "🌑", "🌒", "🌓", "🌔", "🌙", 
-    "🌎", "🌍", "🌏", "🪐", "💫", "⭐", "🌟", "✨", "⚡", "☄️", "💥", "🔥", "🌪️", 
+    "🌎", "🌍", "🌏", "🪐", "💫", "⭐", "🌟", "✨", "⚡", "☄️", "💥", "🔥", "����️", 
     "🌈", "☀️", "🌤️", "⛅", "🌥️", "☁️", "🌦️", "🌧️", "⛈️", "🌩️", "🌨️", "❄️", "☃️", 
     "⛄", "🌬️", "💨", "💧", "💦", "☔", "☂️", "🌊", "🌫️"
   ],
@@ -212,7 +211,6 @@ const Diary = () => {
     return [...filteredEntries].sort((a, b) => {
       switch (sortOption) {
         case "newest":
-          // Fix the sorting logic to properly compare dates
           return new Date(b.date).getTime() - new Date(a.date).getTime();
         case "oldest":
           return new Date(a.date).getTime() - new Date(b.date).getTime();
@@ -243,7 +241,6 @@ const Diary = () => {
       return;
     }
 
-    // Format the date in ISO format for consistent sorting
     const entryDate = format(selectedDate, "yyyy-MM-dd");
 
     let finalContent = newEntryContent;
@@ -267,23 +264,20 @@ const Diary = () => {
       setEntries(updatedEntries);
       toast.success("Entry updated successfully");
     } else {
-      // Create a new entry with current timestamp to ensure proper sorting
       const newEntry: DiaryEntry = {
         id: Date.now().toString(),
         title: newEntryTitle,
         content: finalContent,
-        date: entryDate, // This is in yyyy-MM-dd format
+        date: entryDate,
         mood: newEntryMood,
         archived: false,
         stickers: selectedStickers,
       };
       
-      // Add the new entry to the beginning of the array
       setEntries(prev => [newEntry, ...prev]);
       toast.success("Entry created successfully");
     }
 
-    // Reset all form values and states
     setIsAddingEntry(false);
     setEditingEntry(null);
     setNewEntryTitle("");
@@ -569,7 +563,6 @@ const Diary = () => {
     );
   };
 
-  // Replace isAddingEntry content with the improved edit form
   return (
     <div className="container px-4 mx-auto py-6">
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
@@ -766,7 +759,6 @@ const Diary = () => {
                 onSelect={(day) => day && setSelectedDate(day)}
                 className="rounded-md border"
                 displaySticker={(date) => {
-                  // Find entries for this date and return mood emoji if found
                   const entriesForDate = entries.filter(entry => 
                     isSameDay(new Date(entry.date), date)
                   );
@@ -825,7 +817,6 @@ const Diary = () => {
         </div>
       </div>
       
-      {/* Camera capture dialog */}
       {showCamera && (
         <CameraCapture
           open={showCamera}
@@ -834,7 +825,6 @@ const Diary = () => {
         />
       )}
       
-      {/* Delete confirmation dialog */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-50 bg-background/80 flex items-center justify-center">
           <div className="bg-card p-6 rounded-lg shadow-lg max-w-md w-full">
