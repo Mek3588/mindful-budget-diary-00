@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -163,7 +162,7 @@ const STICKERS = {
     "🦆", "🦢", "🦉", "🦚", "🦜", "🐺", "🐗", "🐴", "🦄", "🐝", "🐛", "🦋", "🐌", 
     "🐞", "🐜", "🦗", "🕷️", "🕸️", "🦂", "🦟", "🦠", "🐢", "🐍", "🦎", "🦖", "🦕", 
     "🐙", "🦑", "🦐", "🦞", "🦀", "🐡", "🐠", "🐟", "🐬", "🐳", "🐋", "🦈", "🐊", 
-    "🐅", "🐆", "🦓", "🦍", "🦧", "🐘", "🦛", "🦏", "🐪", "🐫", "🦒", "🦘", "🐃", 
+    "🐅", "🐆", "🦓", "🦍", "🦧", "🐘", "🦛", "🦏", "🐪", "🐫", "🦒", "����", "🐃", 
     "🐂", "🐄", "🐎", "🐖", "🐏", "🐑", "🦙", "🐐", "🦌", "🐕", "🐩", "🦮", "🐕‍🦺", 
     "🐈", "🐈‍⬛", "🐓", "🦃", "🦚", "🦜", "🦢", "🦩", "🕊️", "🐇", "🦝", "🦨", "🦡", 
     "🦦", "🦥", "🐁", "🐀", "🐿️", "🦔", "🐾", "🐉", "🐲", "🌵", "🦔"
@@ -192,7 +191,12 @@ const Diary = () => {
   useEffect(() => {
     const savedEntries = localStorage.getItem("diary-entries");
     if (savedEntries) {
-      setEntries(JSON.parse(savedEntries));
+      try {
+        setEntries(JSON.parse(savedEntries));
+      } catch (error) {
+        console.error("Error parsing diary entries:", error);
+        setEntries([]);
+      }
     }
   }, []);
 
@@ -249,15 +253,12 @@ const Diary = () => {
       finalContent = `${finalContent}\n\n![Captured Image](${capturedImage})`;
     }
 
-    // Create a copy of the entries array to avoid reference issues
     const updatedEntries = [...entries];
 
     if (editingEntry) {
-      // Find the index of the entry being edited
       const index = updatedEntries.findIndex(entry => entry.id === editingEntry.id);
       
       if (index !== -1) {
-        // Update the entry at the found index
         updatedEntries[index] = {
           ...editingEntry,
           title: newEntryTitle,
@@ -267,7 +268,6 @@ const Diary = () => {
           stickers: selectedStickers,
         };
         
-        // Update the state with the modified entries array
         setEntries(updatedEntries);
         toast.success("Entry updated successfully");
       }
@@ -282,7 +282,7 @@ const Diary = () => {
         stickers: selectedStickers,
       };
       
-      setEntries(prev => [newEntry, ...prev]);
+      setEntries([newEntry, ...updatedEntries]);
       toast.success("Entry created successfully");
     }
 
@@ -332,18 +332,15 @@ const Diary = () => {
   };
 
   const handleEditEntry = (entry: DiaryEntry) => {
-    // Start by setting the editing state
     setIsAddingEntry(true);
     setEditingEntry(entry);
     
-    // Set all form fields to match the entry data
     setNewEntryTitle(entry.title);
-    setNewEntryContent(entry.content.replace(/\n\n!\[Captured Image\]\(.*\)/, '')); // Remove image from content for editing
+    setNewEntryContent(entry.content.replace(/\n\n!\[Captured Image\]\(.*\)/, ''));
     setNewEntryMood(entry.mood);
     setSelectedDate(new Date(entry.date));
     setSelectedStickers(entry.stickers || []);
     
-    // Handle image if there is one
     const imageMatch = entry.content.match(/\n\n!\[Captured Image\]\((.*)\)/);
     if (imageMatch && imageMatch[1]) {
       setCapturedImage(imageMatch[1]);
@@ -661,7 +658,7 @@ const Diary = () => {
               
               {isAddingEntry ? (
                 renderEditForm()
-              ) : sortedEntries.length === 0 ? (
+              ) : filteredEntries.length === 0 ? (
                 <div className="flex flex-col items-center justify-center bg-muted/40 rounded-lg py-10 my-6">
                   <div className="text-4xl mb-4">📔</div>
                   <h3 className="text-xl font-medium">No entries yet</h3>
