@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -257,6 +258,7 @@ const Diary = () => {
       finalContent = `${finalContent}\n\n![Captured Image](${capturedImage})`;
     }
 
+    // Create a copy of the entries array to modify
     const updatedEntries = [...entries];
 
     if (editingEntry) {
@@ -290,6 +292,7 @@ const Diary = () => {
       toast.success("Entry created successfully");
     }
 
+    // Reset all states after saving
     setIsAddingEntry(false);
     setEditingEntry(null);
     setNewEntryTitle("");
@@ -605,4 +608,357 @@ const Diary = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify
+              <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between mb-4">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="flex items-center gap-1">
+                      <Filter className="h-3.5 w-3.5" />
+                      <span>Filter</span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-60 p-4">
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <h4 className="font-medium">Archive Status</h4>
+                        <div className="flex flex-col space-y-1.5">
+                          <label className="flex items-center space-x-2">
+                            <input
+                              type="radio"
+                              checked={archiveFilter === "active"}
+                              onChange={() => setArchiveFilter("active")}
+                              className="form-radio h-4 w-4"
+                            />
+                            <span>Active</span>
+                          </label>
+                          <label className="flex items-center space-x-2">
+                            <input
+                              type="radio"
+                              checked={archiveFilter === "archived"}
+                              onChange={() => setArchiveFilter("archived")}
+                              className="form-radio h-4 w-4"
+                            />
+                            <span>Archived</span>
+                          </label>
+                          <label className="flex items-center space-x-2">
+                            <input
+                              type="radio"
+                              checked={archiveFilter === "all"}
+                              onChange={() => setArchiveFilter("all")}
+                              className="form-radio h-4 w-4"
+                            />
+                            <span>All</span>
+                          </label>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <h4 className="font-medium">Sort By</h4>
+                        <div className="flex flex-col space-y-1.5">
+                          <label className="flex items-center space-x-2">
+                            <input
+                              type="radio"
+                              checked={sortOption === "newest"}
+                              onChange={() => setSortOption("newest")}
+                              className="form-radio h-4 w-4"
+                            />
+                            <span>Newest First</span>
+                          </label>
+                          <label className="flex items-center space-x-2">
+                            <input
+                              type="radio"
+                              checked={sortOption === "oldest"}
+                              onChange={() => setSortOption("oldest")}
+                              className="form-radio h-4 w-4"
+                            />
+                            <span>Oldest First</span>
+                          </label>
+                          <label className="flex items-center space-x-2">
+                            <input
+                              type="radio"
+                              checked={sortOption === "title"}
+                              onChange={() => setSortOption("title")}
+                              className="form-radio h-4 w-4"
+                            />
+                            <span>Title</span>
+                          </label>
+                          <label className="flex items-center space-x-2">
+                            <input
+                              type="radio"
+                              checked={sortOption === "mood"}
+                              onChange={() => setSortOption("mood")}
+                              className="form-radio h-4 w-4"
+                            />
+                            <span>Mood</span>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+                <div className="text-sm text-muted-foreground">
+                  Total entries: {sortedEntries.length}
+                </div>
+              </div>
+
+              {isAddingEntry ? (
+                renderEditForm()
+              ) : (
+                <>
+                  <div className="space-y-4">
+                    {displayedEntries.length > 0 ? (
+                      displayedEntries.map((entry) => (
+                        <Card key={entry.id} className="overflow-hidden">
+                          <CardHeader className="flex flex-row items-start justify-between p-4">
+                            <div className="flex-1 pr-4">
+                              <div className="flex items-center gap-2">
+                                <CardTitle className="flex-1 truncate text-base font-semibold">
+                                  {entry.title}
+                                </CardTitle>
+                                <div className="h-5 w-5 flex items-center justify-center">
+                                  {entry.mood === "happy" && (
+                                    <Smile className="h-4 w-4 text-green-500" />
+                                  )}
+                                  {entry.mood === "neutral" && (
+                                    <SunMedium className="h-4 w-4 text-yellow-500" />
+                                  )}
+                                  {entry.mood === "sad" && (
+                                    <Moon className="h-4 w-4 text-blue-500" />
+                                  )}
+                                </div>
+                              </div>
+                              <CardDescription className="mt-1 flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                <span>{format(new Date(entry.date), "PPP")}</span>
+                                {entry.archived && <Badge variant="outline">Archived</Badge>}
+                              </CardDescription>
+                            </div>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handleEditEntry(entry)}>
+                                  <Edit className="mr-2 h-4 w-4" />
+                                  Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => toggleArchiveEntry(entry.id)}>
+                                  <Archive className="mr-2 h-4 w-4" />
+                                  {entry.archived ? "Unarchive" : "Archive"}
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setEditingEntry(entry);
+                                    setShowDeleteConfirm(true);
+                                  }}
+                                  className="text-destructive"
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </CardHeader>
+                          <CardContent className="px-4 pb-4 pt-0">
+                            <div className="prose prose-sm max-w-none dark:prose-invert">
+                              <div className="line-clamp-3 mb-2">{entry.content}</div>
+                              {entry.stickers && entry.stickers.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-2">
+                                  {entry.stickers.map((sticker, idx) => (
+                                    <span key={idx} className="text-lg">
+                                      {sticker}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))
+                    ) : (
+                      <div className="py-12 text-center">
+                        <div className="text-3xl">📔</div>
+                        <h3 className="mt-2 text-xl font-semibold">No entries found</h3>
+                        <p className="mt-1 text-muted-foreground">
+                          {archiveFilter === "active"
+                            ? "You don't have any active entries."
+                            : archiveFilter === "archived"
+                            ? "You don't have any archived entries."
+                            : "You don't have any entries yet."}
+                        </p>
+                        <Button onClick={handleAddEntry} className="mt-4">
+                          <Plus className="mr-2 h-4 w-4" />
+                          Add your first entry
+                        </Button>
+                      </div>
+                    )}
+                    
+                    {sortedEntries.length > 3 && (
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => setShowAllEntries(!showAllEntries)}
+                      >
+                        {showAllEntries ? (
+                          <>
+                            <ChevronUp className="mr-2 h-4 w-4" />
+                            Show Less
+                          </>
+                        ) : (
+                          <>
+                            <ChevronDown className="mr-2 h-4 w-4" />
+                            Show All ({sortedEntries.length - 3} more)
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </div>
+
+                  {showDeleteConfirm && (
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                      <Card className="max-w-md w-full m-4">
+                        <CardHeader>
+                          <CardTitle>Delete Entry</CardTitle>
+                          <CardDescription>
+                            Are you sure you want to delete this entry? This action cannot be
+                            undone.
+                          </CardDescription>
+                        </CardHeader>
+                        <CardFooter className="flex justify-end gap-2">
+                          <Button variant="outline" onClick={() => setShowDeleteConfirm(false)}>
+                            Cancel
+                          </Button>
+                          <Button variant="destructive" onClick={handleDeleteEntry}>
+                            Delete
+                          </Button>
+                        </CardFooter>
+                      </Card>
+                    </div>
+                  )}
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="md:col-span-5 lg:col-span-4 space-y-4">
+          <Card>
+            <CardHeader className="flex flex-col sm:flex-row">
+              <div>
+                <CardTitle>Calendar</CardTitle>
+                <CardDescription>Select a date to view entries</CardDescription>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="p-1">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(date) => date && setSelectedDate(date)}
+                  className="rounded-md border"
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-xl">
+                Entries for {format(selectedDate, "MMM d, yyyy")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {entriesForSelectedDate.length > 0 ? (
+                <div className="space-y-4">
+                  {displayedDateEntries.map((entry) => (
+                    <Card key={entry.id} className="overflow-hidden">
+                      <CardHeader className="flex flex-row items-start justify-between p-4">
+                        <div className="flex-1 pr-4">
+                          <div className="flex items-center gap-2">
+                            <CardTitle className="flex-1 truncate text-base font-semibold">
+                              {entry.title}
+                            </CardTitle>
+                            <div className="h-5 w-5 flex items-center justify-center">
+                              {entry.mood === "happy" && (
+                                <Smile className="h-4 w-4 text-green-500" />
+                              )}
+                              {entry.mood === "neutral" && (
+                                <SunMedium className="h-4 w-4 text-yellow-500" />
+                              )}
+                              {entry.mood === "sad" && (
+                                <Moon className="h-4 w-4 text-blue-500" />
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => handleEditEntry(entry)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </CardHeader>
+                      <CardContent className="px-4 pb-4 pt-0">
+                        <div className="prose prose-sm max-w-none dark:prose-invert">
+                          <div className="line-clamp-2">{entry.content}</div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                  
+                  {entriesForSelectedDate.length > 3 && (
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => setShowAllDateEntries(!showAllDateEntries)}
+                    >
+                      {showAllDateEntries ? (
+                        <>
+                          <ChevronUp className="mr-2 h-4 w-4" />
+                          Show Less
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDown className="mr-2 h-4 w-4" />
+                          Show All ({entriesForSelectedDate.length - 3} more)
+                        </>
+                      )}
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <div className="py-8 text-center">
+                  <div className="text-3xl">📆</div>
+                  <h3 className="mt-2 text-lg font-semibold">No entries for this date</h3>
+                  <Button onClick={handleAddEntry} className="mt-3" size="sm">
+                    <Plus className="mr-2 h-3 w-3" />
+                    Add entry
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {showCamera && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="max-w-lg w-full m-4">
+            <CardHeader>
+              <CardTitle>Capture Image</CardTitle>
+              <CardDescription>Take a photo for your diary entry</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <CameraCapture onCapture={handleImageCapture} onCancel={() => setShowCamera(false)} />
+            </CardContent>
+          </Card>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default Diary;
