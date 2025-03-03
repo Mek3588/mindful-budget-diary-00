@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -258,7 +257,6 @@ const Diary = () => {
       finalContent = `${finalContent}\n\n![Captured Image](${capturedImage})`;
     }
 
-    // Create a copy of the entries array to modify
     const updatedEntries = [...entries];
 
     if (editingEntry) {
@@ -292,7 +290,6 @@ const Diary = () => {
       toast.success("Entry created successfully");
     }
 
-    // Reset all states after saving
     setIsAddingEntry(false);
     setEditingEntry(null);
     setNewEntryTitle("");
@@ -579,12 +576,10 @@ const Diary = () => {
     );
   };
 
-  // Limit displayed entries
   const displayedEntries = useMemo(() => {
     return showAllEntries ? sortedEntries : sortedEntries.slice(0, 3);
   }, [sortedEntries, showAllEntries]);
 
-  // Limit displayed date entries
   const displayedDateEntries = useMemo(() => {
     return showAllDateEntries ? entriesForSelectedDate : entriesForSelectedDate.slice(0, 3);
   }, [entriesForSelectedDate, showAllDateEntries]);
@@ -945,17 +940,12 @@ const Diary = () => {
       </div>
 
       {showCamera && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <Card className="max-w-lg w-full m-4">
-            <CardHeader>
-              <CardTitle>Capture Image</CardTitle>
-              <CardDescription>Take a photo for your diary entry</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <CameraCapture onCapture={handleImageCapture} onCancel={() => setShowCamera(false)} />
-            </CardContent>
-          </Card>
-        </div>
+        <CameraCapture 
+          onCapture={handleImageCapture} 
+          open={showCamera} 
+          onOpenChange={setShowCamera} 
+          onCancel={() => setShowCamera(false)} 
+        />
       )}
     </div>
   );

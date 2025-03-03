@@ -9,9 +9,10 @@ interface CameraCaptureProps {
   onCapture: (image: string) => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onCancel?: () => void; // Added optional onCancel prop
 }
 
-const CameraCapture = ({ onCapture, open, onOpenChange }: CameraCaptureProps) => {
+const CameraCapture = ({ onCapture, open, onOpenChange, onCancel }: CameraCaptureProps) => {
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [cameraError, setCameraError] = useState<string | null>(null);
@@ -77,6 +78,9 @@ const CameraCapture = ({ onCapture, open, onOpenChange }: CameraCaptureProps) =>
       setCameraError(null);
     } else {
       stopCamera();
+      if (!newOpen && onCancel) {
+        onCancel(); // Call onCancel when dialog is closed if provided
+      }
     }
     onOpenChange(newOpen);
   };
