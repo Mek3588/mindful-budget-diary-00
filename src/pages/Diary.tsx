@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -248,21 +249,28 @@ const Diary = () => {
       finalContent = `${finalContent}\n\n![Captured Image](${capturedImage})`;
     }
 
+    // Create a copy of the entries array to avoid reference issues
+    const updatedEntries = [...entries];
+
     if (editingEntry) {
-      const updatedEntries = entries.map((entry) =>
-        entry.id === editingEntry.id
-          ? {
-              ...entry,
-              title: newEntryTitle,
-              content: finalContent,
-              date: entryDate,
-              mood: newEntryMood,
-              stickers: selectedStickers,
-            }
-          : entry
-      );
-      setEntries(updatedEntries);
-      toast.success("Entry updated successfully");
+      // Find the index of the entry being edited
+      const index = updatedEntries.findIndex(entry => entry.id === editingEntry.id);
+      
+      if (index !== -1) {
+        // Update the entry at the found index
+        updatedEntries[index] = {
+          ...editingEntry,
+          title: newEntryTitle,
+          content: finalContent,
+          date: entryDate,
+          mood: newEntryMood,
+          stickers: selectedStickers,
+        };
+        
+        // Update the state with the modified entries array
+        setEntries(updatedEntries);
+        toast.success("Entry updated successfully");
+      }
     } else {
       const newEntry: DiaryEntry = {
         id: Date.now().toString(),
@@ -324,14 +332,18 @@ const Diary = () => {
   };
 
   const handleEditEntry = (entry: DiaryEntry) => {
+    // Start by setting the editing state
     setIsAddingEntry(true);
     setEditingEntry(entry);
+    
+    // Set all form fields to match the entry data
     setNewEntryTitle(entry.title);
     setNewEntryContent(entry.content.replace(/\n\n!\[Captured Image\]\(.*\)/, '')); // Remove image from content for editing
     setNewEntryMood(entry.mood);
     setSelectedDate(new Date(entry.date));
     setSelectedStickers(entry.stickers || []);
     
+    // Handle image if there is one
     const imageMatch = entry.content.match(/\n\n!\[Captured Image\]\((.*)\)/);
     if (imageMatch && imageMatch[1]) {
       setCapturedImage(imageMatch[1]);

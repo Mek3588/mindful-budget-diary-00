@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -259,22 +260,29 @@ const MedicalPage = () => {
         values = {};
     }
 
+    // Create a copy of the records array to avoid reference issues
+    const updatedRecords = [...records];
+
     if (editingRecord) {
-      const updatedRecords = records.map(record => 
-        record.id === editingRecord.id 
-          ? {
-              ...record,
-              type: recordType,
-              title: recordTitle,
-              description: recordDescription,
-              date: recordDate,
-              time: recordTime,
-              values: values,
-            }
-          : record
-      );
-      setRecords(updatedRecords);
-      toast.success("Record updated successfully");
+      // Find the index of the record being edited
+      const index = updatedRecords.findIndex(record => record.id === editingRecord.id);
+      
+      if (index !== -1) {
+        // Update the record at the found index
+        updatedRecords[index] = {
+          ...editingRecord,
+          type: recordType,
+          title: recordTitle,
+          description: recordDescription,
+          date: recordDate,
+          time: recordTime,
+          values: values,
+        };
+        
+        // Update the state with the modified records array
+        setRecords(updatedRecords);
+        toast.success("Record updated successfully");
+      }
     } else {
       const newRecord: MedicalRecord = {
         id: Date.now().toString(),
@@ -305,13 +313,38 @@ const MedicalPage = () => {
   };
 
   const handleEditRecord = (record: MedicalRecord) => {
+    // Start by setting the editing state
     setEditingRecord(record);
+    
+    // Set all form fields to match the record data
     setRecordType(record.type);
     setRecordTitle(record.title);
     setRecordDescription(record.description || "");
     setRecordDate(record.date);
     setRecordTime(record.time || format(new Date(), "HH:mm"));
     
+    // Reset all value forms first
+    setVitalValues({
+      weight: "",
+      bloodPressure: "",
+      heartRate: "",
+      temperature: "",
+      bloodSugar: "",
+    });
+    setMedicationValues({
+      name: "",
+      dosage: "",
+      frequency: "",
+      startDate: format(new Date(), "yyyy-MM-dd"),
+      endDate: "",
+    });
+    setAppointmentValues({
+      doctor: "",
+      location: "",
+      reason: "",
+    });
+    
+    // Then update the relevant one based on record type
     if (record.values) {
       switch (record.type) {
         case "vitals":
@@ -326,6 +359,7 @@ const MedicalPage = () => {
       }
     }
     
+    // Open the dialog
     setShowRecordDialog(true);
   };
 
